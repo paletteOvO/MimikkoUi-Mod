@@ -1,4 +1,4 @@
-package me.manhong2112.mimikouimod
+package me.manhong2112.mimikkouimod
 
 
 import android.annotation.TargetApi
@@ -19,6 +19,7 @@ import android.preference.PreferenceManager
 import android.preference.RingtonePreference
 import android.text.TextUtils
 import android.view.MenuItem
+import me.manhong2112.mimikkouimod.R
 
 class SettingsActivity : AppCompatPreferenceActivity() {
    override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,6 +41,7 @@ class SettingsActivity : AppCompatPreferenceActivity() {
    }
 
    override fun isValidFragment(fragmentName: String): Boolean {
+      println(fragmentName)
       return when(fragmentName) {
          PreferenceFragment::class.java.name,
          GeneralPreferenceFragment::class.java.name -> true
@@ -54,7 +56,7 @@ class SettingsActivity : AppCompatPreferenceActivity() {
          addPreferencesFromResource(R.xml.pref_general)
          setHasOptionsMenu(true)
 
-         bindPreferenceSummaryToValue(findPreference("test"))
+         // bindPreferenceSummaryToValue(findPreference("drawerBlur"))
       }
 
       override fun onOptionsItemSelected(item: MenuItem): Boolean {

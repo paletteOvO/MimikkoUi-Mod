@@ -1,4 +1,4 @@
-package me.manhong2112.mimikouimod
+package me.manhong2112.mimikkouimod
 
 import android.content.res.Configuration
 import android.os.Bundle

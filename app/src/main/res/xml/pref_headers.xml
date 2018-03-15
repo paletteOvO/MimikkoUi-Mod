@@ -3,7 +3,7 @@
     <!-- These settings headers are only used on tablets. -->
 
     <header
-            android:fragment="me.manhong2112.mimikouimod.SettingsActivity$GeneralPreferenceFragment"
+            android:fragment="me.manhong2112.mimikkouimod.SettingsActivity$GeneralPreferenceFragment"
             android:title="@string/pref_header_general"
             android:icon="@drawable/ic_info_black_24dp"/>
 
