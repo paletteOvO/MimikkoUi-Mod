@@ -6,7 +6,10 @@ import android.R.attr.classLoader
 import android.app.Application
 import de.robv.android.xposed.XposedHelpers.findAndHookMethod
 import android.R.attr.classLoader
+import android.app.Activity
 import android.content.Context
+import android.os.Bundle
+import android.widget.RelativeLayout
 import de.robv.android.xposed.*
 import de.robv.android.xposed.XposedBridge.hookMethod
 import de.robv.android.xposed.XposedHelpers.findClass
@@ -39,12 +42,15 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
             val app = cryAppField.get(param.thisObject) as Application
 
             val cls = XposedHelpers.findClass("com.mimikko.mimikkoui.launcher.activity.Launcher", app.classLoader)
-            cls.declaredMethods.map {
-               log(it.name)
-            }
-            cls.declaredFields.map {
-               log(it.name)
-            }
+            val dockField = cls.getDeclaredField("dock")
+            dockField.isAccessible = true
+            findAndHookMethod(cls, "onCreate", Bundle::class.java, object : XC_MethodHook() {
+               override fun afterHookedMethod(param: MethodHookParam) {
+                  val act = param.thisObject as Activity
+                  val dock = dockField.get(act) as RelativeLayout
+                  dock.alpha = 0.5f
+               }
+            })
          }
       })
       println("==end==")
