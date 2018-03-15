@@ -1,0 +1,9 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <SwitchPreference
+            android:key="test"
+            android:title="abc"
+            android:summary="summary"
+            android:defaultValue="true"/>
+
+</PreferenceScreen>
