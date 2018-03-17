@@ -5,6 +5,8 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.LightingColorFilter
 import android.graphics.Paint
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.renderscript.Allocation
 import android.renderscript.Element
 import android.renderscript.RenderScript
@@ -15,8 +17,28 @@ import org.jetbrains.anko.opaque
 import java.lang.reflect.Method
 
 
-class Utils {
-   companion object {
+
+
+object Utils {
+      fun drawableToBitmap(drawable: Drawable): Bitmap {
+
+         if (drawable is BitmapDrawable) {
+            if (drawable.bitmap != null) {
+               return drawable.bitmap
+            }
+         }
+         val bitmap = if (drawable.intrinsicWidth <= 0 || drawable.intrinsicHeight <= 0) {
+            Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888) // Single color bitmap will be created of 1x1 pixel
+         } else {
+            Bitmap.createBitmap(drawable.intrinsicWidth, drawable.intrinsicHeight, Bitmap.Config.ARGB_8888)
+         }
+
+         val canvas = Canvas(bitmap)
+         drawable.setBounds(0, 0, canvas.width, canvas.height)
+         drawable.draw(canvas)
+         return bitmap
+      }
+
       fun upscale(height: Int, width: Int, bitmap: Bitmap): Bitmap {
          var widthFactor = 0f
          var heightFactor = 0f
@@ -79,7 +101,7 @@ class Utils {
          return outputBitmap
       }
 
-      fun hookMethod(method: Method, before: (XC_MethodHook.MethodHookParam) -> Unit, after: (XC_MethodHook.MethodHookParam) -> Unit): XC_MethodHook.Unhook {
+      fun hookMethod(method: Method, before: (XC_MethodHook.MethodHookParam) -> Unit = {}, after: (XC_MethodHook.MethodHookParam) -> Unit= {}): XC_MethodHook.Unhook {
          return XposedBridge.hookMethod(method, object: XC_MethodHook() {
             override fun beforeHookedMethod(param: MethodHookParam) {
                before(param)
@@ -90,6 +112,35 @@ class Utils {
             }
          })
       }
-   }
 
+      fun replaceMethod(method: Method, replacement: (XC_MethodHook.MethodHookParam) -> Any = {}): XC_MethodHook.Unhook {
+         return XposedBridge.hookMethod(method, object: XC_MethodHook() {
+            override fun beforeHookedMethod(param: MethodHookParam) {
+               try {
+                  val result = replacement(param)
+                  param.result = result
+               } catch (_ : CallOriginalMethod) {}
+            }
+         })
+      }
+
+      class CallOriginalMethod : Throwable()
+
+      fun findMethod(cls: Class<*>, methodName: String, vararg typeList: Class<*>): Method {
+         return try {
+            cls.getMethod(methodName, *typeList)
+         } catch (e : NoSuchMethodException) {
+            try {
+               val m = cls.getDeclaredMethod(methodName, *typeList)
+               m.isAccessible = true
+               m
+            } catch (e : NoSuchMethodException) {
+               cls.superclass ?: throw e
+               findMethod(cls.superclass, methodName, *typeList)
+            }
+         }
+      }
+      fun log(msg: String) {
+         println("==MMKUI==Mod==$msg")
+      }
 }
