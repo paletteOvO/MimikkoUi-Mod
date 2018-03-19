@@ -1,6 +1,6 @@
 package me.manhong2112.mimikkouimod
 
 object Const {
-   const val prefBlurDrawerBackground = "blurDrawerBackground"
-   const val updateDrawerAction = "me.manhong2112.mmikkouimod.action.updateDrawerAction"
+   const val updateDrawerAction = "me.manhong2112.mmikkouimod.action.updateDrawer"
+   const val updateDockAction = "me.manhong2112.mmikkouimod.action.updateDock"
 }

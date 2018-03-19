@@ -38,13 +38,13 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
 
    private val updateDrawerReceiver by lazy {
       object : BroadcastReceiver() {
-         override fun onReceive(p0: Context?, intent: Intent?) {
-            intent?:return
-            val a = intent.getBooleanExtra(Const.prefBlurDrawerBackground, false)
-            log("received ${a}")
+         override fun onReceive(ctx: Context, intent: Intent) {
             drawer ?: return
-            log("drawer is not null")
-            updateDrawer(launcherAct, drawer!!, arrayOf(a))
+            val cfg = Config.getDefaultDrawerConfig()
+            cfg.fromIntent(intent)
+
+            val value = cfg.get<Boolean>(Config.Drawer.DrawerBlurBackground)
+            updateDrawer(launcherAct, drawer!!, arrayOf(value))
          }
       }
    }

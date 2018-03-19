@@ -11,9 +11,6 @@ import android.preference.Preference
 import android.preference.PreferenceActivity
 import android.preference.PreferenceFragment
 import android.view.MenuItem
-import me.manhong2112.mimikkouimod.Const.prefBlurDrawerBackground
-import me.manhong2112.mimikkouimod.Const.updateDrawerAction
-import me.manhong2112.mimikkouimod.Utils.log
 
 class SettingsActivity : AppCompatPreferenceActivity() {
    override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,11 +46,11 @@ class SettingsActivity : AppCompatPreferenceActivity() {
          addPreferencesFromResource(R.xml.pref_general)
          setHasOptionsMenu(true)
 
-         bindPreference<Boolean>(findPreference(prefBlurDrawerBackground)) {
+         bindPreference<Boolean>(findPreference(Config.Drawer.DrawerBlurBackground.name)) {
             _, value ->
-            val intent = Intent(updateDrawerAction)
-            intent.putExtra(prefBlurDrawerBackground, value)
-            this.activity.sendBroadcast(intent)
+            val cfg = Config.getDefaultDrawerConfig()
+            cfg.set(Config.Drawer.DrawerBlurBackground, value)
+            this.activity.sendBroadcast(cfg.toIntent())
             true
          }
       }
