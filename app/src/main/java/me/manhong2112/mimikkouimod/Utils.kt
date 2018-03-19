@@ -99,7 +99,6 @@ object Utils {
       val canvas = Canvas(outputBitmap)
       canvas.drawBitmap(outputBitmap, 0f, 0f, paint)
 
-
       return outputBitmap
    }
 
@@ -130,7 +129,7 @@ object Utils {
    class CallOriginalMethod : Throwable()
 
    fun log(msg: String) {
-      Log.d("MiMiKkoUIvMod", msg)
+      Log.d("MiMiKkoUIMod", msg)
    }
 
    operator fun String.times(n: Int): String {
@@ -162,6 +161,10 @@ object Utils {
    fun Method.hook(before: (XC_MethodHook.MethodHookParam) -> Unit = {}, after: (XC_MethodHook.MethodHookParam) -> Unit = {}): XC_MethodHook.Unhook {
       this.isAccessible = true
       return Utils.hookMethod(this, before = before, after = after)
+   }
+
+   fun Class<*>.hookAllMethod(name: String, before: (Method, XC_MethodHook.MethodHookParam) -> Unit = {_, _ ->}, after: (Method, XC_MethodHook.MethodHookParam) -> Unit = {_, _ ->}) {
+      this.declaredMethods.filter { it.name == name }.map { it.hook(before = {p -> before(it, p)}, after = {p -> after(it, p)}) }
    }
 
    fun Method.replace(replacement: (XC_MethodHook.MethodHookParam) -> Any = {}): XC_MethodHook.Unhook {

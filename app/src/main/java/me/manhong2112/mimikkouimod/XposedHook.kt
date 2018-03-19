@@ -3,12 +3,12 @@ package me.manhong2112.mimikkouimod
 import android.app.Activity
 import android.app.Application
 import android.app.WallpaperManager
-import android.content.ComponentName
-import android.content.Context
+import android.content.*
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.util.DisplayMetrics
 import android.view.View
@@ -34,6 +34,35 @@ import org.jetbrains.anko.backgroundDrawable
 
 class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
    lateinit var app: Application
+   lateinit var launcherAct: Activity
+
+   private val updateDrawerReceiver by lazy {
+      object : BroadcastReceiver() {
+         override fun onReceive(p0: Context?, intent: Intent?) {
+            intent?:return
+            val a = intent.getBooleanExtra(Const.prefBlurDrawerBackground, false)
+            log("received ${a}")
+            drawer ?: return
+            log("drawer is not null")
+            updateDrawer(launcherAct, drawer!!, arrayOf(a))
+         }
+      }
+   }
+
+   val dock: RelativeLayout by lazy {
+      val d = launcherAct.getField<RelativeLayout>("dock")
+      updateDock(launcherAct, d)
+      d
+   }
+   val root: RelativeLayout by lazy {
+      val r = launcherAct.getField<RelativeLayout>("root")
+      updateRoot(launcherAct, r)
+      r
+   }
+
+   var drawer: ViewGroup? = null
+   var workspace: ViewGroup? = null
+
    override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
       if (lpparam.packageName != "com.mimikko.mimikkoui") return
       val stubClass = XposedHelpers.findClass("com.stub.StubApp", lpparam.classLoader)
@@ -42,6 +71,7 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
          val app = param.thisObject.getField(appVariableName) as Application
          realAppHook(app)
       })
+
    }
 
    @Throws(Throwable::class)
@@ -51,19 +81,18 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
 
    private fun realAppHook(app: Application) {
       // com.mimikko.mimikkoui.launcher.components.cell.CellView
-      this.app = app
       val launcherClass = findClass("com.mimikko.mimikkoui.launcher.activity.Launcher", app.classLoader)
       IconProvider.ctx = app
       IconProvider.iconPack = IconProvider.IconPack(app, "website.leifs.delta")
       launcherClass.findMethod("onCreate", Bundle::class.java).hook(after = { param ->
-         val act = param.thisObject as Activity
-         val root = act.getField("root") as RelativeLayout
-         val dock = act.getField("dock") as RelativeLayout
+         this.app = app
+         launcherAct = param.thisObject as Activity
+         launcherAct.registerReceiver(updateDrawerReceiver, IntentFilter(Const.updateDrawerAction))
          val mAddViewVILp = root.findMethod("addView", View::class.java, Integer.TYPE, ViewGroup.LayoutParams::class.java)
          mAddViewVILp.hook(after = {
-            updateRoot(act, root)
-            updateDock(act, dock)
-            rootHook(act, root, it)
+            root
+            dock
+            rootHook(launcherAct, root, it)
          })
       })
 
@@ -84,14 +113,13 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
          is RelativeLayout -> {
             // it can be drawerLayout or Workspace
             // drawerLayout : com.mimikko.mimikkoui.launcher.components.drawer.DrawerLayout
-            val drawerLayout = innerLayout.findViewById(MimikkoID.drawer_layout) as ViewGroup?
-            if (drawerLayout !== null) {
-               updateDrawer(activity, drawerLayout)
-               return
+            if(drawer === null && innerLayout.findViewById<ViewGroup?>(MimikkoID.drawer_layout) !== null) {
+               drawer = innerLayout.findViewById(MimikkoID.drawer_layout) as ViewGroup
+               updateDrawer(activity, drawer!!, arrayOf(false))
             }
-            val workSpace = innerLayout.findViewById(MimikkoID.workspace) as ViewGroup?
-            if (workSpace !== null) {
-               updateWorkspace(activity, workSpace)
+            if (workspace === null && innerLayout.findViewById<ViewGroup?>(MimikkoID.workspace) !== null) {
+               workspace = innerLayout.findViewById(MimikkoID.workspace)
+               updateWorkspace(activity, workspace!!)
                return
             }
          }
@@ -114,18 +142,26 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
       return dock
    }
 
-   private fun updateDrawer(activity: Activity, drawer: ViewGroup) {
+
+   private var backupBackground: Drawable? = null
+   private fun updateDrawer(activity: Activity, drawer: ViewGroup, pref: Array<Any>) {
       val parent = drawer.parent as RelativeLayout
-      val wallpaperManager = WallpaperManager.getInstance(activity)
-      if (wallpaperManager.wallpaperInfo === null) {
-         parent.background = ColorDrawable(Color.TRANSPARENT)
-         val wallpaper = wallpaperManager.drawable as BitmapDrawable
-         val bitmap = wallpaper.bitmap.copy(Bitmap.Config.ARGB_8888, true)
-         val metrics = DisplayMetrics()
-         activity.windowManager.defaultDisplay.getMetrics(metrics)
-         val blurWallpaper = Utils.blur(activity, bitmap, 25f)
-         parent.backgroundDrawable = BitmapDrawable(activity.resources, blurWallpaper)
+      if(pref[0] as Boolean) {
+         val wallpaperManager = WallpaperManager.getInstance(activity)
+         if (wallpaperManager.wallpaperInfo === null) {
+            backupBackground = backupBackground ?: parent.background
+            parent.background = ColorDrawable(Color.TRANSPARENT)
+            val wallpaper = wallpaperManager.drawable as BitmapDrawable
+            val bitmap = wallpaper.bitmap.copy(Bitmap.Config.ARGB_8888, true)
+            val metrics = DisplayMetrics()
+            activity.windowManager.defaultDisplay.getMetrics(metrics)
+            val blurWallpaper = Utils.blur(activity, bitmap, 25f)
+            parent.backgroundDrawable = BitmapDrawable(activity.resources, blurWallpaper)
+         }
+      } else {
+         parent.background = backupBackground ?: parent.background
       }
+
    }
 
    private fun updateWorkspace(activity: Activity, workspace: ViewGroup) {

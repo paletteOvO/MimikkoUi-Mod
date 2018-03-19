@@ -7,8 +7,13 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
-import android.preference.*
+import android.preference.Preference
+import android.preference.PreferenceActivity
+import android.preference.PreferenceFragment
 import android.view.MenuItem
+import me.manhong2112.mimikkouimod.Const.prefBlurDrawerBackground
+import me.manhong2112.mimikkouimod.Const.updateDrawerAction
+import me.manhong2112.mimikkouimod.Utils.log
 
 class SettingsActivity : AppCompatPreferenceActivity() {
    override fun onCreate(savedInstanceState: Bundle?) {
@@ -30,7 +35,6 @@ class SettingsActivity : AppCompatPreferenceActivity() {
    }
 
    override fun isValidFragment(fragmentName: String): Boolean {
-      println(fragmentName)
       return when(fragmentName) {
          PreferenceFragment::class.java.name,
          GeneralPreferenceFragment::class.java.name -> true
@@ -44,6 +48,14 @@ class SettingsActivity : AppCompatPreferenceActivity() {
          super.onCreate(savedInstanceState)
          addPreferencesFromResource(R.xml.pref_general)
          setHasOptionsMenu(true)
+
+         bindPreference<Boolean>(findPreference(prefBlurDrawerBackground)) {
+            _, value ->
+            val intent = Intent(updateDrawerAction)
+            intent.putExtra(prefBlurDrawerBackground, value)
+            this.activity.sendBroadcast(intent)
+            true
+         }
       }
 
       override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -56,34 +68,16 @@ class SettingsActivity : AppCompatPreferenceActivity() {
    }
 
    companion object {
-      private val sBindPreferenceSummaryToValueListener = Preference.OnPreferenceChangeListener {
-         preference, value ->
-         val stringValue = value.toString()
-
-         if (preference is ListPreference) {
-            val index = preference.findIndexOfValue(stringValue)
-            preference.setSummary(
-                  if (index >= 0)
-                     preference.entries[index]
-                  else
-                     null)
-         } else {
-            preference.summary = stringValue
-         }
-         true
-      }
-
       private fun isXLargeTablet(context: Context): Boolean {
          return context.resources.configuration.screenLayout and Configuration.SCREENLAYOUT_SIZE_MASK >= Configuration.SCREENLAYOUT_SIZE_XLARGE
       }
 
-      private fun bindPreferenceSummaryToValue(preference: Preference) {
-         preference.onPreferenceChangeListener = sBindPreferenceSummaryToValueListener
+      private fun <T>bindPreference(preference: Preference, callback: (Preference, T) -> Boolean) {
+         preference.onPreferenceChangeListener = Preference.OnPreferenceChangeListener {
+            preference, value ->
+            return@OnPreferenceChangeListener callback(preference, value as T)
+         }
 
-         sBindPreferenceSummaryToValueListener.onPreferenceChange(preference,
-               PreferenceManager
-                     .getDefaultSharedPreferences(preference.context)
-                     .getString(preference.key, ""))
       }
    }
 }
