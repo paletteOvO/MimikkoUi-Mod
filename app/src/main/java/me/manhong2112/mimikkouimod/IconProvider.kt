@@ -18,6 +18,10 @@ object IconProvider {
       return iconPack.hasIcon(componentInfo)
    }
 
+   fun changeIconPack(packageName: String) {
+      iconPack = IconPack(ctx, packageName)
+   }
+
    class IconPack(private val ctx: Context, val packageName: String) {
       private val icons = HashMap<String, Bitmap>()
       private val appFilter by lazy {
@@ -26,16 +30,22 @@ object IconProvider {
       private val res by lazy {
          ctx.packageManager.getResourcesForApplication(packageName)
       }
+
       fun getIcon(componentInfo: String): Bitmap? {
-         if (componentInfo !in icons) {
-            val id = res.getIdentifier(appFilter[componentInfo], "drawable", packageName)
+         if (componentInfo !in appFilter) {
+            return null
+         }
+         val drawableName = appFilter[componentInfo]!!
+         if (drawableName !in icons) {
+            val id = res.getIdentifier(drawableName, "drawable", packageName)
             log("getIcon $componentInfo -> ${appFilter[componentInfo]}")
-            if(id == 0) {
+            if (id == 0) {
+               log("component $componentInfo is in appfilter but failed to get drawable $drawableName")
                return null
             }
-            icons[componentInfo] = drawableToBitmap(res.getDrawable(id))
+            icons[drawableName] = drawableToBitmap(res.getDrawable(id))
          }
-         return icons[componentInfo]!!
+         return icons[drawableName]!!
       }
 
       fun hasIcon(componentInfo: String): Boolean {
@@ -46,22 +56,19 @@ object IconProvider {
          val id = res.getIdentifier("appfilter", "xml", packageName)
          val xpp = res.getXml(id)
          val hashMap = hashMapOf<String, String>()
-         var eventType = xpp.eventType
-         while (eventType != XmlPullParser.END_DOCUMENT) {
+
+         loop@ while (true) {
+            val eventType = xpp.next()
             when (eventType) {
-               XmlPullParser.START_DOCUMENT -> log("Start document")
                XmlPullParser.START_TAG -> {
-                  log("Start tag " + xpp.name)
-                  if(xpp.name == "item") {
+                  if (xpp.name == "item") {
                      hashMap[xpp.getAttributeValue(null, "component")] = xpp.getAttributeValue(null, "drawable")
                   }
                }
-               XmlPullParser.END_TAG -> log("End tag " + xpp.name)
-               XmlPullParser.TEXT -> log("Text " + xpp.text)
+               XmlPullParser.END_DOCUMENT -> break@loop
+               else -> {}
             }
-            eventType = xpp.next()
          }
-         println("End document")
          return hashMap
       }
    }
