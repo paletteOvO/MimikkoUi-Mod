@@ -9,7 +9,7 @@ android {
         applicationId "me.manhong2112.mimikkouimod"
         minSdkVersion 19
         targetSdkVersion 27
-        versionCode 1
+        versionCode(getVersionCode())
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
@@ -31,7 +31,11 @@ android {
         }
     }
 }
-
+def getVersionCode() {
+    def stdout = new ByteArrayOutputStream()
+    exec { commandLine 'git', 'rev-list', '--count', "HEAD"; standardOutput = stdout }
+    return Integer.parseInt(stdout.toString().trim())
+}
 buildscript {
     ext.kotlin_version = '1.2.30'
     ext.anko_version = '0.9.1'

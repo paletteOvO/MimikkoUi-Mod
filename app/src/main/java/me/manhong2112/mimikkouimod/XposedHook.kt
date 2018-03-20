@@ -13,7 +13,10 @@ import android.os.Bundle
 import android.util.DisplayMetrics
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import de.robv.android.xposed.IXposedHookInitPackageResources
 import de.robv.android.xposed.IXposedHookLoadPackage
@@ -22,6 +25,7 @@ import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.XposedHelpers.findClass
 import de.robv.android.xposed.callbacks.XC_InitPackageResources.InitPackageResourcesParam
 import de.robv.android.xposed.callbacks.XC_LoadPackage
+import me.manhong2112.mimikkouimod.Const.mimikkouiPackageName
 import me.manhong2112.mimikkouimod.MimikkoID.appVariableName
 import me.manhong2112.mimikkouimod.Utils.findMethod
 import me.manhong2112.mimikkouimod.Utils.getField
@@ -30,19 +34,43 @@ import me.manhong2112.mimikkouimod.Utils.invokeMethod
 import me.manhong2112.mimikkouimod.Utils.log
 import me.manhong2112.mimikkouimod.Utils.replace
 import org.jetbrains.anko.backgroundDrawable
+import org.jetbrains.anko.contentView
+import org.jetbrains.anko.find
+import org.jetbrains.anko.onClick
 
 
 class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
    lateinit var app: Application
    lateinit var launcherAct: Activity
 
+   var drawer: ViewGroup? = null
+   var drawerConfig: Config? = null
+      set(value) {
+         field = value
+         log("set drawerConfig")
+         drawer ?: return
+         updateDrawer(launcherAct, drawer!!, value!!)
+      }
+
+
+   var dockConfig: Config? = null
+      set(value) {
+         field = value
+         updateDock(launcherAct, dock)
+      }
+
    private val updateDrawerReceiver by lazy {
       object : BroadcastReceiver() {
          override fun onReceive(ctx: Context, intent: Intent) {
-            drawer ?: return
-            val cfg = intent.getSerializableExtra("Config") as Config
-            val value = cfg.get<Boolean>(Config.Drawer.DrawerBlurBackground)!!
-            updateDrawer(launcherAct, drawer!!, arrayOf(value))
+            log("received updateDrawerAction")
+            drawerConfig = intent.getSerializableExtra("Config") as Config
+         }
+      }
+   }
+   private val updateDockReceiver by lazy {
+      object : BroadcastReceiver() {
+         override fun onReceive(ctx: Context, intent: Intent) {
+            dockConfig = intent.getSerializableExtra("Config") as Config
          }
       }
    }
@@ -58,11 +86,10 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
       r
    }
 
-   var drawer: ViewGroup? = null
    var workspace: ViewGroup? = null
 
    override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
-      if (lpparam.packageName != "com.mimikko.mimikkoui") return
+      if (lpparam.packageName != mimikkouiPackageName) return
       val stubClass = XposedHelpers.findClass("com.stub.StubApp", lpparam.classLoader)
       val m = stubClass.findMethod("attachBaseContext", Context::class.java)
       m.hook(after = { param ->
@@ -74,7 +101,7 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
 
    @Throws(Throwable::class)
    override fun handleInitPackageResources(resparam: InitPackageResourcesParam) {
-      if (resparam.packageName != "com.mimikko.mimikkoui") return
+      if (resparam.packageName != mimikkouiPackageName) return
    }
 
    private fun realAppHook(app: Application) {
@@ -86,6 +113,7 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
          this.app = app
          launcherAct = param.thisObject as Activity
          launcherAct.registerReceiver(updateDrawerReceiver, IntentFilter(Const.updateDrawerAction))
+         loadConfig(app)
          val mAddViewVILp = root.findMethod("addView", View::class.java, Integer.TYPE, ViewGroup.LayoutParams::class.java)
          mAddViewVILp.hook(after = {
             root
@@ -94,8 +122,22 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
          })
       })
 
+//      launcherClass.findMethod("setContentView", View::class.java).hook {
+//          param ->
+//          log("Call setContentView(${param.args.joinToString(", ") {it.toString()}})")
+//      }
+
       val appItemEntityClass = findClass("com.mimikko.common.beans.models.AppItemEntity", app.classLoader)
       appItemEntityClass.findMethod("getIcon").replace(::iconHook)
+
+      injectSetting(app)
+   }
+
+   private fun loadConfig(ctx: Context) {
+      log("loadConfig")
+      val intent = Intent(Const.loadConfigAction)
+      intent.setClassName(BuildConfig.APPLICATION_ID, SettingsActivity::class.java.name)
+      ctx.startActivity(intent)
    }
 
    private fun iconHook(param: XC_MethodHook.MethodHookParam): Any {
@@ -111,19 +153,44 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
          is RelativeLayout -> {
             // it can be drawerLayout or Workspace
             // drawerLayout : com.mimikko.mimikkoui.launcher.components.drawer.DrawerLayout
-            if(drawer === null && innerLayout.findViewById<ViewGroup?>(MimikkoID.drawer_layout) !== null) {
+            if (drawer === null && innerLayout.findViewById<ViewGroup?>(MimikkoID.drawer_layout) !== null) {
                drawer = innerLayout.findViewById(MimikkoID.drawer_layout) as ViewGroup
-               updateDrawer(activity, drawer!!, arrayOf(false))
+               drawerConfig ?: return
+               updateDrawer(activity, drawer!!, drawerConfig!!)
             }
             if (workspace === null && innerLayout.findViewById<ViewGroup?>(MimikkoID.workspace) !== null) {
                workspace = innerLayout.findViewById(MimikkoID.workspace)
                updateWorkspace(activity, workspace!!)
-               return
             }
          }
          else -> {
             log("rootAddView ${innerLayout::class.java.canonicalName}")
          }
+      }
+   }
+
+   private fun injectSetting(app: Application) {
+      val launcherSettingClass = findClass("com.mimikko.mimikkoui.launcher.activity.LauncherSettingActivity", app.classLoader)
+      lateinit var launcherSettingAct: Activity
+      launcherSettingClass.findMethod("onCreate", Bundle::class.java).hook { param ->
+         launcherSettingAct = param.thisObject as Activity
+         val contentView = launcherSettingAct.contentView!! as ViewGroup
+         val app_setting = contentView.find<View>(MimikkoID.app_settings)
+         val setting = app_setting.parent!! as LinearLayout
+
+         val modSettingView =
+               findClass("com.mimikko.common.ui.settinglist.ListItem", app.classLoader)
+                     .getDeclaredConstructor(Context::class.java)
+                     .newInstance(launcherAct) as RelativeLayout
+         modSettingView.invokeMethod<Unit>("setClickable", true)
+         modSettingView.invokeMethod<Unit>("setLabel", "MimikkoUI-Mod")
+         modSettingView.layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT)
+         modSettingView.onClick {
+            val intent = Intent(Intent.ACTION_MAIN)
+            intent.setClassName(BuildConfig.APPLICATION_ID, SettingsActivity::class.java.name)
+            launcherSettingAct.startActivity(intent)
+         }
+         setting.addView(modSettingView)
       }
    }
 
@@ -140,11 +207,11 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
       return dock
    }
 
-
    private var backupBackground: Drawable? = null
-   private fun updateDrawer(activity: Activity, drawer: ViewGroup, pref: Array<Any>) {
+   private fun updateDrawer(activity: Activity, drawer: ViewGroup, cfg: Config) {
+      log("update drawer")
       val parent = drawer.parent as RelativeLayout
-      if(pref[0] as Boolean) {
+      if (cfg.get(Config.Drawer.DrawerBlurBackground)!!) {
          val wallpaperManager = WallpaperManager.getInstance(activity)
          if (wallpaperManager.wallpaperInfo === null) {
             backupBackground = backupBackground ?: parent.background
@@ -159,7 +226,6 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
       } else {
          parent.background = backupBackground ?: parent.background
       }
-
    }
 
    private fun updateWorkspace(activity: Activity, workspace: ViewGroup) {

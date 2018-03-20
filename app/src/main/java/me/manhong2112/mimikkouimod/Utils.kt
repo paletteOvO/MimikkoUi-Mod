@@ -129,7 +129,8 @@ object Utils {
    class CallOriginalMethod : Throwable()
 
    fun log(msg: String) {
-      Log.d("MiMiKkoUIMod", msg)
+      if (BuildConfig.DEBUG)
+         Log.d(Const.TAG, msg)
    }
 
    operator fun String.times(n: Int): String {
@@ -141,7 +142,13 @@ object Utils {
    }
 
    fun <T> Any.invokeMethod(name: String, vararg args: Any): T {
-      return XposedHelpers.findMethodExact(this::class.java, name, *args.map { it::class.java }.toTypedArray()).invoke(this, *args) as T
+      return XposedHelpers.findMethodExact(this::class.java, name, *args.map {
+         when (it) {
+            is Boolean -> java.lang.Boolean.TYPE
+            is Int -> java.lang.Integer.TYPE
+            else -> it::class.java
+         }
+      }.toTypedArray()).invoke(this, *args) as T
    }
 
    fun Class<*>.findMethod(methodName: String, vararg typeList: Class<*>): Method {
@@ -185,12 +192,13 @@ object Utils {
       log("!====")
    }
 
-   fun printView(viewGroup: ViewGroup, intend: Int = 0) {
+   fun ViewGroup.printView(intend: Int = 0) {
+      val viewGroup = this
       log("${" " * intend} ${viewGroup::class.java.canonicalName} : ${viewGroup::class.java.superclass.canonicalName} # ${viewGroup.id}")
       viewGroup.forEachChild {
          when (it) {
             is ViewGroup ->
-               printView(it, intend + 2)
+               it.printView(intend + 2)
             else -> {
                log("${" " * (intend + 2)} ${it::class.java.canonicalName} : ${it::class.java.superclass.canonicalName} # ${it.id}")
             }
@@ -198,7 +206,8 @@ object Utils {
       }
    }
 
-   fun printAllField(obj: Any) {
+   fun Any.printAllField() {
+      val obj = this
       log(obj::class.java.canonicalName)
       obj::class.java.declaredFields.map {
          it.isAccessible = true
