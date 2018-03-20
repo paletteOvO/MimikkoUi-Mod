@@ -40,10 +40,8 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
       object : BroadcastReceiver() {
          override fun onReceive(ctx: Context, intent: Intent) {
             drawer ?: return
-            val cfg = Config.getDefaultDrawerConfig()
-            cfg.fromIntent(intent)
-
-            val value = cfg.get<Boolean>(Config.Drawer.DrawerBlurBackground)
+            val cfg = intent.getSerializableExtra("Config") as Config
+            val value = cfg.get<Boolean>(Config.Drawer.DrawerBlurBackground)!!
             updateDrawer(launcherAct, drawer!!, arrayOf(value))
          }
       }

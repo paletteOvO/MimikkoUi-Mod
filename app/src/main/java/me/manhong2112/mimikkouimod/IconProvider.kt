@@ -49,7 +49,7 @@ object IconProvider {
       }
 
       fun hasIcon(componentInfo: String): Boolean {
-         return ctx.resources.getIdentifier(componentInfo, "drawable", packageName) != 0;
+         return ctx.resources.getIdentifier(componentInfo, "drawable", packageName) != 0
       }
 
       private fun loadAppFilter(): HashMap<String, String> {

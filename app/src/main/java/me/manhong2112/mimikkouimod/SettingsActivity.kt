@@ -10,11 +10,15 @@ import android.os.Bundle
 import android.preference.Preference
 import android.preference.PreferenceActivity
 import android.preference.PreferenceFragment
+import android.preference.PreferenceManager
 import android.view.MenuItem
+import org.jetbrains.anko.act
 
 class SettingsActivity : AppCompatPreferenceActivity() {
    override fun onCreate(savedInstanceState: Bundle?) {
       super.onCreate(savedInstanceState)
+      val pref = PreferenceManager.getDefaultSharedPreferences(this)
+
       setupActionBar()
    }
 
@@ -32,7 +36,7 @@ class SettingsActivity : AppCompatPreferenceActivity() {
    }
 
    override fun isValidFragment(fragmentName: String): Boolean {
-      return when(fragmentName) {
+      return when (fragmentName) {
          PreferenceFragment::class.java.name,
          GeneralPreferenceFragment::class.java.name -> true
          else -> false
@@ -46,13 +50,7 @@ class SettingsActivity : AppCompatPreferenceActivity() {
          addPreferencesFromResource(R.xml.pref_general)
          setHasOptionsMenu(true)
 
-         bindPreference<Boolean>(findPreference(Config.Drawer.DrawerBlurBackground.name)) {
-            _, value ->
-            val cfg = Config.getDefaultDrawerConfig()
-            cfg.set(Config.Drawer.DrawerBlurBackground, value)
-            this.activity.sendBroadcast(cfg.toIntent())
-            true
-         }
+         bindPreference<Boolean>(Config.ConfigType.Drawer, Config.Drawer.DrawerBlurBackground)
       }
 
       override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -62,19 +60,42 @@ class SettingsActivity : AppCompatPreferenceActivity() {
          }
          return super.onOptionsItemSelected(item)
       }
+
+      private fun <T>PreferenceFragment.bindPreference(type: Config.ConfigType, key: Enum<*>) {
+         when(type) {
+            Config.ConfigType.Drawer ->
+               findPreference(key.name).bind<T> {
+                  pref, value ->
+                  val cfg = Config(type)
+                  cfg.set(key, value as Any)
+                  val intent = Intent(Const.updateDrawerAction)
+                  intent.putExtra("Config", cfg)
+                  act.sendBroadcast(intent)
+                  true
+               }
+            Config.ConfigType.Dock ->
+               findPreference(key.name).bind<T> { preference, value ->
+                  val cfg = Config(type)
+                  cfg.set(key, value as Any)
+                  val intent = Intent(Const.updateDockAction)
+                  intent.putExtra("Config", cfg)
+                  act.sendBroadcast(intent)
+                  true
+               }
+         }
+      }
    }
 
    companion object {
+      private fun <T> Preference.bind(callback: (Preference, T) -> Boolean) {
+         this.onPreferenceChangeListener = Preference.OnPreferenceChangeListener { preference, value ->
+            return@OnPreferenceChangeListener callback(preference, value as T)
+         }
+      }
+
       private fun isXLargeTablet(context: Context): Boolean {
          return context.resources.configuration.screenLayout and Configuration.SCREENLAYOUT_SIZE_MASK >= Configuration.SCREENLAYOUT_SIZE_XLARGE
       }
 
-      private fun <T>bindPreference(preference: Preference, callback: (Preference, T) -> Boolean) {
-         preference.onPreferenceChangeListener = Preference.OnPreferenceChangeListener {
-            preference, value ->
-            return@OnPreferenceChangeListener callback(preference, value as T)
-         }
-
-      }
    }
 }
