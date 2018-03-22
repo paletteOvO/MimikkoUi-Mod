@@ -1,3 +1,5 @@
+@file:Suppress("UNCHECKED_CAST")
+
 package me.manhong2112.mimikkouimod
 
 import android.content.Context
@@ -161,6 +163,7 @@ object Utils {
          m
       }
    }
+
    fun Any.findMethod(methodName: String, vararg typeList: Class<*>): Method {
       return this.javaClass.findMethod(methodName, *typeList)
    }

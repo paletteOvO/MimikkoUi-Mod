@@ -78,8 +78,6 @@ class Config constructor(val type: ConfigType) : Serializable {
          }
          return cfg
       }
-
-
    }
 }
 

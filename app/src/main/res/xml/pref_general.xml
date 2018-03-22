@@ -5,4 +5,8 @@
             android:title="Blur Drawer"
             android:defaultValue="false"/>
 
+    <SwitchPreference
+            android:key="DrawerBlurBackground"
+            android:title="Blur Drawer"
+            android:defaultValue="false"/>
 </PreferenceScreen>

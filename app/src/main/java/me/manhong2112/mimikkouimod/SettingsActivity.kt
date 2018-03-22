@@ -18,6 +18,7 @@ import me.manhong2112.mimikkouimod.Utils.log
 class SettingsActivity : AppCompatPreferenceActivity() {
    override fun onCreate(savedInstanceState: Bundle?) {
       super.onCreate(savedInstanceState)
+      PreferenceManager.setDefaultValues(this, R.xml.pref_general, false)
       val intent = intent
       when (intent.action) {
          Const.loadConfigAction -> {
@@ -61,6 +62,7 @@ class SettingsActivity : AppCompatPreferenceActivity() {
          addPreferencesFromResource(R.xml.pref_general)
          setHasOptionsMenu(true)
 
+
          bindPreference<Boolean>(Config.ConfigType.Drawer, Config.Drawer.DrawerBlurBackground)
       }
 
@@ -95,6 +97,7 @@ class SettingsActivity : AppCompatPreferenceActivity() {
    companion object {
       private fun <T> Preference.bind(callback: (Preference, T) -> Boolean) {
          this.onPreferenceChangeListener = Preference.OnPreferenceChangeListener { preference, value ->
+            @Suppress("UNCHECKED_CAST")
             return@OnPreferenceChangeListener callback(preference, value as T)
          }
       }

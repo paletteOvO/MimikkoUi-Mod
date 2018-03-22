@@ -43,8 +43,8 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
    lateinit var app: Application
    lateinit var launcherAct: Activity
 
-   var drawer: ViewGroup? = null
-   var drawerConfig: Config? = null
+   private var drawer: ViewGroup? = null
+   private var drawerConfig: Config? = null
       set(value) {
          field = value
          log("set drawerConfig")
@@ -53,7 +53,7 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
       }
 
 
-   var dockConfig: Config? = null
+   private var dockConfig: Config? = null
       set(value) {
          field = value
          updateDock(launcherAct, dock)
@@ -75,12 +75,12 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
       }
    }
 
-   val dock: RelativeLayout by lazy {
+   private val dock: RelativeLayout by lazy {
       val d = launcherAct.getField<RelativeLayout>("dock")
       updateDock(launcherAct, d)
       d
    }
-   val root: RelativeLayout by lazy {
+   private val root: RelativeLayout by lazy {
       val r = launcherAct.getField<RelativeLayout>("root")
       updateRoot(launcherAct, r)
       r
