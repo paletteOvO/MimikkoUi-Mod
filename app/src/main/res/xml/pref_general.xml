@@ -4,9 +4,11 @@
             android:key="DrawerBlurBackground"
             android:title="Blur Drawer"
             android:defaultValue="false"/>
-
-    <SwitchPreference
-            android:key="DrawerBlurBackground"
-            android:title="Blur Drawer"
-            android:defaultValue="false"/>
+    <SeekBarPreference
+            android:key="DrawerBlurBackgroundBlurRadius"
+            android:title="Blur Radius"
+            android:defaultValue="0"
+            android:max="100"
+            android:min="1"
+            />
 </PreferenceScreen>

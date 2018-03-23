@@ -2,9 +2,9 @@ package me.manhong2112.mimikkouimod
 
 
 import android.annotation.TargetApi
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
@@ -14,8 +14,32 @@ import android.preference.PreferenceFragment
 import android.preference.PreferenceManager
 import android.view.MenuItem
 import me.manhong2112.mimikkouimod.Utils.log
+import org.jetbrains.anko.act
 
 class SettingsActivity : AppCompatPreferenceActivity() {
+
+   class GeneralPreferenceFragment : PreferenceFragment() {
+      private val updater by lazy {
+         makeUpdater(this.activity, Config.ConfigType.Drawer, Const.updateDrawerAction)
+      }
+
+      override fun onCreate(savedInstanceState: Bundle?) {
+         super.onCreate(savedInstanceState)
+         addPreferencesFromResource(R.xml.pref_general)
+         setHasOptionsMenu(true)
+
+         bindUpdater(act, updater)
+      }
+
+      override fun onOptionsItemSelected(item: MenuItem): Boolean {
+         if (item.itemId == android.R.id.home) {
+            startActivity(Intent(activity, SettingsActivity::class.java))
+            return true
+         }
+         return super.onOptionsItemSelected(item)
+      }
+   }
+
    override fun onCreate(savedInstanceState: Bundle?) {
       super.onCreate(savedInstanceState)
       PreferenceManager.setDefaultValues(this, R.xml.pref_general, false)
@@ -29,13 +53,9 @@ class SettingsActivity : AppCompatPreferenceActivity() {
             finish()
          }
          else -> {
-            setupActionBar()
+            supportActionBar?.setDisplayHomeAsUpEnabled(true)
          }
       }
-   }
-
-   private fun setupActionBar() {
-      supportActionBar?.setDisplayHomeAsUpEnabled(true)
    }
 
    override fun onIsMultiPane(): Boolean {
@@ -55,44 +75,7 @@ class SettingsActivity : AppCompatPreferenceActivity() {
       }
    }
 
-   @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-   class GeneralPreferenceFragment : PreferenceFragment() {
-      override fun onCreate(savedInstanceState: Bundle?) {
-         super.onCreate(savedInstanceState)
-         addPreferencesFromResource(R.xml.pref_general)
-         setHasOptionsMenu(true)
 
-
-         bindPreference<Boolean>(Config.ConfigType.Drawer, Config.Drawer.DrawerBlurBackground)
-      }
-
-      override fun onOptionsItemSelected(item: MenuItem): Boolean {
-         if (item.itemId == android.R.id.home) {
-            startActivity(Intent(activity, SettingsActivity::class.java))
-            return true
-         }
-         return super.onOptionsItemSelected(item)
-      }
-
-      private fun <T> PreferenceFragment.bindPreference(type: Config.ConfigType, key: Enum<*>) {
-         when (type) {
-            Config.ConfigType.Drawer ->
-               findPreference(key.name).bind<T> { pref, value ->
-                  val cfg = Config.fromSharedPref(type, pref.sharedPreferences)
-                  cfg.set(key, value as Any)
-                  this.activity.sendConfig(Const.updateDrawerAction, cfg)
-                  true
-               }
-            Config.ConfigType.Dock ->
-               findPreference(key.name).bind<T> { pref, value ->
-                  val cfg = Config.fromSharedPref(type, pref.sharedPreferences)
-                  cfg.set(key, value as Any)
-                  this.activity.sendConfig(Const.updateDockAction, cfg)
-                  true
-               }
-         }
-      }
-   }
 
    companion object {
       private fun <T> Preference.bind(callback: (Preference, T) -> Boolean) {
@@ -102,15 +85,25 @@ class SettingsActivity : AppCompatPreferenceActivity() {
          }
       }
 
+      private fun bindUpdater(ctx: Context, updater: Pair<Config.ConfigType, SharedPreferences.OnSharedPreferenceChangeListener>) {
+         PreferenceManager.getDefaultSharedPreferences(ctx).registerOnSharedPreferenceChangeListener(updater.second)
+      }
+
       private fun isXLargeTablet(context: Context): Boolean {
          return context.resources.configuration.screenLayout and Configuration.SCREENLAYOUT_SIZE_MASK >= Configuration.SCREENLAYOUT_SIZE_XLARGE
       }
 
-      private fun Activity.sendConfig(action: String, cfg: Config) {
+      private fun Context.sendConfig(action: String, cfg: Config) {
          val intent = Intent(action)
          intent.putExtra("Config", cfg)
          sendBroadcast(intent)
       }
 
+      private fun makeUpdater(ctx: Context, type: Config.ConfigType, action: String): Pair<Config.ConfigType, SharedPreferences.OnSharedPreferenceChangeListener> {
+         return type to SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, name ->
+            val cfg = Config.fromSharedPref(type, sharedPreferences)
+            ctx.sendConfig(action, cfg)
+         }
+      }
    }
 }

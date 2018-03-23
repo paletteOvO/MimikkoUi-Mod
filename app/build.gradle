@@ -1,6 +1,5 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-android-extensions'
 
 android {
     compileSdkVersion 27
@@ -12,6 +11,7 @@ android {
         versionCode(getVersionCode())
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        vectorDrawables.useSupportLibrary = true
     }
     signingConfigs {
         config {
@@ -31,35 +31,40 @@ android {
         }
     }
 }
+
 def getVersionCode() {
     def stdout = new ByteArrayOutputStream()
     exec { commandLine 'git', 'rev-list', '--count', "HEAD"; standardOutput = stdout }
     return Integer.parseInt(stdout.toString().trim())
 }
+
 buildscript {
     ext.kotlin_version = '1.2.30'
     ext.anko_version = '0.9.1'
-
+    ext.support_version = '27.+'
     repositories {
         maven { url "https://maven.google.com" }
         jcenter()
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.3.3'
+        classpath 'com.android.tools.build:gradle:3.0.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:appcompat-v7:27.+'
-    compile 'com.android.support:support-v4:27.+'
-    compile 'com.android.support:support-vector-drawable:27.+'
-    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    api "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     // compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
-    compile "org.jetbrains.anko:anko-sdk23:$anko_version"
+
+    api "org.jetbrains.anko:anko-sdk23:$anko_version"
     // compile "org.jetbrains.anko:anko-common:$anko_version"
-    // compile "com.android.support:support-v4:23.0.+"
+
     provided files('lib/XposedBridgeApi-54.jar')
+
+    api "com.android.support:appcompat-v7:$support_version"
+    api "com.android.support:support-v4:$support_version"
+    api "com.android.support:preference-v14:$support_version"
+    // compile 'com.android.support:support-vector-drawable:27.+'
 }

@@ -3,7 +3,6 @@ package me.manhong2112.mimikkouimod
 import android.content.Context
 import android.graphics.Bitmap
 import me.manhong2112.mimikkouimod.Utils.drawableToBitmap
-import me.manhong2112.mimikkouimod.Utils.log
 import org.xmlpull.v1.XmlPullParser
 
 object IconProvider {
@@ -18,7 +17,7 @@ object IconProvider {
       return iconPack.hasIcon(componentInfo)
    }
 
-   fun changeIconPack(packageName: String) {
+   fun setIconPack(packageName: String) {
       iconPack = IconPack(ctx, packageName)
    }
 
@@ -38,9 +37,7 @@ object IconProvider {
          val drawableName = appFilter[componentInfo]!!
          if (drawableName !in icons) {
             val id = res.getIdentifier(drawableName, "drawable", packageName)
-            log("getIcon $componentInfo -> ${appFilter[componentInfo]}")
             if (id == 0) {
-               log("component $componentInfo is in appfilter but failed to get drawable $drawableName")
                return null
             }
             icons[drawableName] = drawableToBitmap(res.getDrawable(id))

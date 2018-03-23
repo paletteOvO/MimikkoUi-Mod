@@ -63,6 +63,7 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
       object : BroadcastReceiver() {
          override fun onReceive(ctx: Context, intent: Intent) {
             log("received updateDrawerAction")
+            log(intent.action)
             drawerConfig = intent.getSerializableExtra("Config") as Config
          }
       }
@@ -220,7 +221,7 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
             val bitmap = wallpaper.bitmap.copy(Bitmap.Config.ARGB_8888, true)
             val metrics = DisplayMetrics()
             activity.windowManager.defaultDisplay.getMetrics(metrics)
-            val blurWallpaper = Utils.blur(activity, bitmap, 25f)
+            val blurWallpaper = Utils.blur(activity, bitmap, cfg.get(Config.Drawer.DrawerBlurBackgroundBlurRadius))
             parent.backgroundDrawable = BitmapDrawable(activity.resources, blurWallpaper)
          }
       } else {

@@ -13,12 +13,13 @@ class Config constructor(val type: ConfigType) : Serializable {
 
    enum class Drawer {
       DrawerBlurBackground,
+      DrawerBlurBackgroundBlurRadius,
    }
 
    enum class Dock
 
    private val data: Array<Any?> by lazy {
-      return@lazy when(type) {
+      when (type) {
          ConfigType.Drawer -> arrayOfNulls<Any>(Drawer.values().size)
          ConfigType.Dock -> arrayOfNulls<Any>(Dock.values().size)
       }
@@ -41,23 +42,12 @@ class Config constructor(val type: ConfigType) : Serializable {
       }
    }
 
-   fun <T> get(pref: Enum<*>): T? {
+   fun <T> get(pref: Enum<*>): T {
+      @Suppress("UNCHECKED_CAST")
       when (pref) {
          is Drawer,
          is Dock ->
-            @Suppress("UNCHECKED_CAST")
-            return data[pref.ordinal] as T?
-         else ->
-            throw IllegalArgumentException()
-      }
-   }
-
-   fun <T> get(pref: Enum<*>, default: T): T {
-      when (pref) {
-         is Drawer,
-         is Dock ->
-            @Suppress("UNCHECKED_CAST")
-            return (data[pref.ordinal] ?: default) as T
+            return data[pref.ordinal] as T
          else ->
             throw IllegalArgumentException()
       }

@@ -80,6 +80,7 @@ object Utils {
    }
 
    fun blur(ctx: Context, image: Bitmap, blurRadius: Float): Bitmap {
+
       val width = image.width
       val height = image.height
 
@@ -90,7 +91,7 @@ object Utils {
       val theIntrinsic = ScriptIntrinsicBlur.create(rs, Element.U8_4(rs))
       val tmpIn = Allocation.createFromBitmap(rs, inputBitmap)
       val tmpOut = Allocation.createFromBitmap(rs, outputBitmap)
-      theIntrinsic.setRadius(blurRadius)
+      theIntrinsic.setRadius(Math.max(1f, Math.min(25f, blurRadius / 4f))) // 0 < blurRadius <= 100 -> 0 < r <= 25
       theIntrinsic.setInput(tmpIn)
       theIntrinsic.forEach(tmpOut)
       val paint = Paint()
