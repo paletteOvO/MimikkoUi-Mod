@@ -5,18 +5,31 @@ import java.io.Serializable
 
 class Config constructor(val type: ConfigType) : Serializable {
    // String|Boolean|Int|Long|Float|StringSet
-
-   enum class ConfigType {
-      Drawer,
-      Dock,
+   enum class ConfigType(val action: String) {
+      Drawer(Const.updateDrawerAction),
+      Dock(Const.updateDockAction),
    }
 
-   enum class Drawer {
-      DrawerBlurBackground,
-      DrawerBlurBackgroundBlurRadius,
+   interface ConfigKey {
+      fun getDefaultValue(): Any
    }
 
-   enum class Dock
+   enum class Drawer(private val value: Any) : ConfigKey {
+      DrawerBlurBackground(false),
+      DrawerBlurBackgroundBlurRadius(25f);
+
+      override fun getDefaultValue(): Any {
+         return value
+      }
+   }
+
+   enum class Dock(private val value: Any) : ConfigKey {
+      ;
+
+      override fun getDefaultValue(): Any {
+         return value
+      }
+   }
 
    private val data: Array<Any?> by lazy {
       when (type) {
@@ -42,12 +55,16 @@ class Config constructor(val type: ConfigType) : Serializable {
       }
    }
 
-   fun <T> get(pref: Enum<*>): T {
+   fun <T, T2> get(pref: T2): T where T2 : Enum<*>, T2 : ConfigKey {
       @Suppress("UNCHECKED_CAST")
       when (pref) {
          is Drawer,
-         is Dock ->
+         is Dock -> {
+            if (data[pref.ordinal] === null) {
+               data[pref.ordinal] = pref.getDefaultValue()
+            }
             return data[pref.ordinal] as T
+         }
          else ->
             throw IllegalArgumentException()
       }
@@ -59,11 +76,11 @@ class Config constructor(val type: ConfigType) : Serializable {
          when (type) {
             ConfigType.Drawer ->
                Drawer.values().forEach {
-                  if (pref.all[it.name] !== null) cfg.set(it, pref.all[it.name]!!)
+                  cfg.set(it, pref.all[it.name] ?: it.getDefaultValue())
                }
             ConfigType.Dock ->
                Dock.values().forEach {
-                  if (pref.all[it.name] !== null) cfg.set(it, pref.all[it.name]!!)
+                  cfg.set(it, pref.all[it.name] ?: it.getDefaultValue())
                }
          }
          return cfg

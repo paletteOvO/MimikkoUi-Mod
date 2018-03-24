@@ -79,7 +79,7 @@ object Utils {
       return result
    }
 
-   fun blur(ctx: Context, image: Bitmap, blurRadius: Float): Bitmap {
+   fun blur(ctx: Context, image: Bitmap, blurRadius: Int): Bitmap {
 
       val width = image.width
       val height = image.height
@@ -88,16 +88,33 @@ object Utils {
       val outputBitmap = Bitmap.createBitmap(inputBitmap)
 
       val rs = RenderScript.create(ctx)
-      val theIntrinsic = ScriptIntrinsicBlur.create(rs, Element.U8_4(rs))
-      val tmpIn = Allocation.createFromBitmap(rs, inputBitmap)
-      val tmpOut = Allocation.createFromBitmap(rs, outputBitmap)
-      theIntrinsic.setRadius(Math.max(1f, Math.min(25f, blurRadius / 4f))) // 0 < blurRadius <= 100 -> 0 < r <= 25
-      theIntrinsic.setInput(tmpIn)
-      theIntrinsic.forEach(tmpOut)
+
+      for (i in 1..(blurRadius / 25)) {
+         val input = Allocation.createFromBitmap(rs, outputBitmap)
+         val output = Allocation.createTyped(rs, input.type)
+         val script = ScriptIntrinsicBlur.create(rs, Element.U8_4(rs))
+
+         script.setRadius(25f)
+         script.setInput(input)
+         script.forEach(output)
+         output.copyTo(outputBitmap)
+      }
+
+      val rest = blurRadius - 25 * (blurRadius / 25)
+      if (rest > 0) {
+         val input = Allocation.createFromBitmap(rs, outputBitmap)
+         val output = Allocation.createTyped(rs, input.type)
+         val script = ScriptIntrinsicBlur.create(rs, Element.U8_4(rs))
+
+         script.setRadius(rest.toFloat())
+         script.setInput(input)
+         script.forEach(output)
+         output.copyTo(outputBitmap)
+      }
+
       val paint = Paint()
       val filter = LightingColorFilter(0x888888.opaque, 0)
       paint.colorFilter = filter
-      tmpOut.copyTo(outputBitmap)
 
       val canvas = Canvas(outputBitmap)
       canvas.drawBitmap(outputBitmap, 0f, 0f, paint)

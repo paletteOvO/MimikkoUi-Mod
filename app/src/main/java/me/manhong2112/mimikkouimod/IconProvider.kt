@@ -6,9 +6,13 @@ import me.manhong2112.mimikkouimod.Utils.drawableToBitmap
 import org.xmlpull.v1.XmlPullParser
 
 object IconProvider {
-   lateinit var iconPack: IconPack
-   lateinit var ctx: Context
+   private lateinit var iconPack: IconPack
+   private lateinit var ctx: Context
 
+   fun init(ctx: Context, iconPack: IconPack) {
+      this.ctx = ctx
+      this.iconPack = iconPack
+   }
    fun getIcon(componentInfo: String): Bitmap? {
       return iconPack.getIcon(componentInfo)
    }

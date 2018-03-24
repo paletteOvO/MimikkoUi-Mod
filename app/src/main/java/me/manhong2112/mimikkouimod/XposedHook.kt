@@ -36,7 +36,6 @@ import me.manhong2112.mimikkouimod.Utils.replace
 import org.jetbrains.anko.backgroundDrawable
 import org.jetbrains.anko.contentView
 import org.jetbrains.anko.find
-import org.jetbrains.anko.onClick
 
 
 class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
@@ -108,8 +107,7 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
    private fun realAppHook(app: Application) {
       // com.mimikko.mimikkoui.launcher.components.cell.CellView
       val launcherClass = findClass("com.mimikko.mimikkoui.launcher.activity.Launcher", app.classLoader)
-      IconProvider.ctx = app
-      IconProvider.iconPack = IconProvider.IconPack(app, "website.leifs.delta")
+      IconProvider.init(app, IconProvider.IconPack(app, "website.leifs.delta"))
       launcherClass.findMethod("onCreate", Bundle::class.java).hook(after = { param ->
          this.app = app
          launcherAct = param.thisObject as Activity
@@ -122,11 +120,6 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
             rootHook(launcherAct, root, it)
          })
       })
-
-//      launcherClass.findMethod("setContentView", View::class.java).hook {
-//          param ->
-//          log("Call setContentView(${param.args.joinToString(", ") {it.toString()}})")
-//      }
 
       val appItemEntityClass = findClass("com.mimikko.common.beans.models.AppItemEntity", app.classLoader)
       appItemEntityClass.findMethod("getIcon").replace(::iconHook)
@@ -176,8 +169,7 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
       launcherSettingClass.findMethod("onCreate", Bundle::class.java).hook { param ->
          launcherSettingAct = param.thisObject as Activity
          val contentView = launcherSettingAct.contentView!! as ViewGroup
-         val app_setting = contentView.find<View>(MimikkoID.app_settings)
-         val setting = app_setting.parent!! as LinearLayout
+         val setting = contentView.find<View>(MimikkoID.app_settings).parent!! as LinearLayout
 
          val modSettingView =
                findClass("com.mimikko.common.ui.settinglist.ListItem", app.classLoader)
@@ -186,7 +178,7 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
          modSettingView.invokeMethod<Unit>("setClickable", true)
          modSettingView.invokeMethod<Unit>("setLabel", "MimikkoUI-Mod")
          modSettingView.layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT)
-         modSettingView.onClick {
+         modSettingView.setOnClickListener {
             val intent = Intent(Intent.ACTION_MAIN)
             intent.setClassName(BuildConfig.APPLICATION_ID, SettingsActivity::class.java.name)
             launcherSettingAct.startActivity(intent)
