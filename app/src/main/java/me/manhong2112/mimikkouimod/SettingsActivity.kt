@@ -48,9 +48,9 @@ class SettingsActivity : AppCompatActivity() {
       Config.bindSharedPref(defaultSharedPreferences)
       supportActionBar?.setDisplayHomeAsUpEnabled(true)
       preferenceLayout {
-         preferencePage(GeneralSettingFragment(), "General", null, null)
-         preferencePage(DrawerSettingFragment(), "Drawer", null, null)
-         preferencePage(DockSettingFragment(), "Dock", null, null)
+         preferencePage(GeneralSettingFragment(), R.string.pref_page_general)
+         preferencePage(DrawerSettingFragment(), R.string.pref_page_drawer)
+         preferencePage(DockSettingFragment(), R.string.pref_page_drawer)
       }
    }
 
@@ -78,7 +78,6 @@ class SettingsActivity : AppCompatActivity() {
             return@OnPreferenceChangeListener callback(preference, value as T)
          }
       }
-
    }
 }
 
@@ -99,10 +98,10 @@ abstract class SettingFragment : Fragment() {
 class DrawerSettingFragment : SettingFragment() {
    override fun createView(layout: PreferenceLayout) {
       with(layout) {
-         switchPreference("Blur Background", key = Config.Key.DrawerBlurBackground)
-         seekBarPreference("Blur Background Radius", "%d", Config.Key.DrawerBlurBackgroundBlurRadius, max = 999)
+         switchPreference(R.string.pref_drawer_blur_background, key = Config.Key.DrawerBlurBackground)
+         seekBarPreference(R.string.pref_drawer_blur_background_radius, R.string.pref_drawer_blur_background_radius_num_format, Config.Key.DrawerBlurBackgroundBlurRadius, max = 999)
 
-         switchPreference("Dark Background", key = Config.Key.DrawerDarkBackground)
+         switchPreference(R.string.pref_drawer_darken_background, key = Config.Key.DrawerDarkBackground)
       }
    }
 }
@@ -110,7 +109,7 @@ class DrawerSettingFragment : SettingFragment() {
 class GeneralSettingFragment : SettingFragment() {
    override fun createView(layout: PreferenceLayout) {
       with(layout) {
-         selectorPreference("Icon pack", key = Config.Key.GeneralIconPack, items = IconProvider.getAllIconPack(context))
+         selectorPreference(R.string.pref_general_icon_pack, key = Config.Key.GeneralIconPack, items = IconProvider.getAllIconPack(context))
       }
    }
 }
@@ -118,7 +117,7 @@ class GeneralSettingFragment : SettingFragment() {
 class DockSettingFragment : SettingFragment() {
    override fun createView(layout: PreferenceLayout) {
       with(layout) {
-         switchPreference("Swipe to open drawer", key = Config.Key.DockSwipeToDrawer)
+         switchPreference(R.string.pref_dock_swipe_up_gesture, key = Config.Key.DockSwipeToDrawer)
       }
    }
 }

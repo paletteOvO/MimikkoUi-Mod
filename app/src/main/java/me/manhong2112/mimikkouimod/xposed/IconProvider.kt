@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ResolveInfo
 import android.graphics.Bitmap
+import me.manhong2112.mimikkouimod.R
 import me.manhong2112.mimikkouimod.common.Config
 import me.manhong2112.mimikkouimod.common.Utils
 import me.manhong2112.mimikkouimod.common.Utils.drawableToBitmap
@@ -57,7 +58,7 @@ object IconProvider {
          } else {
             ctx.packageManager.getResourcesForApplication(it.activityInfo.applicationInfo).getString(stringId)
          } to it.activityInfo.packageName
-      }.distinct() + ("None" to "default")).sortedBy { it.first }
+      }.distinct() + (ctx.getString(R.string.pref_general_none_icon_pack) to "default")).sortedBy { it.first }
    }
 
 

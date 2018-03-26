@@ -56,20 +56,23 @@ android {
         abortOnError false
     }
     signingConfigs {
-        config {
+        release {
             Properties properties = new Properties()
             properties.load(project.rootProject.file('local.properties').newDataInputStream())
             keyAlias properties.getProperty('keyAlias')
             keyPassword properties.getProperty('keyPassword')
             storeFile file(properties.getProperty('storeFile'))
             storePassword properties.getProperty('storePassword')
+            v1SigningEnabled true
+            v2SigningEnabled true
         }
     }
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
+            zipAlignEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.config
+            signingConfig signingConfigs.release
         }
     }
 }

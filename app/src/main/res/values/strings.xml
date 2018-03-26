@@ -1,5 +1,17 @@
 <resources>
     <string name="app_name">MimikkoUi-Mod</string>
 
-    <string name="pref_header_general">General</string>
+    <string name="pref_page_general">General</string>
+    <string name="pref_page_drawer">Drawer</string>
+    <string name="pref_page_dock">Dock</string>
+
+    <string name="pref_drawer_blur_background">Blur Background</string>
+    <string name="pref_drawer_blur_background_radius">Blur Radius</string>
+    <string name="pref_drawer_blur_background_radius_num_format">%d</string>
+    <string name="pref_drawer_darken_background">Darken Background</string>
+
+    <string name="pref_general_icon_pack">Icon Pack</string>
+    <string name="pref_general_none_icon_pack">None</string>
+
+    <string name="pref_dock_swipe_up_gesture">Swipe up to open drawer</string>
 </resources>

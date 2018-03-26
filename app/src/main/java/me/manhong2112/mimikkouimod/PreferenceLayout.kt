@@ -31,6 +31,9 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
       inline fun Activity.preferenceLayout(init: PreferenceLayout.() -> Unit = {}) = ankoView({ PreferenceLayout(it) }, 0, init)
       inline fun Context.preferenceLayout(init: PreferenceLayout.() -> Unit = {}) = ankoView({ PreferenceLayout(it) }, 0, init)
 
+      fun PreferenceLayout.preferencePage(page: Fragment, nameRes: Int, summaryRes: Int = 0, icon: Drawable? = null) =
+            preferencePage(page, ctx.getString(nameRes), if (summaryRes == 0) null else ctx.getString(summaryRes), icon)
+
       fun PreferenceLayout.preferencePage(page: Fragment, name: String, summary: String? = null, icon: Drawable? = null) =
             relativeLayout {
                id = View.generateViewId()
@@ -77,6 +80,9 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
                height = dip(Const.prefItemHeight)
             }
 
+      fun PreferenceLayout.switchPreference(nameRes: Int, summaryRes: Int = 0, key: Config.Key, init: Switch.() -> Unit = {}) =
+            switchPreference(ctx.getString(nameRes), if (summaryRes == 0) null else ctx.getString(summaryRes), key, init)
+
       fun PreferenceLayout.switchPreference(name: String, summary: String? = null, key: Config.Key, init: Switch.() -> Unit = {}) {
          relativeLayout {
             backgroundDrawable = getSelectedItemDrawable(ctx)
@@ -112,6 +118,12 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
             height = dip(Const.prefItemHeight)
          }
       }
+
+      fun PreferenceLayout.seekBarPreference(nameRes: Int, numFormatRes: Int = 0,
+                                             key: Config.Key,
+                                             min: Int = 0, max: Int = 100, step: Int = 1,
+                                             init: SeekBar.() -> Unit = {}) =
+            seekBarPreference(ctx.getString(nameRes), if (numFormatRes == 0) null else ctx.getString(numFormatRes), key, min, max, step, init)
 
       fun PreferenceLayout.seekBarPreference(name: String, numFormat: String? = null,
                                              key: Config.Key,
@@ -170,8 +182,16 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
          }
       }
 
+      fun PreferenceLayout.selectorPreference(nameRes: Int, summaryRes: Int = 0, items: List<Pair<String, String>>, key: Config.Key, init: () -> Unit = {}) {
+         selectorPreference(nameRes, summaryRes, items.map { it.first }, items.map { it.second }, key, init)
+      }
+
       fun PreferenceLayout.selectorPreference(name: String, summary: String? = null, items: List<Pair<String, String>>, key: Config.Key, init: () -> Unit = {}) {
          selectorPreference(name, summary, items.map { it.first }, items.map { it.second }, key, init)
+      }
+
+      fun PreferenceLayout.selectorPreference(nameRes: Int, summaryRes: Int = 0, displayName: List<String>, value: List<String>? = null, key: Config.Key, init: () -> Unit = {}) {
+         selectorPreference(ctx.getString(nameRes), if (summaryRes == 0) null else ctx.getString(summaryRes), displayName, value, key, init)
       }
 
       fun PreferenceLayout.selectorPreference(name: String, summary: String? = null, displayName: List<String>, value: List<String>? = null, key: Config.Key, init: () -> Unit = {}) {
