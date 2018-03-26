@@ -31,7 +31,7 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
       inline fun Activity.preferenceLayout(init: PreferenceLayout.() -> Unit = {}) = ankoView({ PreferenceLayout(it) }, 0, init)
       inline fun Context.preferenceLayout(init: PreferenceLayout.() -> Unit = {}) = ankoView({ PreferenceLayout(it) }, 0, init)
 
-      fun PreferenceLayout.preferencePage(page: Fragment, name: String, summary: String?, icon: Drawable?) =
+      fun PreferenceLayout.preferencePage(page: Fragment, name: String, summary: String? = null, icon: Drawable? = null) =
             relativeLayout {
                id = View.generateViewId()
                backgroundDrawable = getSelectedItemDrawable(ctx)
@@ -41,7 +41,7 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
                   padding = dip(12)
                   image = icon
                }.lparams {
-                  width = dip(Const.prefIconWidth)
+                  width = dip(Const.prefIconWidth) + dip(12)
                   height = dip(Const.prefIconHeight)
                   alignParentLeft()
                   centerInParent()
@@ -57,6 +57,7 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
                      id = View.generateViewId()
                      textSize = sp(6).toFloat()
                      text = summary
+                     textColor = Color.DKGRAY
                   }
                }.lparams {
                   setPadding(0, dip(6), 0, dip(6))
@@ -76,7 +77,7 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
                height = dip(Const.prefItemHeight)
             }
 
-      fun PreferenceLayout.switchPreference(name: String, summary: String?, key: Config.Key, init: Switch.() -> Unit = {}) {
+      fun PreferenceLayout.switchPreference(name: String, summary: String? = null, key: Config.Key, init: Switch.() -> Unit = {}) {
          relativeLayout {
             backgroundDrawable = getSelectedItemDrawable(ctx)
             isClickable = true
@@ -112,7 +113,7 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
          }
       }
 
-      fun PreferenceLayout.seekBarPreference(name: String, numFormat: String?,
+      fun PreferenceLayout.seekBarPreference(name: String, numFormat: String? = null,
                                              key: Config.Key,
                                              min: Int = 0, max: Int = 100, step: Int = 1,
                                              init: SeekBar.() -> Unit = {}) {
@@ -162,6 +163,38 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
             }.lparams {
                width = matchParent
                weight = 0.5f
+            }
+         }.lparams {
+            width = matchParent
+            height = dip(Const.prefItemHeight)
+         }
+      }
+
+      fun PreferenceLayout.selectorPreference(name: String, summary: String? = null, items: List<Pair<String, String>>, key: Config.Key, init: () -> Unit = {}) {
+         selectorPreference(name, summary, items.map { it.first }, items.map { it.second }, key, init)
+      }
+
+      fun PreferenceLayout.selectorPreference(name: String, summary: String? = null, displayName: List<String>, value: List<String>? = null, key: Config.Key, init: () -> Unit = {}) {
+         relativeLayout {
+            backgroundDrawable = getSelectedItemDrawable(ctx)
+            isClickable = true
+            verticalLayout {
+               textView {
+                  text = name
+               }
+               if (summary !== null) textView {
+                  text = summary
+               }
+            }.lparams {
+               padding = dip(12)
+               gravity = Gravity.CENTER_VERTICAL
+               centerInParent()
+               alignParentLeft()
+            }
+            setOnClickListener {
+               ctx.selector(name, displayName) { dialog, index ->
+                  Config[key] = (value ?: displayName)[index]
+               }
             }
          }.lparams {
             width = matchParent

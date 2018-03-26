@@ -11,7 +11,7 @@ object Config {
       DrawerDarkBackground(false),
       DrawerBlurBackgroundBlurRadius(25),
 
-      GeneralIconPack("website.leifs.delta");
+      GeneralIconPack("default");
 
       fun <T> getDefaultValue(): T {
          return mDefaultValue as T

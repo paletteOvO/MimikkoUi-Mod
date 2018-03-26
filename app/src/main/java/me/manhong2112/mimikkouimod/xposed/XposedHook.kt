@@ -55,9 +55,9 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
       object : BroadcastReceiver() {
          override fun onReceive(ctx: Context, intent: Intent) {
             val key = intent.getStringExtra("Key")
-            log("receive config ${key}")
             val value = intent.getSerializableExtra("Value")
-            Config.set(Config.Key.valueOf(key), value)
+            log("receive config ${key} -> $value")
+            Config[Config.Key.valueOf(key)] = value
          }
       }
    }
@@ -136,6 +136,7 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
       Config.setOnChangeListener(Config.Key.DrawerDarkBackground, updateDrawerBackground)
 
       Config.setOnChangeListener(Config.Key.GeneralIconPack, { key, value: String ->
+         log("setOnChangeListener GeneralIconPack")
          IconProvider.update(app)
       })
 
@@ -150,7 +151,7 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
 
    private fun iconHook(param: XC_MethodHook.MethodHookParam): Any {
       val name = param.thisObject.invokeMethod<ComponentName>("getId")
-      return IconProvider.getIcon(name.toString())
+      return IconProvider.getIcon(name)
             ?: throw Utils.CallOriginalMethod()
    }
 
@@ -213,13 +214,13 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
                   }
                }
          )
-         dock.setOnTouchListener(
-               object : OnSwipeTouchListener(act) {
-                  override fun onSwipeTop() {
-                     if (Config[Config.Key.DockSwipeToDrawer]) drawerBtn.callOnClick()
-                  }
-               }
-         )
+//         dock.setOnTouchListener(
+//               object : OnSwipeTouchListener(act) {
+//                  override fun onSwipeTop() {
+//                     if (Config[Config.Key.DockSwipeToDrawer]) drawerBtn.callOnClick()
+//                  }
+//               }
+//         )
       }
    }
 

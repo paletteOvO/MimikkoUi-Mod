@@ -13,13 +13,14 @@ import android.view.ViewGroup
 import me.manhong2112.mimikkouimod.PreferenceLayout.Companion.preferenceLayout
 import me.manhong2112.mimikkouimod.PreferenceLayout.Companion.preferencePage
 import me.manhong2112.mimikkouimod.PreferenceLayout.Companion.seekBarPreference
+import me.manhong2112.mimikkouimod.PreferenceLayout.Companion.selectorPreference
 import me.manhong2112.mimikkouimod.PreferenceLayout.Companion.switchPreference
 import me.manhong2112.mimikkouimod.common.Config
 import me.manhong2112.mimikkouimod.common.Const
 import me.manhong2112.mimikkouimod.common.Utils.log
+import me.manhong2112.mimikkouimod.xposed.IconProvider
 import org.jetbrains.anko.UI
 import org.jetbrains.anko.defaultSharedPreferences
-import org.jetbrains.anko.support.v4.ctx
 import java.io.Serializable
 
 class SettingsActivity : AppCompatActivity() {
@@ -83,7 +84,7 @@ class SettingsActivity : AppCompatActivity() {
 
 abstract class SettingFragment : Fragment() {
    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-      return with(this.ctx) {
+      return with(this.activity!!) {
          UI {
             preferenceLayout {
                createView(this@preferenceLayout)
@@ -98,23 +99,26 @@ abstract class SettingFragment : Fragment() {
 class DrawerSettingFragment : SettingFragment() {
    override fun createView(layout: PreferenceLayout) {
       with(layout) {
-         switchPreference("Blur Background", null, Config.Key.DrawerBlurBackground)
+         switchPreference("Blur Background", key = Config.Key.DrawerBlurBackground)
          seekBarPreference("Blur Background Radius", "%d", Config.Key.DrawerBlurBackgroundBlurRadius, max = 999)
 
-         switchPreference("Dark Background", null, Config.Key.DrawerDarkBackground)
+         switchPreference("Dark Background", key = Config.Key.DrawerDarkBackground)
       }
    }
-
 }
 
 class GeneralSettingFragment : SettingFragment() {
-   override fun createView(layout: PreferenceLayout) {}
+   override fun createView(layout: PreferenceLayout) {
+      with(layout) {
+         selectorPreference("Icon pack", key = Config.Key.GeneralIconPack, items = IconProvider.getAllIconPack(context))
+      }
+   }
 }
 
 class DockSettingFragment : SettingFragment() {
    override fun createView(layout: PreferenceLayout) {
       with(layout) {
-         switchPreference("Swipe to open drawer", null, Config.Key.DockSwipeToDrawer)
+         switchPreference("Swipe to open drawer", key = Config.Key.DockSwipeToDrawer)
       }
    }
 }
