@@ -1,9 +1,8 @@
 package me.manhong2112.mimikkouimod
 
-import android.graphics.Color
+import android.content.Intent
 import android.os.Bundle
 import android.support.v4.app.Fragment
-import android.support.v4.content.ContextCompat
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.preference.Preference
 import android.support.v7.preference.PreferenceManager
@@ -13,100 +12,45 @@ import android.view.View
 import android.view.ViewGroup
 import me.manhong2112.mimikkouimod.PreferenceLayout.Companion.preferenceLayout
 import me.manhong2112.mimikkouimod.PreferenceLayout.Companion.preferencePage
-import me.manhong2112.mimikkouimod.PreferenceLayout.Companion.sendConfig
+import me.manhong2112.mimikkouimod.PreferenceLayout.Companion.seekBarPreference
 import me.manhong2112.mimikkouimod.PreferenceLayout.Companion.switchPreference
-import me.manhong2112.mimikkouimod.Utils.log
-import org.jetbrains.anko.*
+import me.manhong2112.mimikkouimod.common.Config
+import me.manhong2112.mimikkouimod.common.Const
+import me.manhong2112.mimikkouimod.common.Utils.log
+import org.jetbrains.anko.UI
+import org.jetbrains.anko.defaultSharedPreferences
 import org.jetbrains.anko.support.v4.ctx
-
-
-//
-//class SettingsActivity : AppCompatPreferenceActivity() {
-//
-//   class GeneralPreferenceFragment : PreferenceFragment() {
-//      private val updater by lazy {
-//         makeUpdater(this.activity, Config.ConfigType.Drawer, Const.updateDrawerAction)
-//      }
-//
-//      override fun onCreate(savedInstanceState: Bundle?) {
-//         super.onCreate(savedInstanceState)
-//         addPreferencesFromResource(R.xml.pref_general)
-//         setHasOptionsMenu(true)
-//
-//         bindUpdater(act, updater)
-//      }
-//
-//      override fun onOptionsItemSelected(item: MenuItem): Boolean {
-//         if (item.itemId == android.R.id.home) {
-//            startActivity(Intent(activity, SettingsActivity::class.java))
-//            return true
-//         }
-//         return super.onOptionsItemSelected(item)
-//      }
-//   }
-//
-//   override fun onCreate(savedInstanceState: Bundle?) {
-//      super.onCreate(savedInstanceState)
-//      PreferenceManager.setDefaultValues(this, R.xml.pref_general, false)
-//      val intent = intent
-//      when (intent.action) {
-//         Const.loadConfigAction -> {
-//            log("received loadConfigAction")
-//            val pref = PreferenceManager.getDefaultSharedPreferences(this)
-//            sendConfig(Const.updateDrawerAction, Config.fromSharedPref(Config.ConfigType.Drawer, pref))
-//            sendConfig(Const.updateDockAction, Config.fromSharedPref(Config.ConfigType.Dock, pref))
-//            finish()
-//         }
-//         else -> {
-//            supportActionBar?.setDisplayHomeAsUpEnabled(true)
-//         }
-//      }
-//   }
-//
-//   override fun onIsMultiPane(): Boolean {
-//      return isXLargeTablet(this)
-//   }
-//
-//   @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-//   override fun onBuildHeaders(target: List<PreferenceActivity.Header>) {
-//      loadHeadersFromResource(R.xml.pref_headers, target)
-//   }
-//
-//   override fun isValidFragment(fragmentName: String): Boolean {
-//      return when (fragmentName) {
-//         PreferenceFragment::class.java.name,
-//         GeneralPreferenceFragment::class.java.name -> true
-//         else -> false
-//      }
-//   }
-//
-//
-//
-
-//}
+import java.io.Serializable
 
 class SettingsActivity : AppCompatActivity() {
    override fun onCreate(savedInstanceState: Bundle?) {
       super.onCreate(savedInstanceState)
-      PreferenceManager.setDefaultValues(this, R.xml.pref_general, false)
+      Config.Key.values().forEach { key ->
+         Config.setOnChangeListener(key) { key, value: Any ->
+            val intent = Intent(Const.configUpdateAction)
+            intent.putExtra("Key", key.name)
+            intent.putExtra("Value", value as Serializable)
+            sendBroadcast(intent)
+         }
+      }
       val intent = intent
       when (intent.action) {
          Const.loadConfigAction -> {
             log("received loadConfigAction")
             val pref = PreferenceManager.getDefaultSharedPreferences(this)
-            sendConfig(Config.fromSharedPref(Config.ConfigType.Drawer, pref))
-            sendConfig(Config.fromSharedPref(Config.ConfigType.Dock, pref))
+            Config.loadSharedPref(pref, true)
             finish()
-         }
-         else -> {
-            supportActionBar?.setDisplayHomeAsUpEnabled(true)
+            return
          }
       }
+      Config.loadSharedPref(defaultSharedPreferences)
+      Config.bindSharedPref(defaultSharedPreferences)
+      supportActionBar?.setDisplayHomeAsUpEnabled(true)
       preferenceLayout {
-         preferencePage(SettingFragment(), "name", "summary", ContextCompat.getDrawable(ctx, R.drawable.abc_btn_radio_material))
-         preferencePage(SettingFragment2(), "name2", "summary2", ContextCompat.getDrawable(ctx, R.drawable.abc_btn_radio_material))
+         preferencePage(GeneralSettingFragment(), "General", null, null)
+         preferencePage(DrawerSettingFragment(), "Drawer", null, null)
+         preferencePage(DockSettingFragment(), "Dock", null, null)
       }
-
    }
 
    override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -137,41 +81,40 @@ class SettingsActivity : AppCompatActivity() {
    }
 }
 
-class SettingFragment : Fragment() {
+abstract class SettingFragment : Fragment() {
    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
       return with(this.ctx) {
          UI {
             preferenceLayout {
-               switchPreference("DrawerBlurBackground", null, Config.ConfigType.Drawer, Config.Drawer.DrawerBlurBackground)
+               createView(this@preferenceLayout)
             }
          }.view
       }
    }
+
+   abstract fun createView(layout: PreferenceLayout)
 }
 
-class SettingFragment2 : Fragment() {
-   override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-      return with(this.ctx) {
-         UI {
-            preferenceLayout {
-               textView {
-                  backgroundColor = Color.RED
-                  height = dip(64)
-                  width = matchParent
-               }
-            }
-         }.view
+class DrawerSettingFragment : SettingFragment() {
+   override fun createView(layout: PreferenceLayout) {
+      with(layout) {
+         switchPreference("Blur Background", null, Config.Key.DrawerBlurBackground)
+         seekBarPreference("Blur Background Radius", "%d", Config.Key.DrawerBlurBackgroundBlurRadius, max = 999)
+
+         switchPreference("Dark Background", null, Config.Key.DrawerDarkBackground)
       }
    }
+
 }
 
-class SettingFragment3 : Fragment() {
-   override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-      return with(this.ctx) {
-         UI {
-            preferenceLayout {
-            }
-         }.view
+class GeneralSettingFragment : SettingFragment() {
+   override fun createView(layout: PreferenceLayout) {}
+}
+
+class DockSettingFragment : SettingFragment() {
+   override fun createView(layout: PreferenceLayout) {
+      with(layout) {
+         switchPreference("Swipe to open drawer", null, Config.Key.DockSwipeToDrawer)
       }
    }
 }

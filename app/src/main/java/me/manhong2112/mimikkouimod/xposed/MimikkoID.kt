@@ -1,4 +1,4 @@
-package me.manhong2112.mimikkouimod
+package me.manhong2112.mimikkouimod.xposed
 
 object MimikkoID {
    const val dock = 0x7f07009b

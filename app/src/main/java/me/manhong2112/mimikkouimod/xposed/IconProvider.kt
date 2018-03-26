@@ -1,18 +1,20 @@
-package me.manhong2112.mimikkouimod
+package me.manhong2112.mimikkouimod.xposed
 
 import android.content.Context
 import android.graphics.Bitmap
-import me.manhong2112.mimikkouimod.Utils.drawableToBitmap
+import me.manhong2112.mimikkouimod.common.Config
+import me.manhong2112.mimikkouimod.common.Utils.drawableToBitmap
 import org.xmlpull.v1.XmlPullParser
 
 object IconProvider {
    private lateinit var iconPack: IconPack
    private lateinit var ctx: Context
 
-   fun init(ctx: Context, iconPack: IconPack) {
-      this.ctx = ctx
-      this.iconPack = iconPack
+   fun update(ctx: Context) {
+      IconProvider.ctx = ctx
+      IconProvider.iconPack = IconPack(ctx, Config.get(Config.Key.GeneralIconPack))
    }
+
    fun getIcon(componentInfo: String): Bitmap? {
       return iconPack.getIcon(componentInfo)
    }
@@ -67,7 +69,8 @@ object IconProvider {
                   }
                }
                XmlPullParser.END_DOCUMENT -> break@loop
-               else -> {}
+               else -> {
+               }
             }
          }
          return hashMap

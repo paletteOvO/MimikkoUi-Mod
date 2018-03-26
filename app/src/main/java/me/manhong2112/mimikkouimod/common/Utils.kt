@@ -1,6 +1,6 @@
 @file:Suppress("UNCHECKED_CAST")
 
-package me.manhong2112.mimikkouimod
+package me.manhong2112.mimikkouimod.common
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -18,6 +18,7 @@ import android.view.ViewGroup
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
+import me.manhong2112.mimikkouimod.BuildConfig
 import org.jetbrains.anko.forEachChild
 import org.jetbrains.anko.opaque
 import java.lang.reflect.Method
@@ -25,7 +26,6 @@ import java.lang.reflect.Method
 
 object Utils {
    fun drawableToBitmap(drawable: Drawable): Bitmap {
-
       if (drawable is BitmapDrawable) {
          if (drawable.bitmap != null) {
             return drawable.bitmap
@@ -80,7 +80,7 @@ object Utils {
    }
 
    fun blur(ctx: Context, image: Bitmap, blurRadius: Int): Bitmap {
-
+      log("blur")
       val width = image.width
       val height = image.height
 
@@ -89,10 +89,10 @@ object Utils {
 
       val rs = RenderScript.create(ctx)
 
+      val script = ScriptIntrinsicBlur.create(rs, Element.U8_4(rs))
       for (i in 1..(blurRadius / 25)) {
-         val input = Allocation.createFromBitmap(rs, outputBitmap)
+         val input = Allocation.createFromBitmap(rs, outputBitmap, Allocation.MipmapControl.MIPMAP_NONE, Allocation.USAGE_SHARED)
          val output = Allocation.createTyped(rs, input.type)
-         val script = ScriptIntrinsicBlur.create(rs, Element.U8_4(rs))
 
          script.setRadius(25f)
          script.setInput(input)
@@ -102,9 +102,8 @@ object Utils {
 
       val rest = blurRadius - 25 * (blurRadius / 25)
       if (rest > 0) {
-         val input = Allocation.createFromBitmap(rs, outputBitmap)
+         val input = Allocation.createFromBitmap(rs, outputBitmap, Allocation.MipmapControl.MIPMAP_NONE, Allocation.USAGE_SHARED)
          val output = Allocation.createTyped(rs, input.type)
-         val script = ScriptIntrinsicBlur.create(rs, Element.U8_4(rs))
 
          script.setRadius(rest.toFloat())
          script.setInput(input)
@@ -112,14 +111,20 @@ object Utils {
          output.copyTo(outputBitmap)
       }
 
+      rs.destroy()
+      log("blur-ed")
+      return outputBitmap
+   }
+
+   fun darken(bitmap: Bitmap): Bitmap {
+
       val paint = Paint()
       val filter = LightingColorFilter(0x888888.opaque, 0)
       paint.colorFilter = filter
 
-      val canvas = Canvas(outputBitmap)
-      canvas.drawBitmap(outputBitmap, 0f, 0f, paint)
-
-      return outputBitmap
+      val canvas = Canvas(bitmap)
+      canvas.drawBitmap(bitmap, 0f, 0f, paint)
+      return bitmap
    }
 
    fun hookMethod(method: Method, before: (XC_MethodHook.MethodHookParam) -> Unit = {}, after: (XC_MethodHook.MethodHookParam) -> Unit = {}): XC_MethodHook.Unhook {
@@ -188,16 +193,16 @@ object Utils {
 
    fun Method.hook(before: (XC_MethodHook.MethodHookParam) -> Unit = {}, after: (XC_MethodHook.MethodHookParam) -> Unit = {}): XC_MethodHook.Unhook {
       this.isAccessible = true
-      return Utils.hookMethod(this, before = before, after = after)
+      return hookMethod(this, before = before, after = after)
    }
 
-   fun Class<*>.hookAllMethod(name: String, before: (Method, XC_MethodHook.MethodHookParam) -> Unit = {_, _ ->}, after: (Method, XC_MethodHook.MethodHookParam) -> Unit = {_, _ ->}) {
-      this.declaredMethods.filter { it.name == name }.map { it.hook(before = {p -> before(it, p)}, after = {p -> after(it, p)}) }
+   fun Class<*>.hookAllMethod(name: String, before: (Method, XC_MethodHook.MethodHookParam) -> Unit = { _, _ -> }, after: (Method, XC_MethodHook.MethodHookParam) -> Unit = { _, _ -> }) {
+      this.declaredMethods.filter { it.name == name }.map { it.hook(before = { p -> before(it, p) }, after = { p -> after(it, p) }) }
    }
 
    fun Method.replace(replacement: (XC_MethodHook.MethodHookParam) -> Any = {}): XC_MethodHook.Unhook {
       this.isAccessible = true
-      return Utils.replaceMethod(this, replacement = replacement)
+      return replaceMethod(this, replacement = replacement)
    }
 
    fun printCurrentStackTrace(deep: Int = -1) {

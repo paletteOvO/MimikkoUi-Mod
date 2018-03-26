@@ -1,21 +1,14 @@
-package me.manhong2112.mimikkouimod
+package me.manhong2112.mimikkouimod.xposed
+
 
 import android.app.Activity
 import android.app.Application
-import android.app.WallpaperManager
 import android.content.*
-import android.graphics.Bitmap
-import android.graphics.Color
-import android.graphics.drawable.BitmapDrawable
-import android.graphics.drawable.ColorDrawable
-import android.graphics.drawable.Drawable
 import android.os.Bundle
-import android.util.DisplayMetrics
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import de.robv.android.xposed.IXposedHookInitPackageResources
@@ -25,68 +18,60 @@ import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.XposedHelpers.findClass
 import de.robv.android.xposed.callbacks.XC_InitPackageResources.InitPackageResourcesParam
 import de.robv.android.xposed.callbacks.XC_LoadPackage
-import me.manhong2112.mimikkouimod.Const.mimikkouiPackageName
-import me.manhong2112.mimikkouimod.MimikkoID.appVariableName
-import me.manhong2112.mimikkouimod.Utils.findMethod
-import me.manhong2112.mimikkouimod.Utils.getField
-import me.manhong2112.mimikkouimod.Utils.hook
-import me.manhong2112.mimikkouimod.Utils.invokeMethod
-import me.manhong2112.mimikkouimod.Utils.log
-import me.manhong2112.mimikkouimod.Utils.replace
-import org.jetbrains.anko.backgroundDrawable
+import me.manhong2112.mimikkouimod.BuildConfig
+import me.manhong2112.mimikkouimod.SettingsActivity
+import me.manhong2112.mimikkouimod.common.Config
+import me.manhong2112.mimikkouimod.common.Const
+import me.manhong2112.mimikkouimod.common.Const.mimikkouiPackageName
+import me.manhong2112.mimikkouimod.common.OnSwipeTouchListener
+import me.manhong2112.mimikkouimod.common.Utils
+import me.manhong2112.mimikkouimod.common.Utils.findMethod
+import me.manhong2112.mimikkouimod.common.Utils.getField
+import me.manhong2112.mimikkouimod.common.Utils.hook
+import me.manhong2112.mimikkouimod.common.Utils.hookAllMethod
+import me.manhong2112.mimikkouimod.common.Utils.invokeMethod
+import me.manhong2112.mimikkouimod.common.Utils.log
+import me.manhong2112.mimikkouimod.common.Utils.replace
+import me.manhong2112.mimikkouimod.xposed.MimikkoID.appVariableName
 import org.jetbrains.anko.contentView
 import org.jetbrains.anko.find
-
 
 class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
    lateinit var app: Application
    lateinit var launcherAct: Activity
 
    private var drawer: ViewGroup? = null
-   private var drawerConfig: Config? = null
       set(value) {
          field = value
-         log("set drawerConfig")
-         drawer ?: return
-         updateDrawer(launcherAct, drawer!!, value!!)
+         initDrawer(launcherAct, value!!)
       }
-
-
-   private var dockConfig: Config? = null
+   private var workspace: ViewGroup? = null
       set(value) {
          field = value
-         updateDock(launcherAct, dock)
+         initWorkspace(launcherAct, workspace!!)
       }
 
-   private val updateDrawerReceiver by lazy {
+   private val configUpdateReceiver by lazy {
       object : BroadcastReceiver() {
          override fun onReceive(ctx: Context, intent: Intent) {
-            log("received updateDrawerAction")
-            log(intent.action)
-            drawerConfig = intent.getSerializableExtra("Config") as Config
+            val key = intent.getStringExtra("Key")
+            log("receive config ${key}")
+            val value = intent.getSerializableExtra("Value")
+            Config.set(Config.Key.valueOf(key), value)
          }
       }
    }
-   private val updateDockReceiver by lazy {
-      object : BroadcastReceiver() {
-         override fun onReceive(ctx: Context, intent: Intent) {
-            dockConfig = intent.getSerializableExtra("Config") as Config
-         }
-      }
-   }
-
    private val dock: RelativeLayout by lazy {
       val d = launcherAct.getField<RelativeLayout>("dock")
-      updateDock(launcherAct, d)
+      initDock(launcherAct, d)
       d
    }
+
    private val root: RelativeLayout by lazy {
       val r = launcherAct.getField<RelativeLayout>("root")
-      updateRoot(launcherAct, r)
+      initRoot(launcherAct, r)
       r
    }
-
-   var workspace: ViewGroup? = null
 
    override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
       if (lpparam.packageName != mimikkouiPackageName) return
@@ -107,24 +92,53 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
    private fun realAppHook(app: Application) {
       // com.mimikko.mimikkoui.launcher.components.cell.CellView
       val launcherClass = findClass("com.mimikko.mimikkoui.launcher.activity.Launcher", app.classLoader)
-      IconProvider.init(app, IconProvider.IconPack(app, "website.leifs.delta"))
       launcherClass.findMethod("onCreate", Bundle::class.java).hook(after = { param ->
          this.app = app
+         app.registerReceiver(configUpdateReceiver, IntentFilter(Const.configUpdateAction))
          launcherAct = param.thisObject as Activity
-         launcherAct.registerReceiver(updateDrawerReceiver, IntentFilter(Const.updateDrawerAction))
+
+
+         bindConfigUpdateListener()
          loadConfig(app)
+
+         IconProvider.update(app)
+         DrawerBackground.update(app)
+
          val mAddViewVILp = root.findMethod("addView", View::class.java, Integer.TYPE, ViewGroup.LayoutParams::class.java)
          mAddViewVILp.hook(after = {
-            root
-            dock
             rootHook(launcherAct, root, it)
          })
+
       })
+
+      val load = launcherClass.hookAllMethod("load") {
+         // com.mimikko.mimikkoui.launcher.activity.Launcher -> load
+         m, p ->
+         // 鬼知道這數字甚麼意思, 我討厭殼 (好吧我承認是我渣
+         if (p.args[0] as Int == 10) {
+            dock
+         }
+      }
 
       val appItemEntityClass = findClass("com.mimikko.common.beans.models.AppItemEntity", app.classLoader)
       appItemEntityClass.findMethod("getIcon").replace(::iconHook)
 
       injectSetting(app)
+   }
+
+   private fun bindConfigUpdateListener() {
+      val updateDrawerBackground = { k: Config.Key, v: Any ->
+         DrawerBackground.update(app)
+         if (drawer !== null) DrawerBackground.setDrawerBackground(drawer!!)
+      }
+      Config.setOnChangeListener(Config.Key.DrawerBlurBackground, updateDrawerBackground)
+      Config.setOnChangeListener(Config.Key.DrawerBlurBackgroundBlurRadius, updateDrawerBackground)
+      Config.setOnChangeListener(Config.Key.DrawerDarkBackground, updateDrawerBackground)
+
+      Config.setOnChangeListener(Config.Key.GeneralIconPack, { key, value: String ->
+         IconProvider.update(app)
+      })
+
    }
 
    private fun loadConfig(ctx: Context) {
@@ -149,12 +163,9 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
             // drawerLayout : com.mimikko.mimikkoui.launcher.components.drawer.DrawerLayout
             if (drawer === null && innerLayout.findViewById<ViewGroup?>(MimikkoID.drawer_layout) !== null) {
                drawer = innerLayout.findViewById(MimikkoID.drawer_layout) as ViewGroup
-               drawerConfig ?: return
-               updateDrawer(activity, drawer!!, drawerConfig!!)
             }
             if (workspace === null && innerLayout.findViewById<ViewGroup?>(MimikkoID.workspace) !== null) {
-               workspace = innerLayout.findViewById(MimikkoID.workspace)
-               updateWorkspace(activity, workspace!!)
+               workspace = innerLayout.findViewById(MimikkoID.workspace) as ViewGroup
             }
          }
          else -> {
@@ -187,45 +198,42 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
       }
    }
 
-   private fun updateDrawerButton(activity: Activity, drawerButton: View) {
-      val btn = drawerButton as ImageView
-      // btn.image = drawerButton.context.resources.getDrawable(android.R.drawable.btn_star)
-   }
+   private fun initDock(act: Activity, dock: RelativeLayout) {
+      val drawerBtn = dock.findViewById(MimikkoID.drawerButton) as View?
+      if (drawerBtn !== null) {
+         // btn.image = drawerButton.context.resources.getDrawable(android.R.drawable.btn_star)
+         drawerBtn.setOnTouchListener(
+               object : OnSwipeTouchListener(act) {
+                  override fun onSwipeTop() {
+                     if (Config[Config.Key.DockSwipeToDrawer]) drawerBtn.callOnClick()
+                  }
 
-   private fun updateDock(activity: Activity, dock: RelativeLayout): RelativeLayout {
-      val drawerBtn = dock.findViewById(MimikkoID.drawerButton) as Any?
-      if (dock.findViewById(MimikkoID.drawerButton) as Any? !== null) {
-         updateDrawerButton(activity, drawerBtn as View)
-      }
-      return dock
-   }
-
-   private var backupBackground: Drawable? = null
-   private fun updateDrawer(activity: Activity, drawer: ViewGroup, cfg: Config) {
-      log("update drawer")
-      val parent = drawer.parent as RelativeLayout
-      if (cfg.get(Config.Drawer.DrawerBlurBackground)!!) {
-         val wallpaperManager = WallpaperManager.getInstance(activity)
-         if (wallpaperManager.wallpaperInfo === null) {
-            backupBackground = backupBackground ?: parent.background
-            parent.background = ColorDrawable(Color.TRANSPARENT)
-            val wallpaper = wallpaperManager.drawable as BitmapDrawable
-            val bitmap = wallpaper.bitmap.copy(Bitmap.Config.ARGB_8888, true)
-            val metrics = DisplayMetrics()
-            activity.windowManager.defaultDisplay.getMetrics(metrics)
-            val blurWallpaper = Utils.blur(activity, bitmap, cfg.get(Config.Drawer.DrawerBlurBackgroundBlurRadius))
-            parent.backgroundDrawable = BitmapDrawable(activity.resources, blurWallpaper)
-         }
-      } else {
-         parent.background = backupBackground ?: parent.background
+                  override fun onClick() {
+                     drawerBtn.callOnClick()
+                  }
+               }
+         )
+         dock.setOnTouchListener(
+               object : OnSwipeTouchListener(act) {
+                  override fun onSwipeTop() {
+                     if (Config[Config.Key.DockSwipeToDrawer]) drawerBtn.callOnClick()
+                  }
+               }
+         )
       }
    }
 
-   private fun updateWorkspace(activity: Activity, workspace: ViewGroup) {
+   private fun initWorkspace(activity: Activity, workspace: ViewGroup) {
       return
    }
 
-   private fun updateRoot(activity: Activity, root: RelativeLayout): RelativeLayout {
+   private fun initRoot(activity: Activity, root: RelativeLayout): RelativeLayout {
       return root
+   }
+
+   companion object Drawer {
+      private fun initDrawer(activity: Activity, drawer: ViewGroup) {
+         DrawerBackground.setDrawerBackground(drawer)
+      }
    }
 }
