@@ -79,6 +79,9 @@ object Utils {
       return result
    }
 
+   fun downscale(bitmap: Bitmap, scaleFactor: Float): Bitmap {
+      return Bitmap.createScaledBitmap(bitmap, (bitmap.width * scaleFactor).toInt(), (bitmap.height * scaleFactor).toInt(), false)
+   }
    fun blur(ctx: Context, image: Bitmap, blurRadius: Int): Bitmap {
       log("blur")
       val width = image.width

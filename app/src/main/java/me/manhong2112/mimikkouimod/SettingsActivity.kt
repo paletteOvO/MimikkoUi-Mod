@@ -50,7 +50,7 @@ class SettingsActivity : AppCompatActivity() {
       preferenceLayout {
          preferencePage(GeneralSettingFragment(), R.string.pref_page_general)
          preferencePage(DrawerSettingFragment(), R.string.pref_page_drawer)
-         preferencePage(DockSettingFragment(), R.string.pref_page_drawer)
+         preferencePage(DockSettingFragment(), R.string.pref_page_dock)
       }
    }
 
