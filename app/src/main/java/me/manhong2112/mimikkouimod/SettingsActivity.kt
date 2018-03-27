@@ -100,8 +100,9 @@ class DrawerSettingFragment : SettingFragment() {
       with(layout) {
          switchPreference(R.string.pref_drawer_blur_background, key = Config.Key.DrawerBlurBackground)
          seekBarPreference(R.string.pref_drawer_blur_background_radius, R.string.pref_drawer_blur_background_radius_num_format, Config.Key.DrawerBlurBackgroundBlurRadius, max = 999)
-
          switchPreference(R.string.pref_drawer_darken_background, key = Config.Key.DrawerDarkBackground)
+
+         seekBarPreference(R.string.pref_drawer_column_size, R.string.pref_drawer_column_size_num_format, Config.Key.DrawerColumnSize, min = 1, max = 10)
       }
    }
 }
@@ -109,6 +110,8 @@ class DrawerSettingFragment : SettingFragment() {
 class GeneralSettingFragment : SettingFragment() {
    override fun createView(layout: PreferenceLayout) {
       with(layout) {
+         switchPreference(R.string.pref_general_transparent_status_bar, key = Config.Key.GeneralTransparentStatusBar)
+         switchPreference(R.string.pref_general_dark_status_bar_icon, key = Config.Key.GeneralDarkStatusBarIcon)
          selectorPreference(R.string.pref_general_icon_pack, key = Config.Key.GeneralIconPack, items = IconProvider.getAllIconPack(context))
       }
    }

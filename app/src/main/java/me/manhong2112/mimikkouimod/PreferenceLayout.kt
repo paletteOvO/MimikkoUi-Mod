@@ -152,7 +152,7 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
                   numView.gravity = Gravity.RIGHT or Gravity.CENTER_VERTICAL
                }
                seekBar {
-                  setMax(max)
+                  setMax(max - min)
                   incrementProgressBy(step)
                   progress = defaultValue
                   setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {

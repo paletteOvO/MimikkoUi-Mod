@@ -9,6 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+import android.view.WindowManager
 import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import de.robv.android.xposed.IXposedHookInitPackageResources
@@ -33,8 +34,10 @@ import me.manhong2112.mimikkouimod.common.Utils.invokeMethod
 import me.manhong2112.mimikkouimod.common.Utils.log
 import me.manhong2112.mimikkouimod.common.Utils.replace
 import me.manhong2112.mimikkouimod.xposed.MimikkoID.appVariableName
+import me.manhong2112.mimikkouimod.xposed.MimikkoID.drawerSetSpanCountMethodName
 import org.jetbrains.anko.contentView
 import org.jetbrains.anko.find
+
 
 class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
    lateinit var app: Application
@@ -58,6 +61,13 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
             val value = intent.getSerializableExtra("Value")
             log("receive config ${key} -> $value")
             Config[Config.Key.valueOf(key)] = value
+         }
+      }
+   }
+   private val wallpaperUpdateReceiver by lazy {
+      object : BroadcastReceiver() {
+         override fun onReceive(ctx: Context, intent: Intent) {
+            updateDrawerBackground(null, null)
          }
       }
    }
@@ -93,10 +103,10 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
       // com.mimikko.mimikkoui.launcher.components.cell.CellView
       val launcherClass = findClass("com.mimikko.mimikkoui.launcher.activity.Launcher", app.classLoader)
       launcherClass.findMethod("onCreate", Bundle::class.java).hook(after = { param ->
+         launcherAct = param.thisObject as Activity
          this.app = app
          app.registerReceiver(configUpdateReceiver, IntentFilter(Const.configUpdateAction))
-         launcherAct = param.thisObject as Activity
-
+         app.registerReceiver(wallpaperUpdateReceiver, IntentFilter(Intent.ACTION_WALLPAPER_CHANGED)) // well at least it still exist
 
          bindConfigUpdateListener()
          loadConfig(app)
@@ -108,7 +118,6 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
          mAddViewVILp.hook(after = {
             rootHook(launcherAct, root, it)
          })
-
       })
 
       val load = launcherClass.hookAllMethod("load") {
@@ -126,14 +135,37 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
       injectSetting(app)
    }
 
+   private fun updateDrawerBackground(k: Config.Key?, v: Any?) {
+      DrawerBackground.update(app)
+      if (drawer !== null) DrawerBackground.setDrawerBackground(drawer!!)
+   }
+
    private fun bindConfigUpdateListener() {
-      val updateDrawerBackground = { k: Config.Key, v: Any ->
-         DrawerBackground.update(app)
-         if (drawer !== null) DrawerBackground.setDrawerBackground(drawer!!)
-      }
-      Config.setOnChangeListener(Config.Key.DrawerBlurBackground, updateDrawerBackground)
-      Config.setOnChangeListener(Config.Key.DrawerBlurBackgroundBlurRadius, updateDrawerBackground)
-      Config.setOnChangeListener(Config.Key.DrawerDarkBackground, updateDrawerBackground)
+      Config.setOnChangeListener(Config.Key.DrawerBlurBackground, ::updateDrawerBackground)
+      Config.setOnChangeListener(Config.Key.DrawerBlurBackgroundBlurRadius, ::updateDrawerBackground)
+      Config.setOnChangeListener(Config.Key.DrawerDarkBackground, ::updateDrawerBackground)
+      Config.setOnChangeListener(Config.Key.DrawerColumnSize, { k, v: Int ->
+         // public void GridLayoutManager.fU(int) == public void GridLayoutManager.setSpanCount(int)
+         drawer?.invokeMethod<Any>("getLayoutManager")?.invokeMethod<Unit>(drawerSetSpanCountMethodName, v)
+      })
+
+      Config.setOnChangeListener(Config.Key.GeneralDarkStatusBarIcon, { k, v: Boolean ->
+         if (v) {
+            launcherAct.window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+         } else {
+            launcherAct.window.decorView.systemUiVisibility = 0
+         }
+      })
+
+      Config.setOnChangeListener(Config.Key.GeneralTransparentStatusBar, { k, v: Boolean ->
+         if (v) {
+            with(launcherAct.window) {
+               setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS, WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
+            }
+         } else {
+            launcherAct.window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
+         }
+      })
 
       Config.setOnChangeListener(Config.Key.GeneralIconPack, { key, value: String ->
          log("setOnChangeListener GeneralIconPack")
@@ -162,11 +194,11 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
          is RelativeLayout -> {
             // it can be drawerLayout or Workspace
             // drawerLayout : com.mimikko.mimikkoui.launcher.components.drawer.DrawerLayout
-            if (drawer === null && innerLayout.findViewById<ViewGroup?>(MimikkoID.drawer_layout) !== null) {
-               drawer = innerLayout.findViewById(MimikkoID.drawer_layout) as ViewGroup
-            }
             if (workspace === null && innerLayout.findViewById<ViewGroup?>(MimikkoID.workspace) !== null) {
                workspace = innerLayout.findViewById(MimikkoID.workspace) as ViewGroup
+            }
+            if (drawer === null && launcherAct.findViewById<ViewGroup?>(MimikkoID.drawer_layout) !== null) {
+               drawer = launcherAct.findViewById(MimikkoID.drawer_layout) as ViewGroup
             }
          }
          else -> {
@@ -201,26 +233,18 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
 
    private fun initDock(act: Activity, dock: RelativeLayout) {
       val drawerBtn = dock.findViewById(MimikkoID.drawerButton) as View?
-      if (drawerBtn !== null) {
-         // btn.image = drawerButton.context.resources.getDrawable(android.R.drawable.btn_star)
-         drawerBtn.setOnTouchListener(
+      drawerBtn?.run {
+         setOnTouchListener(
                object : OnSwipeTouchListener(act) {
                   override fun onSwipeTop() {
-                     if (Config[Config.Key.DockSwipeToDrawer]) drawerBtn.callOnClick()
+                     if (Config[Config.Key.DockSwipeToDrawer]) callOnClick()
                   }
 
                   override fun onClick() {
-                     drawerBtn.callOnClick()
+                     callOnClick()
                   }
                }
          )
-//         dock.setOnTouchListener(
-//               object : OnSwipeTouchListener(act) {
-//                  override fun onSwipeTop() {
-//                     if (Config[Config.Key.DockSwipeToDrawer]) drawerBtn.callOnClick()
-//                  }
-//               }
-//         )
       }
    }
 
@@ -232,9 +256,8 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
       return root
    }
 
-   companion object Drawer {
-      private fun initDrawer(activity: Activity, drawer: ViewGroup) {
-         DrawerBackground.setDrawerBackground(drawer)
-      }
+   private fun initDrawer(activity: Activity, drawer: ViewGroup) {
+      DrawerBackground.setDrawerBackground(drawer)
+      drawer.invokeMethod<Any>("getLayoutManager").invokeMethod<Unit>(drawerSetSpanCountMethodName, Config[Config.Key.DrawerColumnSize])
    }
 }

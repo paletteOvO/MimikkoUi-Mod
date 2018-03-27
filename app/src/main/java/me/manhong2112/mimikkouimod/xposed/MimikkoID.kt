@@ -2,6 +2,7 @@ package me.manhong2112.mimikkouimod.xposed
 
 object MimikkoID {
    const val dock = 0x7f07009b
+   const val dock_layout = 0x7f09009d
    const val edge_slider_view = 0x7f0900a5
    const val launcher_layout = 0x7f090108
    const val root = 0x7f0901b4
@@ -17,5 +18,5 @@ object MimikkoID {
    const val launcher_settings_main_container = 0x7f09010c
 
    const val appVariableName = "יﾞ"
-
+   const val drawerSetSpanCountMethodName = "fU"
 }

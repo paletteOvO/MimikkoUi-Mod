@@ -14,6 +14,7 @@ import android.renderscript.Element
 import android.renderscript.RenderScript
 import android.renderscript.ScriptIntrinsicBlur
 import android.util.Log
+import android.view.View
 import android.view.ViewGroup
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XposedBridge
@@ -80,39 +81,32 @@ object Utils {
    }
 
    fun downscale(bitmap: Bitmap, scaleFactor: Float): Bitmap {
-      return Bitmap.createScaledBitmap(bitmap, (bitmap.width * scaleFactor).toInt(), (bitmap.height * scaleFactor).toInt(), false)
+      return Bitmap.createScaledBitmap(bitmap, (bitmap.width * scaleFactor).toInt(), (bitmap.height * scaleFactor).toInt(), true)
    }
    fun blur(ctx: Context, image: Bitmap, blurRadius: Int): Bitmap {
       log("blur")
-      val width = image.width
-      val height = image.height
-
-      val inputBitmap = Bitmap.createScaledBitmap(image, width, height, false)
-      val outputBitmap = Bitmap.createBitmap(inputBitmap)
-
+      val outputBitmap = Bitmap.createBitmap(image)
       val rs = RenderScript.create(ctx)
-
       val script = ScriptIntrinsicBlur.create(rs, Element.U8_4(rs))
-      for (i in 1..(blurRadius / 25)) {
+
+      var i = blurRadius / 4
+      while (i > 10) {
+         i -= 10
          val input = Allocation.createFromBitmap(rs, outputBitmap, Allocation.MipmapControl.MIPMAP_NONE, Allocation.USAGE_SHARED)
          val output = Allocation.createTyped(rs, input.type)
 
-         script.setRadius(25f)
+         script.setRadius(10f)
          script.setInput(input)
          script.forEach(output)
          output.copyTo(outputBitmap)
       }
+      val input = Allocation.createFromBitmap(rs, outputBitmap, Allocation.MipmapControl.MIPMAP_NONE, Allocation.USAGE_SHARED)
+      val output = Allocation.createTyped(rs, input.type)
 
-      val rest = blurRadius - 25 * (blurRadius / 25)
-      if (rest > 0) {
-         val input = Allocation.createFromBitmap(rs, outputBitmap, Allocation.MipmapControl.MIPMAP_NONE, Allocation.USAGE_SHARED)
-         val output = Allocation.createTyped(rs, input.type)
-
-         script.setRadius(rest.toFloat())
-         script.setInput(input)
-         script.forEach(output)
-         output.copyTo(outputBitmap)
-      }
+      script.setRadius(i.toFloat())
+      script.setInput(input)
+      script.forEach(output)
+      output.copyTo(outputBitmap)
 
       rs.destroy()
       log("blur-ed")
@@ -170,10 +164,16 @@ object Utils {
    }
 
    fun <T> Any.invokeMethod(name: String, vararg args: Any): T {
-      return XposedHelpers.findMethodExact(this::class.java, name, *args.map {
+      return this::class.java.findMethod(name, *args.map {
          when (it) {
-            is Boolean -> java.lang.Boolean.TYPE
+            is Byte -> java.lang.Byte.TYPE
+            is Short -> java.lang.Short.TYPE
             is Int -> java.lang.Integer.TYPE
+            is Long -> java.lang.Long.TYPE
+            is Float -> java.lang.Float.TYPE
+            is Double -> java.lang.Double.TYPE
+            is Boolean -> java.lang.Boolean.TYPE
+            is Char -> java.lang.Character.TYPE
             else -> it::class.java
          }
       }.toTypedArray()).invoke(this, *args) as T
@@ -235,6 +235,20 @@ object Utils {
       }
    }
 
+   fun ViewGroup.forEachChildRecursively(func: (View) -> Unit) {
+      val viewGroup = this
+      func(viewGroup)
+      viewGroup.forEachChild {
+         when (it) {
+            is ViewGroup ->
+               it.forEachChildRecursively(func)
+            else -> {
+               func(it)
+            }
+         }
+      }
+   }
+
    fun Any.printAllField() {
       val obj = this
       log(obj::class.java.canonicalName)
@@ -243,5 +257,6 @@ object Utils {
          log("  ${it.name} :: ${it.type.canonicalName} : ${it.type.superclass?.canonicalName} = ${it.get(obj)}")
       }
    }
+
 
 }

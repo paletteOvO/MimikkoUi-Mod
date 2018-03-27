@@ -9,7 +9,12 @@
     <string name="pref_drawer_blur_background_radius">Blur Radius</string>
     <string name="pref_drawer_blur_background_radius_num_format">%d</string>
     <string name="pref_drawer_darken_background">Darken Background</string>
+    <string name="pref_drawer_column_size">Column Size</string>
+    <string name="pref_drawer_column_size_num_format">%d</string>
 
+
+    <string name="pref_general_transparent_status_bar">Transparent Status Bar</string>
+    <string name="pref_general_dark_status_bar_icon">Dark Status Bar icon</string>
     <string name="pref_general_icon_pack">Icon Pack</string>
     <string name="pref_general_none_icon_pack">None</string>
 

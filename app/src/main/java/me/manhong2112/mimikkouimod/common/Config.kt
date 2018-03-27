@@ -10,8 +10,11 @@ object Config {
       DrawerBlurBackground(false),
       DrawerDarkBackground(false),
       DrawerBlurBackgroundBlurRadius(25),
+      DrawerColumnSize(4),
 
-      GeneralIconPack("default");
+      GeneralIconPack("default"),
+      GeneralTransparentStatusBar(false),
+      GeneralDarkStatusBarIcon(false);
 
       fun <T> getDefaultValue(): T {
          return mDefaultValue as T

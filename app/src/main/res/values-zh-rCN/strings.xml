@@ -9,7 +9,11 @@
     <string name="pref_drawer_blur_background_radius">模糊半径</string>
     <string name="pref_drawer_blur_background_radius_num_format">%d</string>
     <string name="pref_drawer_darken_background">背景暗化</string>
+    <string name="pref_drawer_column_size">行大小</string>
+    <string name="pref_drawer_column_size_num_format">%d</string>
 
+    <string name="pref_general_transparent_status_bar">状态栏透明</string>
+    <string name="pref_general_dark_status_bar_icon">状态栏深色图标</string>
     <string name="pref_general_icon_pack">图标包</string>
     <string name="pref_general_none_icon_pack">预设</string>
 
