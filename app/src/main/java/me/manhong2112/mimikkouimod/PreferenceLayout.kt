@@ -164,7 +164,7 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
                   setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                      override fun onProgressChanged(p0: SeekBar, value: Int, p2: Boolean) {
                         numFormat?.run {
-                           numView.text = numFormat.format(valueParse(value - min))
+                           numView.text = numFormat.format(valueParse(value + min))
                         }
                      }
 
