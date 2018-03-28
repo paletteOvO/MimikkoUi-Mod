@@ -5,6 +5,8 @@ import android.app.Activity
 import android.app.Application
 import android.content.*
 import android.os.Bundle
+import android.util.AttributeSet
+import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
@@ -12,6 +14,7 @@ import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.view.WindowManager
 import android.widget.LinearLayout
 import android.widget.RelativeLayout
+import android.widget.TextView
 import de.robv.android.xposed.IXposedHookInitPackageResources
 import de.robv.android.xposed.IXposedHookLoadPackage
 import de.robv.android.xposed.XC_MethodHook
@@ -59,7 +62,7 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
          override fun onReceive(ctx: Context, intent: Intent) {
             val key = intent.getStringExtra("Key")
             val value = intent.getSerializableExtra("Value")
-            log("receive config ${key} -> $value")
+            log("receive config $key -> $value")
             Config[Config.Key.valueOf(key)] = value
          }
       }
@@ -120,7 +123,7 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
          })
       })
 
-      val load = launcherClass.hookAllMethod("load") {
+      launcherClass.hookAllMethod("load") {
          // com.mimikko.mimikkoui.launcher.activity.Launcher -> load
          m, p ->
          // 鬼知道這數字甚麼意思, 我討厭殼 (好吧我承認是我渣
@@ -133,6 +136,20 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
       appItemEntityClass.findMethod("getIcon").replace(::iconHook)
 
       injectSetting(app)
+
+      findClass("com.mimikko.mimikkoui.launcher.components.shortcut.Shortcut", app.classLoader)
+            .getDeclaredConstructor(Context::class.java, AttributeSet::class.java)
+            .hook { p ->
+               log("Shortcut Constructor")
+               val shortCut = p.thisObject as TextView
+               shortCut.setShadowLayer(
+                     Config[Config.Key.GeneralShortcutTextShadowRadius],
+                     Config[Config.Key.GeneralShortcutTextShadowDx],
+                     Config[Config.Key.GeneralShortcutTextShadowDy],
+                     Config[Config.Key.GeneralShortcutTextShadowColor])
+               shortCut.setTextColor(Config.get<Int>(Config.Key.GeneralShortcutTextColor))
+               shortCut.setTextSize(TypedValue.COMPLEX_UNIT_SP, Config[Config.Key.GeneralShortcutTextSize])
+            }
    }
 
    private fun updateDrawerBackground(k: Config.Key?, v: Any?) {
@@ -146,7 +163,9 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
       Config.setOnChangeListener(Config.Key.DrawerDarkBackground, ::updateDrawerBackground)
       Config.setOnChangeListener(Config.Key.DrawerColumnSize, { k, v: Int ->
          // public void GridLayoutManager.fU(int) == public void GridLayoutManager.setSpanCount(int)
-         drawer?.invokeMethod<Any>("getLayoutManager")?.invokeMethod<Unit>(drawerSetSpanCountMethodName, v)
+         drawer?.let {
+            setDrawerColumnSize(it)
+         }
       })
 
       Config.setOnChangeListener(Config.Key.GeneralDarkStatusBarIcon, { k, v: Boolean ->
@@ -257,7 +276,13 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
    }
 
    private fun initDrawer(activity: Activity, drawer: ViewGroup) {
+
       DrawerBackground.setDrawerBackground(drawer)
+      setDrawerColumnSize(drawer)
+   }
+
+   private fun setDrawerColumnSize(drawer: ViewGroup) {
       drawer.invokeMethod<Any>("getLayoutManager").invokeMethod<Unit>(drawerSetSpanCountMethodName, Config[Config.Key.DrawerColumnSize])
+
    }
 }

@@ -22,6 +22,8 @@ import de.robv.android.xposed.XposedHelpers
 import me.manhong2112.mimikkouimod.BuildConfig
 import org.jetbrains.anko.forEachChild
 import org.jetbrains.anko.opaque
+import java.lang.reflect.Constructor
+import java.lang.reflect.Member
 import java.lang.reflect.Method
 
 
@@ -83,27 +85,17 @@ object Utils {
    fun downscale(bitmap: Bitmap, scaleFactor: Float): Bitmap {
       return Bitmap.createScaledBitmap(bitmap, (bitmap.width * scaleFactor).toInt(), (bitmap.height * scaleFactor).toInt(), true)
    }
-   fun blur(ctx: Context, image: Bitmap, blurRadius: Int): Bitmap {
+
+   fun blur(ctx: Context, image: Bitmap, blurRadius: Float): Bitmap {
       log("blur")
       val outputBitmap = Bitmap.createBitmap(image)
       val rs = RenderScript.create(ctx)
       val script = ScriptIntrinsicBlur.create(rs, Element.U8_4(rs))
 
-      var i = blurRadius / 4
-      while (i > 10) {
-         i -= 10
-         val input = Allocation.createFromBitmap(rs, outputBitmap, Allocation.MipmapControl.MIPMAP_NONE, Allocation.USAGE_SHARED)
-         val output = Allocation.createTyped(rs, input.type)
-
-         script.setRadius(10f)
-         script.setInput(input)
-         script.forEach(output)
-         output.copyTo(outputBitmap)
-      }
       val input = Allocation.createFromBitmap(rs, outputBitmap, Allocation.MipmapControl.MIPMAP_NONE, Allocation.USAGE_SHARED)
       val output = Allocation.createTyped(rs, input.type)
 
-      script.setRadius(i.toFloat())
+      script.setRadius(blurRadius)
       script.setInput(input)
       script.forEach(output)
       output.copyTo(outputBitmap)
@@ -124,7 +116,7 @@ object Utils {
       return bitmap
    }
 
-   fun hookMethod(method: Method, before: (XC_MethodHook.MethodHookParam) -> Unit = {}, after: (XC_MethodHook.MethodHookParam) -> Unit = {}): XC_MethodHook.Unhook {
+   fun hookMethod(method: Member, before: (XC_MethodHook.MethodHookParam) -> Unit = {}, after: (XC_MethodHook.MethodHookParam) -> Unit = {}): XC_MethodHook.Unhook {
       return XposedBridge.hookMethod(method, object : XC_MethodHook() {
          override fun beforeHookedMethod(param: MethodHookParam) {
             before(param)
@@ -197,6 +189,10 @@ object Utils {
    fun Method.hook(before: (XC_MethodHook.MethodHookParam) -> Unit = {}, after: (XC_MethodHook.MethodHookParam) -> Unit = {}): XC_MethodHook.Unhook {
       this.isAccessible = true
       return hookMethod(this, before = before, after = after)
+   }
+
+   fun <T> Constructor<T>.hook(before: (XC_MethodHook.MethodHookParam) -> Unit = {}, after: (XC_MethodHook.MethodHookParam) -> Unit = {}) {
+      hookMethod(this, before, after)
    }
 
    fun Class<*>.hookAllMethod(name: String, before: (Method, XC_MethodHook.MethodHookParam) -> Unit = { _, _ -> }, after: (Method, XC_MethodHook.MethodHookParam) -> Unit = { _, _ -> }) {

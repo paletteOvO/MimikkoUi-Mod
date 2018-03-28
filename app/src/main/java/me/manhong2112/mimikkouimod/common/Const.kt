@@ -4,6 +4,7 @@ object Const {
    const val configUpdateAction = "me.manhong2112.mmikkouimod.action.configUpdate"
    const val loadConfigAction = "me.manhong2112.mmikkouimod.action.loadConfig"
    const val mimikkouiPackageName = "com.mimikko.mimikkoui"
+   const val mimikkouiAppName = "com.mimikko.common.App"
    const val TAG = "MimikkoUI-Mod"
 
    // in dip
@@ -11,5 +12,6 @@ object Const {
    const val prefIconHeight = 48
    const val prefIconWidth = 48
 
+   const val prefFloatPrecise = 10e2f
 
 }

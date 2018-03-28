@@ -1,10 +1,11 @@
 package me.manhong2112.mimikkouimod.common
 
 import android.content.SharedPreferences
+import android.graphics.Color
 
 @Suppress("UNCHECKED_CAST")
 object Config {
-   enum class Key(private val mDefaultValue: Any) {
+   enum class Key(val mDefaultValue: Any) {
       DockSwipeToDrawer(false),
 
       DrawerBlurBackground(false),
@@ -14,7 +15,15 @@ object Config {
 
       GeneralIconPack("default"),
       GeneralTransparentStatusBar(false),
-      GeneralDarkStatusBarIcon(false);
+      GeneralDarkStatusBarIcon(false),
+
+      GeneralShortcutTextSize(10f),
+      GeneralShortcutTextColor(Color.WHITE),
+      GeneralShortcutTextMaxLine(1),
+      GeneralShortcutTextShadowColor(Color.BLACK),
+      GeneralShortcutTextShadowRadius(10f),
+      GeneralShortcutTextShadowDx(0f),
+      GeneralShortcutTextShadowDy(0f);
 
       fun <T> getDefaultValue(): T {
          return mDefaultValue as T
@@ -35,6 +44,7 @@ object Config {
       sharedPreferences = pref
    }
 
+   // 這Any搞得我就像在寫動態類型的語言...
    operator fun set(key: Key, value: Any) {
       data[key.ordinal] = value
       if (sharedPreferences !== null) {
@@ -71,12 +81,12 @@ object Config {
       Key.values().forEach { key ->
          val value = get(key) as Any
          when (value) {
-            is Int -> editor.putInt(key.name, value)
-            is Boolean -> editor.putBoolean(key.name, value)
-            is Float -> editor.putFloat(key.name, value)
-            is Long -> editor.putLong(key.name, value)
-            is String -> editor.putString(key.name, value)
-            is Set<*> -> editor.putStringSet(key.name, value as Set<String>)
+            is Int -> editor.put(key.name, value)
+            is Boolean -> editor.put(key.name, value)
+            is Float -> editor.put(key.name, value)
+            is Long -> editor.put(key.name, value)
+            is String -> editor.put(key.name, value)
+            is Set<*> -> editor.put(key.name, value as Set<String>)
             else -> throw Exception("Type Error: type of $key is not supported")
          }
       }
@@ -87,14 +97,38 @@ object Config {
       val editor = pref.edit()
       val value = get(key) as Any
       when (value) {
-         is Int -> editor.putInt(key.name, value)
-         is Boolean -> editor.putBoolean(key.name, value)
-         is Float -> editor.putFloat(key.name, value)
-         is Long -> editor.putLong(key.name, value)
-         is String -> editor.putString(key.name, value)
-         is Set<*> -> editor.putStringSet(key.name, value as Set<String>)
+         is Int -> editor.put(key.name, value)
+         is Boolean -> editor.put(key.name, value)
+         is Float -> editor.put(key.name, value)
+         is Long -> editor.put(key.name, value)
+         is String -> editor.put(key.name, value)
+         is Set<*> -> editor.put(key.name, value as Set<String>)
          else -> throw Exception("Type Error: type of $key is not supported")
       }
       editor.apply()
+   }
+
+   inline fun SharedPreferences.Editor.put(key: String, value: Int) {
+      this.putInt(key, value)
+   }
+
+   inline fun SharedPreferences.Editor.put(key: String, value: Boolean) {
+      this.putBoolean(key, value)
+   }
+
+   inline fun SharedPreferences.Editor.put(key: String, value: Float) {
+      this.putFloat(key, value)
+   }
+
+   inline fun SharedPreferences.Editor.put(key: String, value: Long) {
+      this.putLong(key, value)
+   }
+
+   inline fun SharedPreferences.Editor.put(key: String, value: String) {
+      this.putString(key, value)
+   }
+
+   inline fun SharedPreferences.Editor.put(key: String, value: Set<String>) {
+      this.putStringSet(key, value)
    }
 }

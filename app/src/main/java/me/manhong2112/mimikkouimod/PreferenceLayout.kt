@@ -119,19 +119,24 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
          }
       }
 
-      fun PreferenceLayout.seekBarPreference(nameRes: Int, numFormatRes: Int = 0,
-                                             key: Config.Key,
-                                             min: Int = 0, max: Int = 100, step: Int = 1,
-                                             init: SeekBar.() -> Unit = {}) =
-            seekBarPreference(ctx.getString(nameRes), if (numFormatRes == 0) null else ctx.getString(numFormatRes), key, min, max, step, init)
+      fun <T : Number> PreferenceLayout.seekBarPreference(nameRes: Int, numFormatRes: Int = 0,
+                                                          key: Config.Key,
+                                                          min: Int = 0, max: Int = 100, step: Int = 1,
+                                                          displayParse: (T) -> Int = { it.toInt() },
+                                                          valueParse: (Int) -> T = { it as T },
+                                                          init: SeekBar.() -> Unit = {}) {
+         return seekBarPreference<T>(ctx.getString(nameRes), if (numFormatRes == 0) null else ctx.getString(numFormatRes), key, min, max, step, displayParse, valueParse, init)
+      }
 
-      fun PreferenceLayout.seekBarPreference(name: String, numFormat: String? = null,
-                                             key: Config.Key,
-                                             min: Int = 0, max: Int = 100, step: Int = 1,
-                                             init: SeekBar.() -> Unit = {}) {
+      fun <T : Number> PreferenceLayout.seekBarPreference(name: String, numFormat: String? = null,
+                                                          key: Config.Key,
+                                                          min: Int = 0, max: Int = 100, step: Int = 1,
+                                                          displayParse: (T) -> Int = { it.toInt() },
+                                                          valueParse: (Int) -> T = { it as T },
+                                                          init: SeekBar.() -> Unit = {}) {
          linearLayout {
             setPadding(dip(12), 0, dip(12), 0)
-            val defaultValue = Config.get<Int>(key) - min
+
             orientation = VERTICAL
             backgroundDrawable = getSelectedItemDrawable(ctx)
             isClickable = true
@@ -145,9 +150,10 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
             linearLayout {
                gravity = Gravity.CENTER_VERTICAL
                val numView = TextView(ctx)
-               if (numFormat !== null) {
+               val defaultValue = displayParse(Config[key]) - min
+               numFormat?.run {
                   addView(numView, dip(28), wrapContent)
-                  numView.text = numFormat.format(defaultValue + min)
+                  numView.text = numFormat.format(valueParse(displayParse(Config[key]) - min))
                   numView.textSize = sp(5).toFloat()
                   numView.gravity = Gravity.RIGHT or Gravity.CENTER_VERTICAL
                }
@@ -157,8 +163,8 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
                   progress = defaultValue
                   setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                      override fun onProgressChanged(p0: SeekBar, value: Int, p2: Boolean) {
-                        if (numFormat !== null) {
-                           numView.text = numFormat.format(value + min)
+                        numFormat?.run {
+                           numView.text = numFormat.format(valueParse(value - min))
                         }
                      }
 
@@ -166,7 +172,7 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
                      }
 
                      override fun onStopTrackingTouch(p0: SeekBar) {
-                        Config[key] = p0.progress + min
+                        Config[key] = valueParse(p0.progress + min)
                      }
                   })
                }.lparams {
@@ -221,6 +227,53 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
             height = dip(Const.prefItemHeight)
          }
 
+      }
+
+      fun <T> PreferenceLayout.editTextPreference(nameRes: Int, summaryRes: Int = 0, hintRes: Int = 0, key: Config.Key, displayParser: (T) -> String = { it.toString() }, valueParser: (String) -> T = { it as T }) {
+         editTextPreference<T>(ctx.getString(nameRes),
+               if (summaryRes == 0) null else ctx.getString(summaryRes),
+               if (hintRes == 0) null else ctx.getString(hintRes),
+               key,
+               displayParser,
+               valueParser)
+      }
+
+      fun <T> PreferenceLayout.editTextPreference(name: String, summary: String? = null, hint: String? = null, key: Config.Key, displayParser: (T) -> String = { it.toString() }, valueParser: (String) -> T = { it as T }) {
+         relativeLayout {
+            backgroundDrawable = getSelectedItemDrawable(ctx)
+            isClickable = true
+            verticalLayout {
+               textView {
+                  text = name
+               }
+               summary?.let {
+                  textView {
+                     text = it
+                  }
+               }
+            }.lparams {
+               padding = dip(12)
+               gravity = Gravity.CENTER_VERTICAL
+               centerInParent()
+               alignParentLeft()
+            }
+            setOnClickListener {
+               this@editTextPreference.ctx.alert {
+                  customView {
+                     val text = editText {
+                        this.hint = hint
+                        setText(displayParser(Config[key]))
+                     }
+                     positiveButton("OK") {
+                        Config[key] = valueParser(text.text.toString()) as Any
+                     }
+                  }
+               }.show()
+            }
+         }.lparams {
+            width = matchParent
+            height = dip(Const.prefItemHeight)
+         }
       }
 
       private fun getSelectedItemDrawable(ctx: Context): Drawable {

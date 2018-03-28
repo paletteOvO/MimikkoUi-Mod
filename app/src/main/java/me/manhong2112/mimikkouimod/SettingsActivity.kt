@@ -10,6 +10,7 @@ import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import me.manhong2112.mimikkouimod.PreferenceLayout.Companion.editTextPreference
 import me.manhong2112.mimikkouimod.PreferenceLayout.Companion.preferenceLayout
 import me.manhong2112.mimikkouimod.PreferenceLayout.Companion.preferencePage
 import me.manhong2112.mimikkouimod.PreferenceLayout.Companion.seekBarPreference
@@ -17,11 +18,13 @@ import me.manhong2112.mimikkouimod.PreferenceLayout.Companion.selectorPreference
 import me.manhong2112.mimikkouimod.PreferenceLayout.Companion.switchPreference
 import me.manhong2112.mimikkouimod.common.Config
 import me.manhong2112.mimikkouimod.common.Const
+import me.manhong2112.mimikkouimod.common.Const.prefFloatPrecise
 import me.manhong2112.mimikkouimod.common.Utils.log
 import me.manhong2112.mimikkouimod.xposed.IconProvider
 import org.jetbrains.anko.UI
 import org.jetbrains.anko.defaultSharedPreferences
 import java.io.Serializable
+import java.math.BigInteger
 
 class SettingsActivity : AppCompatActivity() {
    override fun onCreate(savedInstanceState: Bundle?) {
@@ -31,6 +34,7 @@ class SettingsActivity : AppCompatActivity() {
             val intent = Intent(Const.configUpdateAction)
             intent.putExtra("Key", key.name)
             intent.putExtra("Value", value as Serializable)
+            intent.`package` = Const.mimikkouiPackageName
             sendBroadcast(intent)
          }
       }
@@ -99,10 +103,10 @@ class DrawerSettingFragment : SettingFragment() {
    override fun createView(layout: PreferenceLayout) {
       with(layout) {
          switchPreference(R.string.pref_drawer_blur_background, key = Config.Key.DrawerBlurBackground)
-         seekBarPreference(R.string.pref_drawer_blur_background_radius, R.string.pref_drawer_blur_background_radius_num_format, Config.Key.DrawerBlurBackgroundBlurRadius, max = 999)
+         seekBarPreference<Int>(R.string.pref_drawer_blur_background_radius, R.string.pref_drawer_blur_background_radius_num_format, Config.Key.DrawerBlurBackgroundBlurRadius, max = 999)
          switchPreference(R.string.pref_drawer_darken_background, key = Config.Key.DrawerDarkBackground)
 
-         seekBarPreference(R.string.pref_drawer_column_size, R.string.pref_drawer_column_size_num_format, Config.Key.DrawerColumnSize, min = 1, max = 10)
+         seekBarPreference<Int>(R.string.pref_drawer_column_size, R.string.pref_drawer_column_size_num_format, Config.Key.DrawerColumnSize, min = 1, max = 10)
       }
    }
 }
@@ -113,6 +117,33 @@ class GeneralSettingFragment : SettingFragment() {
          switchPreference(R.string.pref_general_transparent_status_bar, key = Config.Key.GeneralTransparentStatusBar)
          switchPreference(R.string.pref_general_dark_status_bar_icon, key = Config.Key.GeneralDarkStatusBarIcon)
          selectorPreference(R.string.pref_general_icon_pack, key = Config.Key.GeneralIconPack, items = IconProvider.getAllIconPack(context))
+
+         editTextPreference(name = "Text Color", key = Config.Key.GeneralShortcutTextColor,
+               displayParser = {
+                  "%08X".format(it)
+               },
+               valueParser = {
+                  BigInteger(it, 16).toInt()
+               })
+         val displayParse: (Float) -> Int = { (it * prefFloatPrecise).toInt() }
+         val valueParse: (Int) -> Float = { it / prefFloatPrecise }
+         val max = 32 * prefFloatPrecise.toInt()
+         seekBarPreference("Text Size", numFormat = "%.2f", key = Config.Key.GeneralShortcutTextSize,
+               max = max,
+               displayParse = displayParse,
+               valueParse = valueParse)
+         seekBarPreference("Text Shadow Radius", numFormat = "%.2f", key = Config.Key.GeneralShortcutTextShadowRadius,
+               max = max,
+               displayParse = displayParse,
+               valueParse = valueParse)
+         seekBarPreference("Text Shadow dx", numFormat = "%.2f", key = Config.Key.GeneralShortcutTextShadowDx,
+               max = max,
+               displayParse = displayParse,
+               valueParse = valueParse)
+         seekBarPreference("Text Shadow dy", numFormat = "%.2f", key = Config.Key.GeneralShortcutTextShadowDy,
+               max = max,
+               displayParse = displayParse,
+               valueParse = valueParse)
       }
    }
 }
