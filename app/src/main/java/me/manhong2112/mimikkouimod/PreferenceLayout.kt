@@ -152,8 +152,8 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
                val numView = TextView(ctx)
                val defaultValue = displayParse(Config[key]) - min
                numFormat?.run {
-                  addView(numView, dip(28), wrapContent)
-                  numView.text = numFormat.format(valueParse(displayParse(Config[key]) - min))
+                  addView(numView, dip(36), wrapContent)
+                  numView.text = numFormat.format(valueParse(displayParse(Config[key]) + min))
                   numView.textSize = sp(5).toFloat()
                   numView.gravity = Gravity.RIGHT or Gravity.CENTER_VERTICAL
                }
