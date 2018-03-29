@@ -10,19 +10,20 @@ import me.manhong2112.mimikkouimod.common.Config
 import me.manhong2112.mimikkouimod.common.Utils
 import me.manhong2112.mimikkouimod.common.Utils.drawableToBitmap
 import org.xmlpull.v1.XmlPullParser
+import java.lang.ref.WeakReference
 
 
 object IconProvider {
-   private lateinit var ctx: Context
+   private lateinit var ctx: WeakReference<Context>
    private lateinit var iconPack: IconPack
 
    fun update(ctx: Context) {
       Utils.log("IconProvider update")
-      this.ctx = ctx
+      this.ctx = WeakReference(ctx)
       val value = Config.get<String>(Config.Key.GeneralIconPack)
       if (value == "default") {
          Utils.log("IconProvider update default")
-         IconProvider.iconPack = object : IconPack(ctx, "default") {
+         IconProvider.iconPack = object : IconPack(WeakReference(ctx), "default") {
             override fun getIcon(componentName: ComponentName): Bitmap? {
                return null // IconHook will rollback to original method if icon is null
             }
@@ -32,8 +33,8 @@ object IconProvider {
             }
          }
       } else {
-         Utils.log("IconProvider update ${value}")
-         IconProvider.iconPack = IconPack(ctx, value)
+         Utils.log("IconProvider update $value")
+         IconProvider.iconPack = IconPack(WeakReference(ctx), value)
       }
    }
 
@@ -62,39 +63,46 @@ object IconProvider {
    }
 
 
-   open class IconPack(private val ctx: Context, val name: String) {
+   open class IconPack(private val ctx: WeakReference<Context>, val name: String) {
+
       private val icons = HashMap<String, Bitmap>()
       private val appFilter by lazy {
          loadAppFilter()
       }
       private val res by lazy {
-         ctx.packageManager.getResourcesForApplication(name)
+         ctx.get()?.run {
+            packageManager.getResourcesForApplication(name)
+         }
       }
 
       open fun getIcon(componentName: ComponentName): Bitmap? {
+         res ?: return null
          val componentInfo = componentName.toString()
          if (componentInfo !in appFilter) {
             return null
          }
          val drawableName = appFilter[componentInfo]!!
          if (drawableName !in icons) {
-            val id = res.getIdentifier(drawableName, "drawable", name)
+            val id = res!!.getIdentifier(drawableName, "drawable", name)
             if (id == 0) {
                return null
             }
-            icons[drawableName] = drawableToBitmap(res.getDrawable(id))
+            icons[drawableName] = drawableToBitmap(res!!.getDrawable(id))
          }
          return icons[drawableName]!!
       }
 
       open fun hasIcon(componentName: ComponentName): Boolean {
-         return res.getIdentifier(componentName.toString(), "drawable", name) != 0
+         return res?.run {
+            getIdentifier(componentName.toString(), "drawable", name) != 0
+         } ?: false
       }
 
       private fun loadAppFilter(): HashMap<String, String> {
-         val id = res.getIdentifier("appfilter", "xml", name)
-         val xpp = res.getXml(id)
          val hashMap = hashMapOf<String, String>()
+         res ?: return hashMap
+         val id = res!!.getIdentifier("appfilter", "xml", name)
+         val xpp = res!!.getXml(id)
 
          loop@ while (true) {
             val eventType = xpp.next()

@@ -40,6 +40,9 @@ dependencies {
     implementation "com.android.support:support-v4:$support_version"
     implementation "com.android.support:preference-v14:$support_version"
     // compile 'com.android.support:support-vector-drawable:27.+'
+
+    // Color Picker
+    implementation 'com.jaredrummler:colorpicker:1.0.2'
 }
 
 android {

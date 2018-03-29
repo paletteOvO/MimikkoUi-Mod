@@ -5,7 +5,9 @@ import android.graphics.Color
 
 @Suppress("UNCHECKED_CAST")
 object Config {
-   enum class Key(val mDefaultValue: Any) {
+   enum class Key(private val mDefaultValue: Any) {
+      SupportedVersion("1.8.7"),
+
       DockSwipeToDrawer(false),
 
       DrawerBlurBackground(false),
@@ -14,6 +16,8 @@ object Config {
       DrawerColumnSize(4),
 
       GeneralIconPack("default"),
+      GeneralIconScale(100), // in %
+
       GeneralTransparentStatusBar(false),
       GeneralDarkStatusBarIcon(false),
 

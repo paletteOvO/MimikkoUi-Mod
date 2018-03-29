@@ -114,9 +114,14 @@ class DrawerSettingFragment : SettingFragment() {
 class GeneralSettingFragment : SettingFragment() {
    override fun createView(layout: PreferenceLayout) {
       with(layout) {
+         val displayParse: (Float) -> Int = { (it * prefFloatPrecise).toInt() }
+         val valueParse: (Int) -> Float = { it / prefFloatPrecise }
+
          switchPreference(R.string.pref_general_transparent_status_bar, key = Config.Key.GeneralTransparentStatusBar)
          switchPreference(R.string.pref_general_dark_status_bar_icon, key = Config.Key.GeneralDarkStatusBarIcon)
+
          selectorPreference(R.string.pref_general_icon_pack, key = Config.Key.GeneralIconPack, items = IconProvider.getAllIconPack(context))
+         seekBarPreference<Int>("Icon Size", numFormat = "%d%%", key = Config.Key.GeneralIconScale)
 
          editTextPreference(name = "Text Color", key = Config.Key.GeneralShortcutTextColor,
                displayParser = {
@@ -125,8 +130,7 @@ class GeneralSettingFragment : SettingFragment() {
                valueParser = {
                   BigInteger(it, 16).toInt()
                })
-         val displayParse: (Float) -> Int = { (it * prefFloatPrecise).toInt() }
-         val valueParse: (Int) -> Float = { it / prefFloatPrecise }
+
          val max = 32 * prefFloatPrecise.toInt()
          seekBarPreference("Text Size", numFormat = "%.2f", key = Config.Key.GeneralShortcutTextSize,
                max = max,

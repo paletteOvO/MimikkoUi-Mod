@@ -4,8 +4,8 @@ package me.manhong2112.mimikkouimod.xposed
 import android.app.Activity
 import android.app.Application
 import android.content.*
+import android.graphics.Canvas
 import android.os.Bundle
-import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
@@ -26,20 +26,21 @@ import me.manhong2112.mimikkouimod.BuildConfig
 import me.manhong2112.mimikkouimod.SettingsActivity
 import me.manhong2112.mimikkouimod.common.Config
 import me.manhong2112.mimikkouimod.common.Const
+import me.manhong2112.mimikkouimod.common.Const.mimikkouiLauncherActName
 import me.manhong2112.mimikkouimod.common.Const.mimikkouiPackageName
 import me.manhong2112.mimikkouimod.common.OnSwipeTouchListener
 import me.manhong2112.mimikkouimod.common.Utils
 import me.manhong2112.mimikkouimod.common.Utils.findMethod
 import me.manhong2112.mimikkouimod.common.Utils.getField
 import me.manhong2112.mimikkouimod.common.Utils.hook
-import me.manhong2112.mimikkouimod.common.Utils.hookAllMethod
 import me.manhong2112.mimikkouimod.common.Utils.invokeMethod
 import me.manhong2112.mimikkouimod.common.Utils.log
 import me.manhong2112.mimikkouimod.common.Utils.replace
-import me.manhong2112.mimikkouimod.xposed.MimikkoID.appVariableName
 import me.manhong2112.mimikkouimod.xposed.MimikkoID.drawerSetSpanCountMethodName
 import org.jetbrains.anko.contentView
 import org.jetbrains.anko.find
+import java.io.File
+import me.manhong2112.mimikkouimod.common.Config.Key as Cfg
 
 
 class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
@@ -88,13 +89,45 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
 
    override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
       if (lpparam.packageName != mimikkouiPackageName) return
-      val stubClass = XposedHelpers.findClass("com.stub.StubApp", lpparam.classLoader)
-      val m = stubClass.findMethod("attachBaseContext", Context::class.java)
-      m.hook(after = { param ->
-         val app = param.thisObject.getField(appVariableName) as Application
+      getPackageVersion(lpparam)?.run {
+         val versionName = first
+         val versionCode = second
+         if (versionName != Config[Config.Key.SupportedVersion]) {
+            return
+         }
+      } ?: run {
+         log("null version info")
+      }
+//      val stubClass = XposedHelpers.findClass("com.stub.StubApp", lpparam.classLoader)
+//
+//      val m = stubClass.findMethod("attachBaseContext", Context::class.java)
+//      m.hook(after = { param ->
+//         val app = param.thisObject.getField(appVariableName) as Application
+//         realAppHook(app)
+//      })
+
+      // 既然殼沒了, 那...
+      // 設計時想了不少, 偏偏沒想到會把殼去掉..
+      val launcherClass = findClass(mimikkouiLauncherActName, lpparam.classLoader)
+      launcherClass.findMethod("onCreate", Bundle::class.java).hook(after = { param ->
+         val app = (param.thisObject as Activity).application
+         onCreateHook(param)
          realAppHook(app)
       })
+   }
 
+   private fun getPackageVersion(lpparam: XC_LoadPackage.LoadPackageParam): Pair<String, Int>? {
+      return try {
+         val parserCls = XposedHelpers.findClass("android.content.pm.PackageParser", lpparam.classLoader)
+         val parser = parserCls.newInstance()
+         val apkPath = File(lpparam.appInfo.sourceDir)
+         val pkg = XposedHelpers.callMethod(parser, "parsePackage", apkPath, 0)
+         val versionName = XposedHelpers.getObjectField(pkg, "mVersionName") as String
+         val versionCode = XposedHelpers.getIntField(pkg, "mVersionCode")
+         Pair(versionName, versionCode)
+      } catch (e: Throwable) {
+         null
+      }
    }
 
    @Throws(Throwable::class)
@@ -102,30 +135,32 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
       if (resparam.packageName != mimikkouiPackageName) return
    }
 
+   private fun onCreateHook(param: XC_MethodHook.MethodHookParam) {
+      launcherAct = param.thisObject as Activity
+      app = launcherAct.application
+      app.registerReceiver(configUpdateReceiver, IntentFilter(Const.configUpdateAction))
+      app.registerReceiver(wallpaperUpdateReceiver, IntentFilter(Intent.ACTION_WALLPAPER_CHANGED)) // well at least it still exist
+
+      bindConfigUpdateListener()
+      loadConfig(app)
+
+      IconProvider.update(app)
+      DrawerBackground.update(app)
+
+      val mAddViewVILp = root.findMethod("addView", View::class.java, Integer.TYPE, ViewGroup.LayoutParams::class.java)
+      mAddViewVILp.hook(after = {
+         if ((param.thisObject as View).id != root.id) return@hook
+         rootHook(launcherAct, root, it)
+      })
+   }
    private fun realAppHook(app: Application) {
       // com.mimikko.mimikkoui.launcher.components.cell.CellView
-      val launcherClass = findClass("com.mimikko.mimikkoui.launcher.activity.Launcher", app.classLoader)
-      launcherClass.findMethod("onCreate", Bundle::class.java).hook(after = { param ->
-         launcherAct = param.thisObject as Activity
-         this.app = app
-         app.registerReceiver(configUpdateReceiver, IntentFilter(Const.configUpdateAction))
-         app.registerReceiver(wallpaperUpdateReceiver, IntentFilter(Intent.ACTION_WALLPAPER_CHANGED)) // well at least it still exist
+      val launcherClass = findClass(mimikkouiLauncherActName, app.classLoader)
+//      launcherClass.findMethod("onCreate", Bundle::class.java).hook(after = ::onCreateHook)
 
-         bindConfigUpdateListener()
-         loadConfig(app)
-
-         IconProvider.update(app)
-         DrawerBackground.update(app)
-
-         val mAddViewVILp = root.findMethod("addView", View::class.java, Integer.TYPE, ViewGroup.LayoutParams::class.java)
-         mAddViewVILp.hook(after = {
-            rootHook(launcherAct, root, it)
-         })
-      })
-
-      launcherClass.hookAllMethod("load") {
+      launcherClass.findMethod("load", Integer.TYPE).hook {
          // com.mimikko.mimikkoui.launcher.activity.Launcher -> load
-         m, p ->
+         p ->
          // 鬼知道這數字甚麼意思, 我討厭殼 (好吧我承認是我渣
          if (p.args[0] as Int == 10) {
             dock
@@ -138,17 +173,25 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
       injectSetting(app)
 
       findClass("com.mimikko.mimikkoui.launcher.components.shortcut.Shortcut", app.classLoader)
-            .getDeclaredConstructor(Context::class.java, AttributeSet::class.java)
+            .findMethod("onDraw", Canvas::class.java)
             .hook { p ->
                log("Shortcut Constructor")
-               val shortCut = p.thisObject as TextView
-               shortCut.setShadowLayer(
+               val shortcut = p.thisObject as TextView
+               shortcut.setShadowLayer(
                      Config[Config.Key.GeneralShortcutTextShadowRadius],
                      Config[Config.Key.GeneralShortcutTextShadowDx],
                      Config[Config.Key.GeneralShortcutTextShadowDy],
                      Config[Config.Key.GeneralShortcutTextShadowColor])
-               shortCut.setTextColor(Config.get<Int>(Config.Key.GeneralShortcutTextColor))
-               shortCut.setTextSize(TypedValue.COMPLEX_UNIT_SP, Config[Config.Key.GeneralShortcutTextSize])
+               shortcut.maxLines = Config[Config.Key.GeneralShortcutTextMaxLine]
+               shortcut.setTextColor(Config.get<Int>(Config.Key.GeneralShortcutTextColor))
+               shortcut.setTextSize(TypedValue.COMPLEX_UNIT_SP, Config.get<Float>(Config.Key.GeneralShortcutTextSize))
+//               val bubbleItem = shortcut.invokeMethod("getBubbleItem") as Any
+//               val icon = bubbleItem.invokeMethod("getIcon") as Bitmap
+//
+//               val scale = Config.get<Int>(Config.Key.GeneralIconScale) / 100f
+//               val scaledWidth = (icon.width * scale / 2).roundToInt()
+//               val scaledHeight = (icon.height * scale / 2).roundToInt()
+               // shortcut.invokeMethod("setIconRect", Rect(-scaledWidth, -scaledHeight, scaledWidth, scaledHeight)) as Any
             }
    }
 
@@ -162,7 +205,6 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
       Config.setOnChangeListener(Config.Key.DrawerBlurBackgroundBlurRadius, ::updateDrawerBackground)
       Config.setOnChangeListener(Config.Key.DrawerDarkBackground, ::updateDrawerBackground)
       Config.setOnChangeListener(Config.Key.DrawerColumnSize, { k, v: Int ->
-         // public void GridLayoutManager.fU(int) == public void GridLayoutManager.setSpanCount(int)
          drawer?.let {
             setDrawerColumnSize(it)
          }
@@ -202,12 +244,10 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
 
    private fun iconHook(param: XC_MethodHook.MethodHookParam): Any {
       val name = param.thisObject.invokeMethod<ComponentName>("getId")
-      return IconProvider.getIcon(name)
-            ?: throw Utils.CallOriginalMethod()
+      return IconProvider.getIcon(name) ?: throw Utils.CallOriginalMethod()
    }
 
    private fun rootHook(activity: Activity, root: RelativeLayout, param: XC_MethodHook.MethodHookParam) {
-      if ((param.thisObject as View).id != root.id) return
       val innerLayout = param.args[0] as ViewGroup
       when (innerLayout) {
          is RelativeLayout -> {
@@ -276,13 +316,11 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
    }
 
    private fun initDrawer(activity: Activity, drawer: ViewGroup) {
-
       DrawerBackground.setDrawerBackground(drawer)
       setDrawerColumnSize(drawer)
    }
 
    private fun setDrawerColumnSize(drawer: ViewGroup) {
       drawer.invokeMethod<Any>("getLayoutManager").invokeMethod<Unit>(drawerSetSpanCountMethodName, Config[Config.Key.DrawerColumnSize])
-
    }
 }

@@ -5,6 +5,8 @@ object Const {
    const val loadConfigAction = "me.manhong2112.mmikkouimod.action.loadConfig"
    const val mimikkouiPackageName = "com.mimikko.mimikkoui"
    const val mimikkouiAppName = "com.mimikko.common.App"
+
+   const val mimikkouiLauncherActName = "com.mimikko.common.App"
    const val TAG = "MimikkoUI-Mod"
 
    // in dip

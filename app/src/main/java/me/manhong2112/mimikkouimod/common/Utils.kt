@@ -174,11 +174,11 @@ object Utils {
    fun Class<*>.findMethod(methodName: String, vararg typeList: Class<*>): Method {
       val cls = this
       return try {
-         cls.getMethod(methodName, *typeList)
+         cls.getDeclaredMethod(methodName, *typeList).also {
+            it.isAccessible = true
+         }
       } catch (e: NoSuchMethodException) {
-         val m = cls.getDeclaredMethod(methodName, *typeList)
-         m.isAccessible = true
-         m
+         this.superclass?.findMethod(methodName, *typeList) ?: throw e
       }
    }
 
