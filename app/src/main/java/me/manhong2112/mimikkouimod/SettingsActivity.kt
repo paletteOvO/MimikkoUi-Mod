@@ -121,9 +121,10 @@ class GeneralSettingFragment : SettingFragment() {
          switchPreference(R.string.pref_general_dark_status_bar_icon, key = Config.Key.GeneralDarkStatusBarIcon)
 
          selectorPreference(R.string.pref_general_icon_pack, key = Config.Key.GeneralIconPack, items = IconProvider.getAllIconPack(context))
-         seekBarPreference<Int>("Icon Size", numFormat = "%d%%", key = Config.Key.GeneralIconScale)
+         seekBarPreference<Int>(R.string.pref_general_icon_size, R.string.pref_general_icon_size_num_format, key = Config.Key.GeneralIconScale)
 
-         editTextPreference(name = "Text Color", key = Config.Key.GeneralShortcutTextColor,
+         editTextPreference(R.string.pref_general_icon_text_color,
+               key = Config.Key.GeneralShortcutTextColor,
                displayParser = {
                   "%08X".format(it)
                },
@@ -132,19 +133,22 @@ class GeneralSettingFragment : SettingFragment() {
                })
 
          val max = 32 * prefFloatPrecise.toInt()
-         seekBarPreference("Text Size", numFormat = "%.2f", key = Config.Key.GeneralShortcutTextSize,
+         seekBarPreference(R.string.pref_general_icon_text_size, R.string.pref_general_icon_text_num_format, key = Config.Key.GeneralShortcutTextSize,
                max = max,
                displayParse = displayParse,
                valueParse = valueParse)
-         seekBarPreference("Text Shadow Radius", numFormat = "%.2f", key = Config.Key.GeneralShortcutTextShadowRadius,
+         seekBarPreference(R.string.pref_general_icon_text_shadow_radius, R.string.pref_general_icon_text_num_format,
+               key = Config.Key.GeneralShortcutTextShadowRadius,
                max = max,
                displayParse = displayParse,
                valueParse = valueParse)
-         seekBarPreference("Text Shadow dx", numFormat = "%.2f", key = Config.Key.GeneralShortcutTextShadowDx,
+         seekBarPreference(R.string.pref_general_icon_text_shadow_dx, R.string.pref_general_icon_text_num_format,
+               key = Config.Key.GeneralShortcutTextShadowDx,
                max = max,
                displayParse = displayParse,
                valueParse = valueParse)
-         seekBarPreference("Text Shadow dy", numFormat = "%.2f", key = Config.Key.GeneralShortcutTextShadowDy,
+         seekBarPreference(R.string.pref_general_icon_text_shadow_dy, R.string.pref_general_icon_text_num_format,
+               key = Config.Key.GeneralShortcutTextShadowDy,
                max = max,
                displayParse = displayParse,
                valueParse = valueParse)

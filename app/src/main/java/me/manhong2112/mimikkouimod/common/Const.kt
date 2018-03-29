@@ -6,7 +6,7 @@ object Const {
    const val mimikkouiPackageName = "com.mimikko.mimikkoui"
    const val mimikkouiAppName = "com.mimikko.common.App"
 
-   const val mimikkouiLauncherActName = "com.mimikko.common.App"
+   const val mimikkouiLauncherActName = "com.mimikko.mimikkoui.launcher.activity.Launcher"
    const val TAG = "MimikkoUI-Mod"
 
    // in dip

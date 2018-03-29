@@ -5,18 +5,30 @@
     <string name="pref_page_drawer">Drawer</string>
     <string name="pref_page_dock">Dock</string>
 
-    <string name="pref_drawer_blur_background">Blur Background</string>
-    <string name="pref_drawer_blur_background_radius">Blur Radius</string>
+    <string name="pref_drawer_blur_background">Blur background</string>
+    <string name="pref_drawer_blur_background_radius">Blur radius</string>
     <string name="pref_drawer_blur_background_radius_num_format">%d</string>
-    <string name="pref_drawer_darken_background">Darken Background</string>
-    <string name="pref_drawer_column_size">Column Size</string>
+    <string name="pref_drawer_darken_background">Darken background</string>
+    <string name="pref_drawer_column_size">Column size</string>
     <string name="pref_drawer_column_size_num_format">%d</string>
 
+    <string name="pref_general_transparent_status_bar">Transparent status bar</string>
+    <string name="pref_general_dark_status_bar_icon">Dark status bar icon</string>
 
-    <string name="pref_general_transparent_status_bar">Transparent Status Bar</string>
-    <string name="pref_general_dark_status_bar_icon">Dark Status Bar icon</string>
-    <string name="pref_general_icon_pack">Icon Pack</string>
+    <string name="pref_general_icon_size">Icon size</string>
+    <string name="pref_general_icon_size_num_format">%d%%</string>
+    <string name="pref_general_icon_pack">Icon pack</string>
     <string name="pref_general_none_icon_pack">None</string>
 
+    <string name="pref_general_icon_text_size">Text size</string>
+    <string name="pref_general_icon_text_color">Text color</string>
+    <string name="pref_general_icon_text_shadow_radius">Text shadow radius</string>
+    <string name="pref_general_icon_text_shadow_dy">Text shadow dy</string>
+    <string name="pref_general_icon_text_shadow_dx">Text shadow dx</string>
+    <string name="pref_general_icon_text_shadow_color">Text shadow color</string>
+
+    <string name="pref_general_icon_text_num_format">%.2f</string>
+
     <string name="pref_dock_swipe_up_gesture">Swipe up to open drawer</string>
+
 </resources>
