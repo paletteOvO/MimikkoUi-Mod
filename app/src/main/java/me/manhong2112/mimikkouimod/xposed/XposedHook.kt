@@ -149,7 +149,7 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
 
       val mAddViewVILp = root.findMethod("addView", View::class.java, Integer.TYPE, ViewGroup.LayoutParams::class.java)
       mAddViewVILp.hook(after = {
-         if ((param.thisObject as View).id != root.id) return@hook
+         if ((it.thisObject as View).id != root.id) return@hook
          rootHook(launcherAct, root, it)
       })
    }
