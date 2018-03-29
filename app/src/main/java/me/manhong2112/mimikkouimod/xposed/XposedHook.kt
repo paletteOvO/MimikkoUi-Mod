@@ -196,8 +196,7 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
    }
 
    private fun updateDrawerBackground(k: Config.Key?, v: Any?) {
-      DrawerBackground.update(app)
-      if (drawer !== null) DrawerBackground.setDrawerBackground(drawer!!)
+      DrawerBackground.update(app, drawer)
    }
 
    private fun bindConfigUpdateListener() {
@@ -256,9 +255,6 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
             if (workspace === null && innerLayout.findViewById<ViewGroup?>(MimikkoID.workspace) !== null) {
                workspace = innerLayout.findViewById(MimikkoID.workspace) as ViewGroup
             }
-            if (drawer === null && launcherAct.findViewById<ViewGroup?>(MimikkoID.drawer_layout) !== null) {
-               drawer = launcherAct.findViewById(MimikkoID.drawer_layout) as ViewGroup
-            }
          }
          else -> {
             log("rootAddView ${innerLayout::class.java.canonicalName}")
@@ -296,11 +292,20 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
          setOnTouchListener(
                object : OnSwipeTouchListener(act) {
                   override fun onSwipeTop() {
-                     if (Config[Config.Key.DockSwipeToDrawer]) callOnClick()
+                     if (Config[Config.Key.DockSwipeToDrawer]) {
+                        callOnClick()
+                        drawer ?: run {
+                           drawer = launcherAct.findViewById(MimikkoID.drawer_layout) as ViewGroup
+                        }
+                     }
+
                   }
 
                   override fun onClick() {
                      callOnClick()
+                     drawer ?: run {
+                        drawer = launcherAct.findViewById(MimikkoID.drawer_layout) as ViewGroup
+                     }
                   }
                }
          )

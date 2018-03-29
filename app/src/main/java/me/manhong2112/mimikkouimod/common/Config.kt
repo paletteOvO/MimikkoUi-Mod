@@ -12,7 +12,7 @@ object Config {
 
       DrawerBlurBackground(false),
       DrawerDarkBackground(false),
-      DrawerBlurBackgroundBlurRadius(25),
+      DrawerBlurBackgroundBlurRadius(100),
       DrawerColumnSize(4),
 
       GeneralIconPack("default"),
