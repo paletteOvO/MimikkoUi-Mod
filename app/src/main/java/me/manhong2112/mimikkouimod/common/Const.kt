@@ -16,4 +16,7 @@ object Const {
 
    const val prefFloatPrecise = 10e2f
 
+   const val supportedVersionName = "1.8.7"
+   const val supportedVersionCode = 30
+
 }

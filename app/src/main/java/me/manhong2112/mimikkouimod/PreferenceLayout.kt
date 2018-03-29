@@ -125,7 +125,7 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
                                                           displayParse: (T) -> Int = { it.toInt() },
                                                           valueParse: (Int) -> T = { it as T },
                                                           init: SeekBar.() -> Unit = {}) {
-         return seekBarPreference<T>(ctx.getString(nameRes), if (numFormatRes == 0) null else ctx.getString(numFormatRes), key, min, max, step, displayParse, valueParse, init)
+         return seekBarPreference(ctx.getString(nameRes), if (numFormatRes == 0) null else ctx.getString(numFormatRes), key, min, max, step, displayParse, valueParse, init)
       }
 
       fun <T : Number> PreferenceLayout.seekBarPreference(name: String, numFormat: String? = null,
@@ -230,7 +230,7 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
       }
 
       fun <T> PreferenceLayout.editTextPreference(nameRes: Int, summaryRes: Int = 0, hintRes: Int = 0, key: Config.Key, displayParser: (T) -> String = { it.toString() }, valueParser: (String) -> T = { it as T }) {
-         editTextPreference<T>(ctx.getString(nameRes),
+         editTextPreference(ctx.getString(nameRes),
                if (summaryRes == 0) null else ctx.getString(summaryRes),
                if (hintRes == 0) null else ctx.getString(hintRes),
                key,

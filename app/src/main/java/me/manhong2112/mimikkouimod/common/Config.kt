@@ -6,7 +6,6 @@ import android.graphics.Color
 @Suppress("UNCHECKED_CAST")
 object Config {
    enum class Key(private val mDefaultValue: Any) {
-      SupportedVersion("1.8.7"),
 
       DockSwipeToDrawer(false),
 

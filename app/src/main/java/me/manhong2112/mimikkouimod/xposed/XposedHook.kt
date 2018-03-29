@@ -28,6 +28,8 @@ import me.manhong2112.mimikkouimod.common.Config
 import me.manhong2112.mimikkouimod.common.Const
 import me.manhong2112.mimikkouimod.common.Const.mimikkouiLauncherActName
 import me.manhong2112.mimikkouimod.common.Const.mimikkouiPackageName
+import me.manhong2112.mimikkouimod.common.Const.supportedVersionCode
+import me.manhong2112.mimikkouimod.common.Const.supportedVersionName
 import me.manhong2112.mimikkouimod.common.OnSwipeTouchListener
 import me.manhong2112.mimikkouimod.common.Utils
 import me.manhong2112.mimikkouimod.common.Utils.findMethod
@@ -92,7 +94,8 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
       getPackageVersion(lpparam)?.run {
          val versionName = first
          val versionCode = second
-         if (versionName != Config[Config.Key.SupportedVersion]) {
+         if (versionCode != supportedVersionCode ||
+               versionName != supportedVersionName) {
             return
          }
       } ?: run {
@@ -184,7 +187,7 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
                      Config[Config.Key.GeneralShortcutTextShadowColor])
                shortcut.maxLines = Config[Config.Key.GeneralShortcutTextMaxLine]
                shortcut.setTextColor(Config.get<Int>(Config.Key.GeneralShortcutTextColor))
-               shortcut.setTextSize(TypedValue.COMPLEX_UNIT_SP, Config.get<Float>(Config.Key.GeneralShortcutTextSize))
+               shortcut.setTextSize(TypedValue.COMPLEX_UNIT_SP, Config.get(Config.Key.GeneralShortcutTextSize))
 //               val bubbleItem = shortcut.invokeMethod("getBubbleItem") as Any
 //               val icon = bubbleItem.invokeMethod("getIcon") as Bitmap
 //
@@ -203,7 +206,7 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
       Config.setOnChangeListener(Config.Key.DrawerBlurBackground, ::updateDrawerBackground)
       Config.setOnChangeListener(Config.Key.DrawerBlurBackgroundBlurRadius, ::updateDrawerBackground)
       Config.setOnChangeListener(Config.Key.DrawerDarkBackground, ::updateDrawerBackground)
-      Config.setOnChangeListener(Config.Key.DrawerColumnSize, { k, v: Int ->
+      Config.setOnChangeListener(Config.Key.DrawerColumnSize, { _, _: Int ->
          drawer?.let {
             setDrawerColumnSize(it)
          }
@@ -217,7 +220,7 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
          }
       })
 
-      Config.setOnChangeListener(Config.Key.GeneralTransparentStatusBar, { k, v: Boolean ->
+      Config.setOnChangeListener(Config.Key.GeneralTransparentStatusBar, { _, v: Boolean ->
          if (v) {
             with(launcherAct.window) {
                setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS, WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
@@ -227,7 +230,7 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
          }
       })
 
-      Config.setOnChangeListener(Config.Key.GeneralIconPack, { key, value: String ->
+      Config.setOnChangeListener(Config.Key.GeneralIconPack, { _, _: String ->
          log("setOnChangeListener GeneralIconPack")
          IconProvider.update(app)
       })

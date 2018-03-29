@@ -24,7 +24,7 @@ object DrawerBackground {
       log("drawerBackground end")
    }
 
-   val lock: Any = Any()
+   private val lock: Any = Any()
    fun update(ctx: Context, drawer: View? = null) {
       log("update start")
       val x = Config.get<Int>(Config.Key.DrawerBlurBackgroundBlurRadius)
