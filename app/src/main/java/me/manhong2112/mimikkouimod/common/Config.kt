@@ -2,6 +2,8 @@ package me.manhong2112.mimikkouimod.common
 
 import android.content.SharedPreferences
 import android.graphics.Color
+import me.manhong2112.mimikkouimod.common.Utils.log
+import org.jetbrains.anko.doAsync
 
 @Suppress("UNCHECKED_CAST")
 object Config {
@@ -62,12 +64,16 @@ object Config {
 
    fun callCallback(key: Key, value: Any) {
       if (callbacks[key.ordinal] !== null) {
-         callbacks[key.ordinal]!!(key, value)
+         doAsync {
+            log("call $key callback")
+            callbacks[key.ordinal]!!(key, value)
+         }
       }
    }
 
    fun loadSharedPref(pref: SharedPreferences, callCallback: Boolean = false) {
       Key.values().forEach { key ->
+         log("loading ${key}")
          loadSharedPref(key, pref, callCallback)
       }
    }

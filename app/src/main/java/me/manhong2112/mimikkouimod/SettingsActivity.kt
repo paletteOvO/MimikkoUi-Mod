@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.preference.Preference
-import android.support.v7.preference.PreferenceManager
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
@@ -19,7 +18,6 @@ import me.manhong2112.mimikkouimod.PreferenceLayout.Companion.switchPreference
 import me.manhong2112.mimikkouimod.common.Config
 import me.manhong2112.mimikkouimod.common.Const
 import me.manhong2112.mimikkouimod.common.Const.prefFloatPrecise
-import me.manhong2112.mimikkouimod.common.Utils.log
 import me.manhong2112.mimikkouimod.xposed.IconProvider
 import org.jetbrains.anko.UI
 import org.jetbrains.anko.defaultSharedPreferences
@@ -39,15 +37,7 @@ class SettingsActivity : AppCompatActivity() {
          }
       }
       val intent = intent
-      when (intent.action) {
-         Const.loadConfigAction -> {
-            log("received loadConfigAction")
-            val pref = PreferenceManager.getDefaultSharedPreferences(this)
-            Config.loadSharedPref(pref, true)
-            finish()
-            return
-         }
-      }
+
       Config.loadSharedPref(defaultSharedPreferences)
       Config.bindSharedPref(defaultSharedPreferences)
       supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -62,7 +52,6 @@ class SettingsActivity : AppCompatActivity() {
       val fm = supportFragmentManager
       when (item.itemId) {
          android.R.id.home -> {
-            log(fm.backStackEntryCount.toString())
             if (fm.backStackEntryCount > 0) {
                fm.popBackStackImmediate()
             } else {
@@ -73,7 +62,6 @@ class SettingsActivity : AppCompatActivity() {
       }
       return super.onOptionsItemSelected(item)
    }
-
 
    companion object {
       private fun <T> Preference.bind(callback: (Preference, T) -> Boolean) {

@@ -9,6 +9,7 @@ import me.manhong2112.mimikkouimod.R
 import me.manhong2112.mimikkouimod.common.Config
 import me.manhong2112.mimikkouimod.common.Utils
 import me.manhong2112.mimikkouimod.common.Utils.drawableToBitmap
+import me.manhong2112.mimikkouimod.common.Utils.log
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
 import java.lang.ref.WeakReference
@@ -73,23 +74,28 @@ object IconProvider {
          loadAppFilter()
       }
       private val res by lazy {
-         ctx.get()?.run {
-            packageManager.getResourcesForApplication(packageName)
-         }
+         ctx.get()?.packageManager?.getResourcesForApplication(packageName)
       }
 
       open fun getIcon(componentName: ComponentName): Bitmap? {
-         res ?: return null
+         res ?: run {
+            log("res is null")
+            return null
+         }
+         res!!
          val componentInfo = componentName.toString()
          if (componentInfo !in appFilter) {
             return null
          }
          val drawableName = appFilter[componentInfo]!!
          if (drawableName !in icons) {
+            log("load drawable $drawableName")
             val id = res!!.getIdentifier(drawableName, "drawable", packageName)
             if (id == 0) {
+               log("failed to get drawable")
                return null
             }
+            log("cache drawable")
             icons[drawableName] = drawableToBitmap(res!!.getDrawable(id))
          }
          return icons[drawableName]!!
@@ -103,9 +109,14 @@ object IconProvider {
 
       private fun loadAppFilter(): HashMap<String, String> {
          val hashMap = hashMapOf<String, String>()
-         res ?: return hashMap
+         res ?: run {
+            log("res is null")
+            return hashMap
+         }
          val id = res!!.getIdentifier("appfilter", "xml", packageName)
-         val parser = if (id == 0) {
+         val parser = if (id != 0) {
+            res!!.getXml(id)
+         } else {
             ctx.get() ?: return hashMap
             val otherContext = ctx.get()!!.createPackageContext(packageName, 0)
             val am = otherContext.assets
@@ -114,8 +125,6 @@ object IconProvider {
             f.newPullParser().also {
                it.setInput(am.open("appfilter.xml"), "utf-8")
             }
-         } else {
-            res!!.getXml(id)
          }
 
          loop@ while (true) {
@@ -125,6 +134,7 @@ object IconProvider {
                   if (parser.name == "item") {
                      val key = parser.getAttributeValue(null, "component") ?: continue@loop
                      val value: String = parser.getAttributeValue(null, "drawable") ?: continue@loop
+                     log("$key -> $value")
                      hashMap[key] = value
                   }
                }

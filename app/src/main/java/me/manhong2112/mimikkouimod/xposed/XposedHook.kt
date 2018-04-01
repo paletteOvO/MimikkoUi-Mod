@@ -23,6 +23,7 @@ import de.robv.android.xposed.XposedHelpers.findClass
 import de.robv.android.xposed.callbacks.XC_InitPackageResources.InitPackageResourcesParam
 import de.robv.android.xposed.callbacks.XC_LoadPackage
 import me.manhong2112.mimikkouimod.BuildConfig
+import me.manhong2112.mimikkouimod.ConfigReceiver
 import me.manhong2112.mimikkouimod.SettingsActivity
 import me.manhong2112.mimikkouimod.common.Config
 import me.manhong2112.mimikkouimod.common.Const
@@ -238,10 +239,12 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
    }
 
    private fun loadConfig(ctx: Context) {
-      log("loadConfig")
+      log("send loadConfig")
       val intent = Intent(Const.loadConfigAction)
-      intent.setClassName(BuildConfig.APPLICATION_ID, SettingsActivity::class.java.name)
-      ctx.startActivity(intent)
+      intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES)
+      intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
+      intent.setClassName(BuildConfig.APPLICATION_ID, ConfigReceiver::class.java.name)
+      ctx.sendBroadcast(intent)
    }
 
    private fun iconHook(param: XC_MethodHook.MethodHookParam): Any {
