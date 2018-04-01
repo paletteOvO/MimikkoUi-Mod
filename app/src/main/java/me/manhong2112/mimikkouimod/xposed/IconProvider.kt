@@ -10,6 +10,7 @@ import me.manhong2112.mimikkouimod.common.Config
 import me.manhong2112.mimikkouimod.common.Utils
 import me.manhong2112.mimikkouimod.common.Utils.drawableToBitmap
 import org.xmlpull.v1.XmlPullParser
+import org.xmlpull.v1.XmlPullParserFactory
 import java.lang.ref.WeakReference
 
 
@@ -48,10 +49,12 @@ object IconProvider {
 
    fun getAllIconPack(ctx: Context): List<Pair<String, String>> {
       val pm = ctx.packageManager
-      val list: MutableList<ResolveInfo> = pm.queryIntentActivities(Intent("com.novalauncher.THEME"), 0)
-      list.addAll(pm.queryIntentActivities(Intent("org.adw.launcher.icons.ACTION_PICK_ICON"), 0))
-      list.addAll(pm.queryIntentActivities(Intent("com.dlto.atom.launcher.THEME"), 0))
-      list.addAll(pm.queryIntentActivities(Intent("android.intent.action.MAIN").addCategory("com.anddoes.launcher.THEME"), 0))
+
+      val list: MutableList<ResolveInfo> = pm.queryIntentActivities(Intent("com.novalauncher.THEME"), 0) // nova
+      list.addAll(pm.queryIntentActivities(Intent("android.intent.action.MAIN").addCategory("com.teslacoilsw.launcher.THEME"), 0)) // nova
+      list.addAll(pm.queryIntentActivities(Intent("org.adw.launcher.icons.ACTION_PICK_ICON"), 0)) // adw
+      list.addAll(pm.queryIntentActivities(Intent("com.dlto.atom.launcher.THEME"), 0)) // atom
+      list.addAll(pm.queryIntentActivities(Intent("android.intent.action.MAIN").addCategory("com.anddoes.launcher.THEME"), 0)) // Apex
       return (list.map {
          val stringId = it.activityInfo.applicationInfo.labelRes
          if (stringId == 0) {
@@ -63,7 +66,7 @@ object IconProvider {
    }
 
 
-   open class IconPack(private val ctx: WeakReference<Context>, val name: String) {
+   open class IconPack(private val ctx: WeakReference<Context>, private val packageName: String) {
 
       private val icons = HashMap<String, Bitmap>()
       private val appFilter by lazy {
@@ -71,7 +74,7 @@ object IconProvider {
       }
       private val res by lazy {
          ctx.get()?.run {
-            packageManager.getResourcesForApplication(name)
+            packageManager.getResourcesForApplication(packageName)
          }
       }
 
@@ -83,7 +86,7 @@ object IconProvider {
          }
          val drawableName = appFilter[componentInfo]!!
          if (drawableName !in icons) {
-            val id = res!!.getIdentifier(drawableName, "drawable", name)
+            val id = res!!.getIdentifier(drawableName, "drawable", packageName)
             if (id == 0) {
                return null
             }
@@ -94,22 +97,35 @@ object IconProvider {
 
       open fun hasIcon(componentName: ComponentName): Boolean {
          return res?.run {
-            getIdentifier(componentName.toString(), "drawable", name) != 0
+            getIdentifier(componentName.toString(), "packageName", packageName) != 0
          } ?: false
       }
 
       private fun loadAppFilter(): HashMap<String, String> {
          val hashMap = hashMapOf<String, String>()
          res ?: return hashMap
-         val id = res!!.getIdentifier("appfilter", "xml", name)
-         val xpp = res!!.getXml(id)
+         val id = res!!.getIdentifier("appfilter", "xml", packageName)
+         val parser = if (id == 0) {
+            ctx.get() ?: return hashMap
+            val otherContext = ctx.get()!!.createPackageContext(packageName, 0)
+            val am = otherContext.assets
+            val f = XmlPullParserFactory.newInstance()
+            f.isNamespaceAware = true
+            f.newPullParser().also {
+               it.setInput(am.open("appfilter.xml"), "utf-8")
+            }
+         } else {
+            res!!.getXml(id)
+         }
 
          loop@ while (true) {
-            val eventType = xpp.next()
+            val eventType = parser.next()
             when (eventType) {
                XmlPullParser.START_TAG -> {
-                  if (xpp.name == "item") {
-                     hashMap[xpp.getAttributeValue(null, "component")] = xpp.getAttributeValue(null, "drawable")
+                  if (parser.name == "item") {
+                     val key = parser.getAttributeValue(null, "component") ?: continue@loop
+                     val value: String = parser.getAttributeValue(null, "drawable") ?: continue@loop
+                     hashMap[key] = value
                   }
                }
                XmlPullParser.END_DOCUMENT -> break@loop

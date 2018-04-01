@@ -178,7 +178,7 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
       findClass("com.mimikko.mimikkoui.launcher.components.shortcut.Shortcut", app.classLoader)
             .findMethod("onDraw", Canvas::class.java)
             .hook { p ->
-               log("Shortcut Constructor")
+               // log("Shortcut Constructor")
                val shortcut = p.thisObject as TextView
                shortcut.setShadowLayer(
                      Config[Config.Key.GeneralShortcutTextShadowRadius],
@@ -296,16 +296,15 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
                object : OnSwipeTouchListener(act) {
                   override fun onSwipeTop() {
                      if (Config[Config.Key.DockSwipeToDrawer]) {
-                        callOnClick()
+                        performClick()
                         drawer ?: run {
                            drawer = launcherAct.findViewById(MimikkoID.drawer_layout) as ViewGroup
                         }
                      }
-
                   }
 
                   override fun onClick() {
-                     callOnClick()
+                     performClick()
                      drawer ?: run {
                         drawer = launcherAct.findViewById(MimikkoID.drawer_layout) as ViewGroup
                      }
