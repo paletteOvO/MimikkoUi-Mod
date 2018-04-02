@@ -4,7 +4,6 @@ package me.manhong2112.mimikkouimod.xposed
 import android.app.Activity
 import android.app.Application
 import android.content.*
-import android.graphics.Canvas
 import android.graphics.Rect
 import android.os.Bundle
 import android.util.TypedValue
@@ -13,10 +12,14 @@ import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.view.WindowManager
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import android.widget.TextView
-import de.robv.android.xposed.*
+import de.robv.android.xposed.IXposedHookInitPackageResources
+import de.robv.android.xposed.IXposedHookLoadPackage
+import de.robv.android.xposed.XC_MethodHook
+import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.XposedHelpers.findClass
 import de.robv.android.xposed.callbacks.XC_InitPackageResources.InitPackageResourcesParam
 import de.robv.android.xposed.callbacks.XC_LoadPackage
@@ -48,6 +51,8 @@ import me.manhong2112.mimikkouimod.common.Config.Key as Cfg
 open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
    lateinit var app: Application
    lateinit var launcherAct: Activity
+
+   lateinit var drawerButton: ImageView
 
    private var drawer: ViewGroup? = null
       set(value) {
@@ -156,7 +161,7 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
       loadConfig(app)
 
       IconProvider.update(app)
-      DrawerBackground.update(app)
+      DrawerBackground.update(launcherAct)
 
       val mAddViewVILp = root.findMethod("addView", View::class.java, Integer.TYPE, ViewGroup.LayoutParams::class.java)
       mAddViewVILp.hook(after = {
@@ -184,68 +189,32 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
 
       injectSetting(app)
 
-//      findClass("com.mimikko.mimikkoui.launcher.components.shortcut.Shortcut", app.classLoader)
-//            .findMethod("onDraw", Canvas::class.java)
-//            .hook { p ->
-//               // log("Shortcut Constructor")
-//
-////               val bubbleItem = shortcut.invokeMethod("getBubbleItem") as Any
-////               val icon = bubbleItem.invokeMethod("getIcon") as Bitmap
-////
-////               val scale = Config.get<Int>(Config.Key.GeneralIconScale) / 100f
-////               val scaledWidth = (icon.width * scale / 2).roundToInt()
-////               val scaledHeight = (icon.height * scale / 2).roundToInt()
-//               // shortcut.invokeMethod("setIconRect", Rect(-scaledWidth, -scaledHeight, scaledWidth, scaledHeight)) as Any
-//            }
-      XposedBridge.hookMethod(findClass("com.mimikko.mimikkoui.launcher.components.shortcut.Shortcut", app.classLoader)
-            .findMethod("onDraw", Canvas::class.java), object : XC_MethodHook() {
-         // 我內心是拒絕寫成這樣的, 我相信有更好的辦法的, 但...再說吧...等我啥時侯有想法了...反正能解決問題, 而且一次解決兩個...
-         val fuck = hashMapOf<Any, Rect>()
+      findClass("com.mimikko.mimikkoui.launcher.components.shortcut.Shortcut", app.classLoader)
+            .declaredConstructors
+            .forEach {
+               it.hook { p ->
+                  val shortcut = p.thisObject as TextView
+                  shortcut.setShadowLayer(
+                        Config[Config.Key.GeneralShortcutTextShadowRadius],
+                        Config[Config.Key.GeneralShortcutTextShadowDx],
+                        Config[Config.Key.GeneralShortcutTextShadowDy],
+                        Config[Config.Key.GeneralShortcutTextShadowColor])
+                  shortcut.maxLines = Config[Config.Key.GeneralShortcutTextMaxLine]
+                  shortcut.setTextColor(Config.get<Int>(Config.Key.GeneralShortcutTextColor))
+                  shortcut.setTextSize(TypedValue.COMPLEX_UNIT_SP, Config.get(Config.Key.GeneralShortcutTextSize))
 
-         @Throws(Throwable::class)
-         override fun beforeHookedMethod(p: XC_MethodHook.MethodHookParam) {
-            val shortcut = p.thisObject as TextView
-            shortcut.setShadowLayer(
-                  Config[Config.Key.GeneralShortcutTextShadowRadius],
-                  Config[Config.Key.GeneralShortcutTextShadowDx],
-                  Config[Config.Key.GeneralShortcutTextShadowDy],
-                  Config[Config.Key.GeneralShortcutTextShadowColor])
-            shortcut.maxLines = Config[Config.Key.GeneralShortcutTextMaxLine]
-            shortcut.setTextColor(Config.get<Int>(Config.Key.GeneralShortcutTextColor))
-            shortcut.setTextSize(TypedValue.COMPLEX_UNIT_SP, Config.get(Config.Key.GeneralShortcutTextSize))
-
-            val scale = Config.get<Int>(Config.Key.GeneralIconScale) / 100f
-
-            val rect = Rect(p.thisObject.invokeMethod("getIconRect"))
-            fuck[p.thisObject] = rect
-            p.thisObject.invokeMethod<Unit>("setIconRect",
-                  Rect((rect.left * scale).toInt(),
+                  val scale = Config.get<Int>(Config.Key.GeneralIconScale) / 100f
+                  val rect = p.thisObject.invokeMethod("getIconRect") as Rect
+                  rect.set((rect.left * scale).toInt(),
                         (rect.top * scale).toInt(),
                         (rect.right * scale).toInt(),
-                        (rect.bottom * scale).toInt()))
-         }
-
-         @Throws(Throwable::class)
-         override fun afterHookedMethod(p: XC_MethodHook.MethodHookParam) {
-            p.thisObject.invokeMethod<Unit>("setIconRect", fuck[p.thisObject]!!)
-            fuck.remove(p.thisObject)
-         }
-      })
-//            .declaredConstructors
-//            .forEach {
-//               lateinit var originalRect: Rect
-//               it.hook(before = { p ->
-//                  originalRect = Rect(p.thisObject.invokeMethod("getIconRect"))
-//                  val scale = Config.get<Int>(Config.Key.GeneralIconScale) / 100f
-//                  log("setRect $originalRect")
-//                  p.thisObject.invokeMethod("setIconRect", Rect((originalRect.left * scale).toInt(), (originalRect.top * scale).toInt(), (originalRect.right * scale).toInt(), (originalRect.bottom * scale).toInt()))
-//               })
-//            }
-
+                        (rect.bottom * scale).toInt())
+               }
+            }
    }
 
    private fun updateDrawerBackground(k: Config.Key?, v: Any?) {
-      DrawerBackground.update(app, drawer)
+      DrawerBackground.update(launcherAct, drawer)
    }
 
    private fun bindConfigUpdateListener() {
@@ -283,6 +252,12 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
 
       Config.setOnChangeListener(Config.Key.GeneralIconScale, { _, _: Int ->
          log("setOnChangeListener GeneralIconScale")
+         refreshDrawerLayout()
+         dockLayout?.let {
+            log("update dock layout")
+            it.invalidate()
+            it.requestLayout()
+         }
 //         dockLayout?.forEachChildRecursively {
 //            if (it.id == MimikkoID.bubble) {
 //               val scale = Config.get<Int>(Config.Key.GeneralIconScale) / 100f
@@ -357,13 +332,10 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
       val drawerBtn = dock.findViewById(MimikkoID.drawerButton) as View?
       drawerBtn?.run {
          setOnTouchListener(
-               object : OnSwipeTouchListener(act) {
+               object : OnSwipeTouchListener(launcherAct) {
                   override fun onSwipeTop() {
                      if (Config[Config.Key.DockSwipeToDrawer]) {
-                        performClick()
-                        drawer ?: run {
-                           drawer = launcherAct.findViewById(MimikkoID.drawer_layout) as ViewGroup
-                        }
+                        onClick()
                      }
                   }
 
@@ -393,5 +365,16 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
 
    private fun setDrawerColumnSize(drawer: ViewGroup) {
       drawer.invokeMethod<Any>("getLayoutManager").invokeMethod<Unit>(drawerSetSpanCountMethodName, Config[Config.Key.DrawerColumnSize])
+   }
+
+   private fun refreshDrawerLayout() {
+      drawer?.let {
+         // 哇這堆完全不知道原理是啥的玩意居然靠譜, 玄學編程玄學編程
+         it.findMethod("setAdapter", findClass("android.support.v7.widget.RecyclerView\$Adapter", app.classLoader))
+               .invoke(it, it.invokeMethod<Any>("getAdapter"))
+         it.findMethod("setLayoutManager", findClass("android.support.v7.widget.RecyclerView\$LayoutManager", app.classLoader))
+               .invoke(it, it.invokeMethod<Any>("getLayoutManager"))
+      }
+
    }
 }

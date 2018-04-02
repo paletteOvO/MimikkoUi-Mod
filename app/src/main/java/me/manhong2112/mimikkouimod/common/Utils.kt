@@ -128,7 +128,7 @@ object Utils {
       })
    }
 
-   fun replaceMethod(method: Method, replacement: (XC_MethodHook.MethodHookParam) -> Any = {}): XC_MethodHook.Unhook {
+   fun replaceMethod(method: Member, replacement: (XC_MethodHook.MethodHookParam) -> Any = {}): XC_MethodHook.Unhook {
       return XposedBridge.hookMethod(method, object : XC_MethodHook() {
          override fun beforeHookedMethod(param: MethodHookParam) {
             try {
@@ -174,16 +174,30 @@ object Utils {
    fun Class<*>.findMethod(methodName: String, vararg typeList: Class<*>): Method {
       val cls = this
       return try {
-         cls.getDeclaredMethod(methodName, *typeList).also {
+         XposedHelpers.findMethodExact(cls, methodName, *typeList).also {
             it.isAccessible = true
          }
       } catch (e: NoSuchMethodException) {
+         this.superclass?.findMethod(methodName, *typeList) ?: throw e
+      } catch (e: NoSuchMethodError) {
          this.superclass?.findMethod(methodName, *typeList) ?: throw e
       }
    }
 
    fun Any.findMethod(methodName: String, vararg typeList: Class<*>): Method {
       return this.javaClass.findMethod(methodName, *typeList)
+   }
+
+   fun Class<*>.hookAllMethods(methodName: String, before: (XC_MethodHook.MethodHookParam) -> Unit = {}, after: (XC_MethodHook.MethodHookParam) -> Unit = {}) {
+      XposedBridge.hookAllMethods(this, methodName, object : XC_MethodHook() {
+         override fun beforeHookedMethod(param: MethodHookParam) {
+            before(param)
+         }
+
+         override fun afterHookedMethod(param: MethodHookParam) {
+            after(param)
+         }
+      })
    }
 
    fun Method.hook(before: (XC_MethodHook.MethodHookParam) -> Unit = {}, after: (XC_MethodHook.MethodHookParam) -> Unit = {}): XC_MethodHook.Unhook {

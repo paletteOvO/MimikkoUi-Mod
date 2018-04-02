@@ -1,7 +1,7 @@
 package me.manhong2112.mimikkouimod.xposed
 
+import android.app.Activity
 import android.app.WallpaperManager
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
@@ -25,13 +25,13 @@ object DrawerBackground {
    }
 
    private val lock: Any = Any()
-   fun update(ctx: Context, drawer: View? = null) {
+   fun update(act: Activity, drawer: View? = null) {
       log("update start")
       val x = Config.get<Int>(Config.Key.DrawerBlurBackgroundBlurRadius)
       doAsync {
          synchronized(lock) {
             if (Config[Config.Key.DrawerBlurBackground] && x != 0) {
-               val wallpaperManager = WallpaperManager.getInstance(ctx)
+               val wallpaperManager = WallpaperManager.getInstance(act)
 
                val scaleFactor = 1 - x / 1998f
                val wallpaperBitmap = (wallpaperManager.drawable as BitmapDrawable).bitmap.copy(Bitmap.Config.ARGB_8888, true)
@@ -40,18 +40,21 @@ object DrawerBackground {
 
                val wallpaper =
                      if (Config[Config.Key.DrawerDarkBackground])
-                        Utils.darken(Utils.blur(ctx, bitmap, Config.get<Int>(Config.Key.DrawerBlurBackgroundBlurRadius).toFloat() / 40f))
+                        Utils.darken(Utils.blur(act, bitmap, Config.get<Int>(Config.Key.DrawerBlurBackgroundBlurRadius).toFloat() / 40f))
                      else
-                        Utils.blur(ctx, bitmap, Config.get<Int>(Config.Key.DrawerBlurBackgroundBlurRadius).toFloat() / 40f)
+                        Utils.blur(act, bitmap, Config.get<Int>(Config.Key.DrawerBlurBackgroundBlurRadius).toFloat() / 40f)
                log("set drawerBackground br1")
-               drawerBackground = BitmapDrawable(ctx.resources, wallpaper)
+               drawerBackground = BitmapDrawable(act.resources, wallpaper)
             } else {
                log("set drawerBackground br2")
                drawerBackground = drawerBGBackup
             }
-            drawer?.let {
-               setDrawerBackground(it)
+            act.runOnUiThread {
+               drawer?.let {
+                  setDrawerBackground(it)
+               }
             }
+
          }
       }
 

@@ -3,7 +3,6 @@ package me.manhong2112.mimikkouimod.common
 import android.content.SharedPreferences
 import android.graphics.Color
 import me.manhong2112.mimikkouimod.common.Utils.log
-import org.jetbrains.anko.doAsync
 
 @Suppress("UNCHECKED_CAST")
 object Config {
@@ -64,11 +63,8 @@ object Config {
 
    fun callCallback(key: Key, value: Any) {
       if (callbacks[key.ordinal] !== null) {
-         doAsync {
-            log("call $key callback")
-            callbacks[key.ordinal]!!(key, value)
-         }
-
+         log("call $key callback")
+         callbacks[key.ordinal]!!(key, value)
       }
    }
 
