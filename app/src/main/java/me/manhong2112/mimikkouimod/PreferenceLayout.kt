@@ -27,9 +27,20 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
    }
 
    companion object {
-      inline fun ViewManager.preferenceLayout(init: PreferenceLayout.() -> Unit = {}) = ankoView({ PreferenceLayout(it) }, 0, init)
-      inline fun Activity.preferenceLayout(init: PreferenceLayout.() -> Unit = {}) = ankoView({ PreferenceLayout(it) }, 0, init)
-      inline fun Context.preferenceLayout(init: PreferenceLayout.() -> Unit = {}) = ankoView({ PreferenceLayout(it) }, 0, init)
+      inline fun ViewManager.preferenceLayout(init: PreferenceLayout.() -> Unit = {}) = with(scrollView()) {
+         isFillViewport = true
+         ankoView({ PreferenceLayout(it) }, 0, init)
+      }
+
+      inline fun Activity.preferenceLayout(init: PreferenceLayout.() -> Unit = {}) = with(scrollView()) {
+         isFillViewport = true
+         ankoView({ PreferenceLayout(it) }, 0, init)
+      }
+
+      inline fun Context.preferenceLayout(init: PreferenceLayout.() -> Unit = {}) = with(scrollView()) {
+         isFillViewport = true
+         ankoView({ PreferenceLayout(it) }, 0, init)
+      }
 
       fun PreferenceLayout.preferencePage(page: Fragment, nameRes: Int, summaryRes: Int = 0, icon: Drawable? = null) =
             preferencePage(page, ctx.getString(nameRes), if (summaryRes == 0) null else ctx.getString(summaryRes), icon)
