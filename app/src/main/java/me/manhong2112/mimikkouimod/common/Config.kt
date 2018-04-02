@@ -73,7 +73,7 @@ object Config {
 
    fun loadSharedPref(pref: SharedPreferences, callCallback: Boolean = false) {
       Key.values().forEach { key ->
-         log("loading ${key}")
+         log("loading $key")
          loadSharedPref(key, pref, callCallback)
       }
    }

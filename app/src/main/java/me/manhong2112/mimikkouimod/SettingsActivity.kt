@@ -125,6 +125,14 @@ class GeneralSettingFragment : SettingFragment() {
                max = max,
                displayParse = displayParse,
                valueParse = valueParse)
+         editTextPreference(R.string.pref_general_icon_text_shadow_color,
+               key = Config.Key.GeneralShortcutTextShadowColor,
+               displayParser = {
+                  "%08X".format(it)
+               },
+               valueParser = {
+                  BigInteger(it, 16).toInt()
+               })
          seekBarPreference(R.string.pref_general_icon_text_shadow_radius, R.string.pref_general_icon_text_num_format,
                key = Config.Key.GeneralShortcutTextShadowRadius,
                max = max,
