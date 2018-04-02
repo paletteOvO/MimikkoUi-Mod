@@ -5,6 +5,7 @@ import android.app.Activity
 import android.app.Application
 import android.content.*
 import android.graphics.Canvas
+import android.graphics.Rect
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.View
@@ -157,6 +158,7 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
          rootHook(launcherAct, root, it)
       })
    }
+
    private fun realAppHook(app: Application) {
       // com.mimikko.mimikkoui.launcher.components.cell.CellView
       val launcherClass = findClass(mimikkouiLauncherActName, app.classLoader)
@@ -197,6 +199,18 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
 //               val scaledHeight = (icon.height * scale / 2).roundToInt()
                // shortcut.invokeMethod("setIconRect", Rect(-scaledWidth, -scaledHeight, scaledWidth, scaledHeight)) as Any
             }
+      findClass("com.mimikko.mimikkoui.launcher.components.shortcut.Shortcut", app.classLoader)
+            .declaredConstructors
+            .forEach {
+               it.hook { p ->
+                  val rect: Rect = p.thisObject.invokeMethod("getIconRect")
+                  val scale = Config.get<Int>(Config.Key.GeneralIconScale) / 100f
+                  log("setRect $rect")
+                  rect.set((rect.left * scale).toInt(), (rect.top * scale).toInt(), (rect.right * scale).toInt(), (rect.bottom * scale).toInt())
+                  p.thisObject.invokeMethod("setIconRect", rect)
+               }
+            }
+
    }
 
    private fun updateDrawerBackground(k: Config.Key?, v: Any?) {
