@@ -13,11 +13,16 @@ object MimikkoID {
    const val drawer_layout = 0x7f0900b3
    const val workspace = 0x7f090317
    const val drawerButton = 0x7f0900b2
-   const val bubble = 0x7f04004c
+   const val bubble = 0x7f090048
    const val app_settings = 0x7f090026
    const val launcher_settings_main_container = 0x7f090134
 
-   const val appVariableName = "יﾞ"
+   const val appVariableName = ""
+
    const val drawerSetSpanCountMethodName = "setSpanCount"
+
+   const val dockSceneVariableName = "aPH" // in Launcher class
+   const val dockLayoutVariableName = "bag" // in DockScene class
+
 
 }

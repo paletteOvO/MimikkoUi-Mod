@@ -16,10 +16,7 @@ import android.view.WindowManager
 import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import android.widget.TextView
-import de.robv.android.xposed.IXposedHookInitPackageResources
-import de.robv.android.xposed.IXposedHookLoadPackage
-import de.robv.android.xposed.XC_MethodHook
-import de.robv.android.xposed.XposedHelpers
+import de.robv.android.xposed.*
 import de.robv.android.xposed.XposedHelpers.findClass
 import de.robv.android.xposed.callbacks.XC_InitPackageResources.InitPackageResourcesParam
 import de.robv.android.xposed.callbacks.XC_LoadPackage
@@ -40,14 +37,15 @@ import me.manhong2112.mimikkouimod.common.Utils.hook
 import me.manhong2112.mimikkouimod.common.Utils.invokeMethod
 import me.manhong2112.mimikkouimod.common.Utils.log
 import me.manhong2112.mimikkouimod.common.Utils.replace
+import me.manhong2112.mimikkouimod.xposed.MimikkoID.dockLayoutVariableName
+import me.manhong2112.mimikkouimod.xposed.MimikkoID.dockSceneVariableName
 import me.manhong2112.mimikkouimod.xposed.MimikkoID.drawerSetSpanCountMethodName
 import org.jetbrains.anko.contentView
 import org.jetbrains.anko.find
 import java.io.File
 import me.manhong2112.mimikkouimod.common.Config.Key as Cfg
 
-
-class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
+open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
    lateinit var app: Application
    lateinit var launcherAct: Activity
 
@@ -80,15 +78,23 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
       }
    }
    private val dock: RelativeLayout by lazy {
-      val d = launcherAct.getField<RelativeLayout>("dock")
-      initDock(launcherAct, d)
-      d
+      launcherAct.getField<RelativeLayout>("dock").also {
+         initDock(launcherAct, it)
+      }
    }
+   private var dockLayout: ViewGroup? = null
+      get() {
+         field = field ?: launcherAct
+               .getField<Any?>(dockSceneVariableName)
+               ?.getField(dockLayoutVariableName)
+         return field
+      }
+
 
    private val root: RelativeLayout by lazy {
-      val r = launcherAct.getField<RelativeLayout>("root")
-      initRoot(launcherAct, r)
-      r
+      launcherAct.getField<RelativeLayout>("root").also {
+         initRoot(launcherAct, it)
+      }
    }
 
    override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
@@ -178,38 +184,63 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
 
       injectSetting(app)
 
-      findClass("com.mimikko.mimikkoui.launcher.components.shortcut.Shortcut", app.classLoader)
-            .findMethod("onDraw", Canvas::class.java)
-            .hook { p ->
-               // log("Shortcut Constructor")
-               val shortcut = p.thisObject as TextView
-               shortcut.setShadowLayer(
-                     Config[Config.Key.GeneralShortcutTextShadowRadius],
-                     Config[Config.Key.GeneralShortcutTextShadowDx],
-                     Config[Config.Key.GeneralShortcutTextShadowDy],
-                     Config[Config.Key.GeneralShortcutTextShadowColor])
-               shortcut.maxLines = Config[Config.Key.GeneralShortcutTextMaxLine]
-               shortcut.setTextColor(Config.get<Int>(Config.Key.GeneralShortcutTextColor))
-               shortcut.setTextSize(TypedValue.COMPLEX_UNIT_SP, Config.get(Config.Key.GeneralShortcutTextSize))
-//               val bubbleItem = shortcut.invokeMethod("getBubbleItem") as Any
-//               val icon = bubbleItem.invokeMethod("getIcon") as Bitmap
+//      findClass("com.mimikko.mimikkoui.launcher.components.shortcut.Shortcut", app.classLoader)
+//            .findMethod("onDraw", Canvas::class.java)
+//            .hook { p ->
+//               // log("Shortcut Constructor")
 //
-//               val scale = Config.get<Int>(Config.Key.GeneralIconScale) / 100f
-//               val scaledWidth = (icon.width * scale / 2).roundToInt()
-//               val scaledHeight = (icon.height * scale / 2).roundToInt()
-               // shortcut.invokeMethod("setIconRect", Rect(-scaledWidth, -scaledHeight, scaledWidth, scaledHeight)) as Any
-            }
-      findClass("com.mimikko.mimikkoui.launcher.components.shortcut.Shortcut", app.classLoader)
-            .declaredConstructors
-            .forEach {
-               it.hook { p ->
-                  val rect: Rect = p.thisObject.invokeMethod("getIconRect")
-                  val scale = Config.get<Int>(Config.Key.GeneralIconScale) / 100f
-                  log("setRect $rect")
-                  rect.set((rect.left * scale).toInt(), (rect.top * scale).toInt(), (rect.right * scale).toInt(), (rect.bottom * scale).toInt())
-                  p.thisObject.invokeMethod("setIconRect", rect)
-               }
-            }
+////               val bubbleItem = shortcut.invokeMethod("getBubbleItem") as Any
+////               val icon = bubbleItem.invokeMethod("getIcon") as Bitmap
+////
+////               val scale = Config.get<Int>(Config.Key.GeneralIconScale) / 100f
+////               val scaledWidth = (icon.width * scale / 2).roundToInt()
+////               val scaledHeight = (icon.height * scale / 2).roundToInt()
+//               // shortcut.invokeMethod("setIconRect", Rect(-scaledWidth, -scaledHeight, scaledWidth, scaledHeight)) as Any
+//            }
+      XposedBridge.hookMethod(findClass("com.mimikko.mimikkoui.launcher.components.shortcut.Shortcut", app.classLoader)
+            .findMethod("onDraw", Canvas::class.java), object : XC_MethodHook() {
+         // 我內心是拒絕寫成這樣的, 我相信有更好的辦法的, 但...再說吧...等我啥時侯有想法了...反正能解決問題, 而且一次解決兩個...
+         val fuck = hashMapOf<Any, Rect>()
+
+         @Throws(Throwable::class)
+         override fun beforeHookedMethod(p: XC_MethodHook.MethodHookParam) {
+            val shortcut = p.thisObject as TextView
+            shortcut.setShadowLayer(
+                  Config[Config.Key.GeneralShortcutTextShadowRadius],
+                  Config[Config.Key.GeneralShortcutTextShadowDx],
+                  Config[Config.Key.GeneralShortcutTextShadowDy],
+                  Config[Config.Key.GeneralShortcutTextShadowColor])
+            shortcut.maxLines = Config[Config.Key.GeneralShortcutTextMaxLine]
+            shortcut.setTextColor(Config.get<Int>(Config.Key.GeneralShortcutTextColor))
+            shortcut.setTextSize(TypedValue.COMPLEX_UNIT_SP, Config.get(Config.Key.GeneralShortcutTextSize))
+
+            val scale = Config.get<Int>(Config.Key.GeneralIconScale) / 100f
+
+            val rect = Rect(p.thisObject.invokeMethod("getIconRect"))
+            fuck[p.thisObject] = rect
+            p.thisObject.invokeMethod<Unit>("setIconRect",
+                  Rect((rect.left * scale).toInt(),
+                        (rect.top * scale).toInt(),
+                        (rect.right * scale).toInt(),
+                        (rect.bottom * scale).toInt()))
+         }
+
+         @Throws(Throwable::class)
+         override fun afterHookedMethod(p: XC_MethodHook.MethodHookParam) {
+            p.thisObject.invokeMethod<Unit>("setIconRect", fuck[p.thisObject]!!)
+            fuck.remove(p.thisObject)
+         }
+      })
+//            .declaredConstructors
+//            .forEach {
+//               lateinit var originalRect: Rect
+//               it.hook(before = { p ->
+//                  originalRect = Rect(p.thisObject.invokeMethod("getIconRect"))
+//                  val scale = Config.get<Int>(Config.Key.GeneralIconScale) / 100f
+//                  log("setRect $originalRect")
+//                  p.thisObject.invokeMethod("setIconRect", Rect((originalRect.left * scale).toInt(), (originalRect.top * scale).toInt(), (originalRect.right * scale).toInt(), (originalRect.bottom * scale).toInt()))
+//               })
+//            }
 
    }
 
@@ -248,6 +279,22 @@ class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
       Config.setOnChangeListener(Config.Key.GeneralIconPack, { _, _: String ->
          log("setOnChangeListener GeneralIconPack")
          IconProvider.update(app)
+      })
+
+      Config.setOnChangeListener(Config.Key.GeneralIconScale, { _, _: Int ->
+         log("setOnChangeListener GeneralIconScale")
+//         dockLayout?.forEachChildRecursively {
+//            if (it.id == MimikkoID.bubble) {
+//               val scale = Config.get<Int>(Config.Key.GeneralIconScale) / 100f
+//               val rect: Rect = it.invokeMethod("getIconRect")
+//               log("setRect $rect")
+//               rect.set((rect.left * scale).toInt(), (rect.top * scale).toInt(), (rect.right * scale).toInt(), (rect.bottom * scale).toInt())
+//               it.invokeMethod<Unit>("setIconRect", rect)
+//               it.invalidate()
+//            } else {
+//               log(it.id.toString())
+//            }
+//         }
       })
 
    }

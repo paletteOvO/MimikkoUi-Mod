@@ -18,6 +18,7 @@ import me.manhong2112.mimikkouimod.PreferenceLayout.Companion.switchPreference
 import me.manhong2112.mimikkouimod.common.Config
 import me.manhong2112.mimikkouimod.common.Const
 import me.manhong2112.mimikkouimod.common.Const.prefFloatPrecise
+import me.manhong2112.mimikkouimod.common.Utils.log
 import me.manhong2112.mimikkouimod.xposed.IconProvider
 import org.jetbrains.anko.UI
 import org.jetbrains.anko.defaultSharedPreferences
@@ -29,6 +30,7 @@ class SettingsActivity : AppCompatActivity() {
       super.onCreate(savedInstanceState)
       Config.Key.values().forEach { key ->
          Config.setOnChangeListener(key) { key, value: Any ->
+            log("send config $key -> $value")
             val intent = Intent(Const.configUpdateAction)
             intent.putExtra("Key", key.name)
             intent.putExtra("Value", value as Serializable)
@@ -36,8 +38,6 @@ class SettingsActivity : AppCompatActivity() {
             sendBroadcast(intent)
          }
       }
-      val intent = intent
-
       Config.loadSharedPref(defaultSharedPreferences)
       Config.bindSharedPref(defaultSharedPreferences)
       supportActionBar?.setDisplayHomeAsUpEnabled(true)

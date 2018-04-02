@@ -68,6 +68,7 @@ object Config {
             log("call $key callback")
             callbacks[key.ordinal]!!(key, value)
          }
+
       }
    }
 
