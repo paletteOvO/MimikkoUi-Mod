@@ -21,7 +21,8 @@ class GeneralSettingFragment : SettingFragment() {
          switchPreference(R.string.pref_general_transparent_status_bar, key = Config.Key.GeneralTransparentStatusBar)
          switchPreference(R.string.pref_general_dark_status_bar_icon, key = Config.Key.GeneralDarkStatusBarIcon)
 
-         selectorPreference(R.string.pref_general_icon_pack, key = Config.Key.GeneralIconPack, items = IconProvider.getAllIconPack(context))
+         val iconPacks = IconProvider.getAllIconPack(context)
+         selectorPreference(R.string.pref_general_icon_pack, key = Config.Key.GeneralIconPackFallback, displayName = iconPacks.map { it.first }, value = iconPacks.map { listOf(it.second) })
          seekBarPreference<Int>(R.string.pref_general_icon_size, R.string.pref_general_icon_size_num_format, key = Config.Key.GeneralIconScale)
 
          editTextPreference(R.string.pref_general_icon_text_color,

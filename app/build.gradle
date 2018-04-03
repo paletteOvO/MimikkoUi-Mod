@@ -41,6 +41,8 @@ dependencies {
     implementation "com.android.support:preference-v14:$support_version"
     // compile 'com.android.support:support-vector-drawable:27.+'
 
+    // implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.9.0.pr3'
+
     // Color Picker
     // implementation 'com.jaredrummler:colorpicker:1.0.2'
 }

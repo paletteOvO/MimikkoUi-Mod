@@ -200,19 +200,19 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
          }
       }
 
-      fun PreferenceLayout.selectorPreference(nameRes: Int, summaryRes: Int = 0, items: List<Pair<String, String>>, key: Config.Key, init: () -> Unit = {}) {
+      fun PreferenceLayout.selectorPreference(nameRes: Int, summaryRes: Int = 0, items: List<Pair<String, Any>>, key: Config.Key, init: () -> Unit = {}) {
          selectorPreference(nameRes, summaryRes, items.map { it.first }, items.map { it.second }, key, init)
       }
 
-      fun PreferenceLayout.selectorPreference(name: String, summary: String? = null, items: List<Pair<String, String>>, key: Config.Key, init: () -> Unit = {}) {
+      fun PreferenceLayout.selectorPreference(name: String, summary: String? = null, items: List<Pair<String, Any>>, key: Config.Key, init: () -> Unit = {}) {
          selectorPreference(name, summary, items.map { it.first }, items.map { it.second }, key, init)
       }
 
-      fun PreferenceLayout.selectorPreference(nameRes: Int, summaryRes: Int = 0, displayName: List<String>, value: List<String>? = null, key: Config.Key, init: () -> Unit = {}) {
+      fun PreferenceLayout.selectorPreference(nameRes: Int, summaryRes: Int = 0, displayName: List<String>, value: List<Any>? = null, key: Config.Key, init: () -> Unit = {}) {
          selectorPreference(ctx.getString(nameRes), if (summaryRes == 0) null else ctx.getString(summaryRes), displayName, value, key, init)
       }
 
-      fun PreferenceLayout.selectorPreference(name: String, summary: String? = null, displayName: List<String>, value: List<String>? = null, key: Config.Key, init: () -> Unit = {}) {
+      fun PreferenceLayout.selectorPreference(name: String, summary: String? = null, displayName: List<String>, value: List<Any>? = null, key: Config.Key, init: () -> Unit = {}) {
          relativeLayout {
             backgroundDrawable = getSelectedItemDrawable(ctx)
             isClickable = true

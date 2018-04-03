@@ -5,9 +5,11 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ResolveInfo
 import android.graphics.Bitmap
+import android.util.ArrayMap
 import me.manhong2112.mimikkouimod.R
 import me.manhong2112.mimikkouimod.common.Config
 import me.manhong2112.mimikkouimod.common.Utils
+import me.manhong2112.mimikkouimod.common.Utils.arrayMapOf
 import me.manhong2112.mimikkouimod.common.Utils.drawableToBitmap
 import me.manhong2112.mimikkouimod.common.Utils.log
 import org.xmlpull.v1.XmlPullParser
@@ -17,35 +19,63 @@ import java.lang.ref.WeakReference
 
 object IconProvider {
    private lateinit var ctx: WeakReference<Context>
-   private lateinit var iconPack: IconPack
+   private lateinit var iconPacks: List<IconPack>
+   private val iconPacksCache: ArrayMap<String, IconPack> by lazy {
+      arrayMapOf<String, IconPack>(
+            "default" to defaultIconPack
+      )
+   }
+   private val defaultIconPack by lazy {
+      object : IconPack(ctx, "default") {
+         override fun getIcon(componentName: ComponentName): Bitmap? {
+            return null // IconHook will rollback to original method if icon is null
+         }
+
+         override fun hasIcon(componentName: ComponentName): Boolean {
+            return true
+         }
+      }
+   }
+
+   private fun <K, V> Map<K, V>.foreach(callback: (K, V) -> Unit) {
+      this.entries.forEach {
+         callback(it.key, it.value)
+      }
+   }
 
    fun update(ctx: Context) {
       Utils.log("IconProvider update")
       this.ctx = WeakReference(ctx)
-      val value = Config.get<String>(Config.Key.GeneralIconPack)
-      if (value == "default") {
-         Utils.log("IconProvider update default")
-         IconProvider.iconPack = object : IconPack(WeakReference(ctx), "default") {
-            override fun getIcon(componentName: ComponentName): Bitmap? {
-               return null // IconHook will rollback to original method if icon is null
-            }
-
-            override fun hasIcon(componentName: ComponentName): Boolean {
-               return true
-            }
-         }
-      } else {
-         Utils.log("IconProvider update $value")
-         IconProvider.iconPack = IconPack(WeakReference(ctx), value)
+      val value = Config.get<List<String>>(Config.Key.GeneralIconPackFallback) + "default"
+      iconPacks = value.map {
+         log("loading iconpack $it")
+         iconPacksCache[it] = iconPacksCache[it] ?: IconPack(WeakReference(ctx), it)
+         iconPacksCache[it]!!
       }
+      iconPacksCache.foreach { k, v ->
+         if (k !in value) {
+            iconPacksCache.remove(k)
+         }
+      }
+
    }
 
    fun getIcon(componentName: ComponentName): Bitmap? {
-      return iconPack.getIcon(componentName)
+      iconPacks.forEach {
+         if (it.hasIcon(componentName)) {
+            return it.getIcon(componentName)
+         }
+      }
+      return null
    }
 
    fun hasIcon(componentName: ComponentName): Boolean {
-      return iconPack.hasIcon(componentName)
+      iconPacks.forEach {
+         if (it.hasIcon(componentName)) {
+            return true
+         }
+      }
+      return false
    }
 
    fun getAllIconPack(ctx: Context): List<Pair<String, String>> {
@@ -68,7 +98,6 @@ object IconProvider {
 
 
    open class IconPack(private val ctx: WeakReference<Context>, private val packageName: String) {
-
       private val icons = HashMap<String, Bitmap>()
       private val appFilter by lazy {
          loadAppFilter()
@@ -102,9 +131,7 @@ object IconProvider {
       }
 
       open fun hasIcon(componentName: ComponentName): Boolean {
-         return res?.run {
-            getIdentifier(componentName.toString(), "packageName", packageName) != 0
-         } ?: false
+         return componentName.toString() in appFilter
       }
 
       private fun loadAppFilter(): HashMap<String, String> {

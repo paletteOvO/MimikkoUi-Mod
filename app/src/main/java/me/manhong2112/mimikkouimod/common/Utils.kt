@@ -13,6 +13,7 @@ import android.renderscript.Allocation
 import android.renderscript.Element
 import android.renderscript.RenderScript
 import android.renderscript.ScriptIntrinsicBlur
+import android.util.ArrayMap
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
@@ -29,6 +30,17 @@ import java.lang.reflect.Method
 
 
 object Utils {
+   val EmptyFunction1: (Any) -> Any = { }
+   val EmptyFunction2: (Any, Any) -> Any = { _, _ -> }
+   val EmptyFunction3: (Any, Any, Any) -> Any = { _, _, _ -> }
+
+   fun <K, V> arrayMapOf(vararg items: Pair<K, V>): ArrayMap<K, V> {
+      val map = ArrayMap<K, V>(items.size)
+      items.forEach {
+         map[it.first] = it.second
+      }
+      return map
+   }
    fun drawableToBitmap(drawable: Drawable): Bitmap {
       if (drawable is BitmapDrawable) {
          if (drawable.bitmap != null) {
