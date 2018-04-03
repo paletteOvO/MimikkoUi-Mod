@@ -1,4 +1,4 @@
-package me.manhong2112.mimikkouimod
+package me.manhong2112.mimikkouimod.layout
 
 import android.app.Activity
 import android.content.Context
@@ -12,6 +12,7 @@ import android.view.ViewManager
 import android.widget.SeekBar
 import android.widget.Switch
 import android.widget.TextView
+import me.manhong2112.mimikkouimod.R
 import me.manhong2112.mimikkouimod.common.Config
 import me.manhong2112.mimikkouimod.common.Const
 import org.jetbrains.anko.*

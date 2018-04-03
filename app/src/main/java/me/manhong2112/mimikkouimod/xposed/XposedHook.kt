@@ -25,7 +25,6 @@ import de.robv.android.xposed.callbacks.XC_InitPackageResources.InitPackageResou
 import de.robv.android.xposed.callbacks.XC_LoadPackage
 import me.manhong2112.mimikkouimod.BuildConfig
 import me.manhong2112.mimikkouimod.ConfigReceiver
-import me.manhong2112.mimikkouimod.SettingsActivity
 import me.manhong2112.mimikkouimod.common.Config
 import me.manhong2112.mimikkouimod.common.Const
 import me.manhong2112.mimikkouimod.common.Const.mimikkouiLauncherActName
@@ -38,9 +37,11 @@ import me.manhong2112.mimikkouimod.common.Utils.findMethod
 import me.manhong2112.mimikkouimod.common.Utils.findViews
 import me.manhong2112.mimikkouimod.common.Utils.getField
 import me.manhong2112.mimikkouimod.common.Utils.hook
+import me.manhong2112.mimikkouimod.common.Utils.hookAsync
 import me.manhong2112.mimikkouimod.common.Utils.invokeMethod
 import me.manhong2112.mimikkouimod.common.Utils.log
 import me.manhong2112.mimikkouimod.common.Utils.replace
+import me.manhong2112.mimikkouimod.setting.SettingsActivity
 import me.manhong2112.mimikkouimod.xposed.MimikkoID.bubble
 import me.manhong2112.mimikkouimod.xposed.MimikkoID.dock_layout
 import me.manhong2112.mimikkouimod.xposed.MimikkoID.drawerSetSpanCountMethodName
@@ -98,6 +99,10 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
       }
    }
 
+   private val dragLayer: RelativeLayout by lazy {
+      launcherAct.getField<RelativeLayout>("dragLayer").also {}
+   }
+
    override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
       if (lpparam.packageName != mimikkouiPackageName) return
       getPackageVersion(lpparam)?.run {
@@ -121,7 +126,7 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
       // 既然殼沒了, 那...
       // 設計時想了不少, 偏偏沒想到會把殼去掉..
       val launcherClass = findClass(mimikkouiLauncherActName, lpparam.classLoader)
-      launcherClass.findMethod("onCreate", Bundle::class.java).hook(after = { param ->
+      launcherClass.findMethod("onCreate", Bundle::class.java).hookAsync(after = { param ->
          val app = (param.thisObject as Activity).application
          onCreateHook(param)
          realAppHook(app)
@@ -160,9 +165,10 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
       DrawerBackground.update(launcherAct)
 
       val mAddViewVILp = root.findMethod("addView", View::class.java, Integer.TYPE, ViewGroup.LayoutParams::class.java)
-      mAddViewVILp.hook(after = {
-         if ((it.thisObject as View).id != root.id) return@hook
-         rootHook(launcherAct, root, it)
+      mAddViewVILp.hookAsync(after = {
+         if ((it.thisObject as View).id == root.id) {
+            rootHook(launcherAct, root, it)
+         }
       })
    }
 
@@ -177,7 +183,7 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
          // 鬼知道這數字甚麼意思, 我討厭殼 (好吧我承認是我渣
          if (p.args[0] as Int == 10) {
             dock
-            dockLayout = dock.find<ViewGroup>(dock_layout)
+            dockLayout = dock.find(dock_layout)
          }
       }
 
@@ -200,12 +206,10 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
                   shortcut.setTextColor(Config.get<Int>(Config.Key.GeneralShortcutTextColor))
                   shortcut.setTextSize(TypedValue.COMPLEX_UNIT_SP, Config.get(Config.Key.GeneralShortcutTextSize))
 
-                  val scale = Config.get<Int>(Config.Key.GeneralIconScale) / 100f
+                  val s = (launcherAct.resources.getDimension(MimikkoID.dimen.app_icon_size) / 2 * Config.get<Int>(Config.Key.GeneralIconScale) / 100f).roundToInt()
+
                   val rect = p.thisObject.invokeMethod("getIconRect") as Rect
-                  rect.set((rect.left * scale).toInt(),
-                        (rect.top * scale).toInt(),
-                        (rect.right * scale).toInt(),
-                        (rect.bottom * scale).toInt())
+                  rect.set(-s, -s, s, s)
                }
             }
    }
@@ -261,19 +265,6 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
             it.invokeMethod<Any>("setIconRect", Rect(-s, -s, s, s))
             it.invalidate()
          }
-//         dockLayout?.forEachChildRecursively {
-//            if (it.id == MimikkoID.bubble) {
-//               val scale = Config.get<Int>(Config.Key.GeneralIconScale) / 100f
-//               val rect: Rect = it.invokeMethod("getIconRect")
-//               log("setRect $rect")
-//               rect.set((rect.left * scale).toInt(), (rect.top * scale).toInt(), (rect.right * scale).toInt(), (rect.bottom * scale).toInt())
-//               it.invokeMethod<Unit>("setIconRect", rect)
-//               it.invalidate()
-//            } else {
-//               log(it.id.toString())
-//            }
-//         }
-
       })
    }
 
@@ -297,7 +288,7 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
          is RelativeLayout -> {
             // it can be drawerLayout or Workspace
             // drawerLayout : com.mimikko.mimikkoui.launcher.components.drawer.DrawerLayout
-            if (workspace === null && innerLayout.findViewById<ViewGroup?>(MimikkoID.workspace) !== null) {
+            if (workspace === null && innerLayout.findViewById<View?>(MimikkoID.workspace) !== null) {
                workspace = innerLayout.findViewById(MimikkoID.workspace) as ViewGroup
             }
          }
@@ -369,6 +360,7 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
    private fun setDrawerColumnSize(drawer: ViewGroup) {
       drawer.invokeMethod<Any>("getLayoutManager").invokeMethod<Unit>(drawerSetSpanCountMethodName, Config[Config.Key.DrawerColumnSize])
    }
+
 
    private fun refreshDrawerLayout() {
       drawer?.let {

@@ -7,7 +7,6 @@ import me.manhong2112.mimikkouimod.common.Utils.log
 @Suppress("UNCHECKED_CAST")
 object Config {
    enum class Key(private val mDefaultValue: Any) {
-
       DockSwipeToDrawer(false),
 
       DrawerBlurBackground(false),

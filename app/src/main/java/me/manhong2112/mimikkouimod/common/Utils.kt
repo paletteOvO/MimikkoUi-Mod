@@ -20,6 +20,7 @@ import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
 import me.manhong2112.mimikkouimod.BuildConfig
+import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.forEachChild
 import org.jetbrains.anko.opaque
 import java.lang.reflect.Constructor
@@ -128,6 +129,22 @@ object Utils {
       })
    }
 
+   fun hookMethodAsync(method: Member, before: (XC_MethodHook.MethodHookParam) -> Unit = {}, after: (XC_MethodHook.MethodHookParam) -> Unit = {}): XC_MethodHook.Unhook {
+      return XposedBridge.hookMethod(method, object : XC_MethodHook() {
+         override fun beforeHookedMethod(param: MethodHookParam) {
+            doAsync {
+               before(param)
+            }
+         }
+
+         override fun afterHookedMethod(param: MethodHookParam) {
+            doAsync {
+               after(param)
+            }
+         }
+      })
+   }
+
    fun replaceMethod(method: Member, replacement: (XC_MethodHook.MethodHookParam) -> Any = {}): XC_MethodHook.Unhook {
       return XposedBridge.hookMethod(method, object : XC_MethodHook() {
          override fun beforeHookedMethod(param: MethodHookParam) {
@@ -203,6 +220,11 @@ object Utils {
    fun Method.hook(before: (XC_MethodHook.MethodHookParam) -> Unit = {}, after: (XC_MethodHook.MethodHookParam) -> Unit = {}): XC_MethodHook.Unhook {
       this.isAccessible = true
       return hookMethod(this, before = before, after = after)
+   }
+
+   fun Method.hookAsync(before: (XC_MethodHook.MethodHookParam) -> Unit = {}, after: (XC_MethodHook.MethodHookParam) -> Unit = {}): XC_MethodHook.Unhook {
+      this.isAccessible = true
+      return hookMethodAsync(this, before = before, after = after)
    }
 
    fun <T> Constructor<T>.hook(before: (XC_MethodHook.MethodHookParam) -> Unit = {}, after: (XC_MethodHook.MethodHookParam) -> Unit = {}) {
