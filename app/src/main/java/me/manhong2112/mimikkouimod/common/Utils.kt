@@ -231,6 +231,14 @@ object Utils {
       log("!====")
    }
 
+   fun ViewGroup.findViews(id: Int): List<View> {
+      val result = mutableListOf<View>()
+      this.forEachChildRecursively {
+         if (it.id == id) result.add(it)
+      }
+      return result
+   }
+
    fun ViewGroup.printView(intend: Int = 0) {
       val viewGroup = this
       log("${" " * intend} ${viewGroup::class.java.canonicalName} : ${viewGroup::class.java.superclass.canonicalName} # ${viewGroup.id}")

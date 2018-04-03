@@ -35,17 +35,20 @@ import me.manhong2112.mimikkouimod.common.Const.supportedVersionName
 import me.manhong2112.mimikkouimod.common.OnSwipeTouchListener
 import me.manhong2112.mimikkouimod.common.Utils
 import me.manhong2112.mimikkouimod.common.Utils.findMethod
+import me.manhong2112.mimikkouimod.common.Utils.findViews
 import me.manhong2112.mimikkouimod.common.Utils.getField
 import me.manhong2112.mimikkouimod.common.Utils.hook
 import me.manhong2112.mimikkouimod.common.Utils.invokeMethod
 import me.manhong2112.mimikkouimod.common.Utils.log
 import me.manhong2112.mimikkouimod.common.Utils.replace
-import me.manhong2112.mimikkouimod.xposed.MimikkoID.dockLayoutVariableName
-import me.manhong2112.mimikkouimod.xposed.MimikkoID.dockSceneVariableName
+import me.manhong2112.mimikkouimod.xposed.MimikkoID.bubble
+import me.manhong2112.mimikkouimod.xposed.MimikkoID.dock_layout
 import me.manhong2112.mimikkouimod.xposed.MimikkoID.drawerSetSpanCountMethodName
 import org.jetbrains.anko.contentView
 import org.jetbrains.anko.find
+import org.jetbrains.anko.forEachChild
 import java.io.File
+import kotlin.math.roundToInt
 import me.manhong2112.mimikkouimod.common.Config.Key as Cfg
 
 open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
@@ -88,13 +91,6 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
       }
    }
    private var dockLayout: ViewGroup? = null
-      get() {
-         field = field ?: launcherAct
-               .getField<Any?>(dockSceneVariableName)
-               ?.getField(dockLayoutVariableName)
-         return field
-      }
-
 
    private val root: RelativeLayout by lazy {
       launcherAct.getField<RelativeLayout>("root").also {
@@ -181,6 +177,7 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
          // 鬼知道這數字甚麼意思, 我討厭殼 (好吧我承認是我渣
          if (p.args[0] as Int == 10) {
             dock
+            dockLayout = dock.find<ViewGroup>(dock_layout)
          }
       }
 
@@ -253,10 +250,16 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
       Config.setOnChangeListener(Config.Key.GeneralIconScale, { _, _: Int ->
          log("setOnChangeListener GeneralIconScale")
          refreshDrawerLayout()
-         dockLayout?.let {
-            log("update dock layout")
+         val s = (launcherAct.resources.getDimension(MimikkoID.dimen.app_icon_size) / 2 * Config.get<Int>(Config.Key.GeneralIconScale) / 100f).roundToInt()
+         dockLayout?.forEachChild {
+            (it as ViewGroup).getChildAt(1).let {
+               it.invokeMethod<Any>("setIconRect", Rect(-s, -s, s, s))
+               it.invalidate()
+            }
+         }
+         workspace?.findViews(bubble)?.forEach {
+            it.invokeMethod<Any>("setIconRect", Rect(-s, -s, s, s))
             it.invalidate()
-            it.requestLayout()
          }
 //         dockLayout?.forEachChildRecursively {
 //            if (it.id == MimikkoID.bubble) {
@@ -270,8 +273,8 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
 //               log(it.id.toString())
 //            }
 //         }
-      })
 
+      })
    }
 
    private fun loadConfig(ctx: Context) {

@@ -24,5 +24,8 @@ object MimikkoID {
    const val dockSceneVariableName = "aPH" // in Launcher class
    const val dockLayoutVariableName = "bag" // in DockScene class
 
+   object dimen {
+      const val app_icon_size = 0x7f070055
+   }
 
 }
