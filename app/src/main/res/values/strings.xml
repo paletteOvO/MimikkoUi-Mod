@@ -11,6 +11,7 @@
     <string name="pref_drawer_darken_background">Darken background</string>
     <string name="pref_drawer_column_size">Column size</string>
     <string name="pref_drawer_column_size_num_format">%d</string>
+    <string name="pref_drawer_draw_under_status_bar">Draw under status bar</string>
 
     <string name="pref_general_transparent_status_bar">Transparent status bar</string>
     <string name="pref_general_dark_status_bar_icon">Dark status bar icon</string>
@@ -22,6 +23,9 @@
 
     <string name="pref_general_icon_text_size">Text size</string>
     <string name="pref_general_icon_text_color">Text color</string>
+    <string name="pref_general_icon_text_max_lines">Text max lines</string>
+    <string name="pref_general_icon_text_max_lines_num_format">%d</string>
+
     <string name="pref_general_icon_text_shadow_radius">Text shadow radius</string>
     <string name="pref_general_icon_text_shadow_dy">Text shadow dy</string>
     <string name="pref_general_icon_text_shadow_dx">Text shadow dx</string>

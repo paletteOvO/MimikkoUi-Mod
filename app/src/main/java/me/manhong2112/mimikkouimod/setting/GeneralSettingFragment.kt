@@ -34,6 +34,8 @@ class GeneralSettingFragment : SettingFragment() {
                   BigInteger(it, 16).toInt()
                })
 
+         seekBarPreference<Int>(R.string.pref_general_icon_text_max_lines, R.string.pref_general_icon_text_max_lines_num_format, key = Config.Key.GeneralShortcutTextMaxLine, max = 3)
+
          val max = 32 * Const.prefFloatPrecise.toInt()
          seekBarPreference(R.string.pref_general_icon_text_size, R.string.pref_general_icon_text_num_format, key = Config.Key.GeneralShortcutTextSize,
                max = max,

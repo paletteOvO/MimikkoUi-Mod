@@ -3,7 +3,6 @@ package me.manhong2112.mimikkouimod.setting
 import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
-import android.support.v7.preference.Preference
 import android.view.MenuItem
 import me.manhong2112.mimikkouimod.R
 import me.manhong2112.mimikkouimod.common.Config
@@ -50,15 +49,6 @@ class SettingsActivity : AppCompatActivity() {
          }
       }
       return super.onOptionsItemSelected(item)
-   }
-
-   companion object {
-      private fun <T> Preference.bind(callback: (Preference, T) -> Boolean) {
-         this.onPreferenceChangeListener = Preference.OnPreferenceChangeListener { preference, value ->
-            @Suppress("UNCHECKED_CAST")
-            return@OnPreferenceChangeListener callback(preference, value as T)
-         }
-      }
    }
 }
 

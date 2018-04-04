@@ -19,4 +19,5 @@ object Const {
    const val supportedVersionName = "1.8.7"
    const val supportedVersionCode = 30
 
+   const val drawerBackgroundId = 1641654
 }

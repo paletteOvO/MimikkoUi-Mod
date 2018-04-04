@@ -6,22 +6,41 @@ import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.RelativeLayout
 import me.manhong2112.mimikkouimod.common.Config
+import me.manhong2112.mimikkouimod.common.Const.drawerBackgroundId
 import me.manhong2112.mimikkouimod.common.Utils
 import me.manhong2112.mimikkouimod.common.Utils.log
-import org.jetbrains.anko.doAsync
+import org.jetbrains.anko.*
+import java.lang.ref.WeakReference
 
 object DrawerBackground {
    private var drawerBackground: Drawable? = null
-   private var drawerBGBackup: Drawable? = null
-
-   fun setDrawerBackground(drawer: View) {
+   private var imageView: WeakReference<ImageView>? = null
+   fun enable(drawer: ViewGroup) {
       drawerBackground ?: return
       val parent = drawer.parent as RelativeLayout
-      drawerBGBackup = drawerBGBackup ?: parent.background
-      parent.background = drawerBackground
-      log("drawerBackground end")
+      // drawerBGBackup = drawerBGBackup ?: parent.background
+      (drawer.layoutParams as RelativeLayout.LayoutParams).setMargins(0, parent.topPadding, 0, 0)
+      parent.padding = 0
+
+      parent.findViewById<View?>(drawerBackgroundId) ?: run {
+         imageView = WeakReference(ImageView(drawer.context))
+         imageView!!.get()?.let {
+            it.id = drawerBackgroundId
+            it.image = drawerBackground
+            parent.addView(it, 0, RelativeLayout.LayoutParams(matchParent, matchParent))
+         }
+      }
+   }
+
+   fun disable(drawer: ViewGroup) {
+      val parent = drawer.parent as ViewGroup
+      parent.findViewById<View?>(drawerBackgroundId)?.let {
+         parent.removeView(it)
+      }
    }
 
    private val lock: Any = Any()
@@ -33,7 +52,7 @@ object DrawerBackground {
             if (Config[Config.Key.DrawerBlurBackground] && x != 0) {
                val wallpaperManager = WallpaperManager.getInstance(act)
 
-               val scaleFactor = 1 - x / 1998f
+               val scaleFactor = 1 - x / 1000f
                val wallpaperBitmap = (wallpaperManager.drawable as BitmapDrawable).bitmap.copy(Bitmap.Config.ARGB_8888, true)
                val bitmap = Utils.downscale(wallpaperBitmap, scaleFactor)
                wallpaperBitmap.recycle()
@@ -45,16 +64,12 @@ object DrawerBackground {
                         Utils.blur(act, bitmap, Config.get<Int>(Config.Key.DrawerBlurBackgroundBlurRadius).toFloat() / 40f)
                log("set drawerBackground br1")
                drawerBackground = BitmapDrawable(act.resources, wallpaper)
-            } else {
-               log("set drawerBackground br2")
-               drawerBackground = drawerBGBackup
-            }
-            act.runOnUiThread {
-               drawer?.let {
-                  setDrawerBackground(it)
+               act.runOnUiThread {
+                  imageView?.get()?.let {
+                     it.image = drawerBackground
+                  }
                }
             }
-
          }
       }
 

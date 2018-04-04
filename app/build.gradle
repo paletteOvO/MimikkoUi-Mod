@@ -54,30 +54,30 @@ android {
         applicationId "me.manhong2112.mimikkouimod"
         minSdkVersion 19
         targetSdkVersion 27
-        versionCode = getVersionCode()
-        versionName "1.0"
+        versionCode getVersionCode()
+        versionName "1.0b"
     }
     lintOptions {
         abortOnError false
     }
     signingConfigs {
         release {
+            setV1SigningEnabled true
+            setV2SigningEnabled true
             Properties properties = new Properties()
             properties.load(project.rootProject.file('local.properties').newDataInputStream())
-            keyAlias properties.getProperty('keyAlias')
-            keyPassword properties.getProperty('keyPassword')
-            storeFile file(properties.getProperty('storeFile'))
-            storePassword properties.getProperty('storePassword')
-            v1SigningEnabled true
-            v2SigningEnabled true
+            setKeyAlias properties.getProperty('keyAlias')
+            setKeyPassword properties.getProperty('keyPassword')
+            setStoreFile file(properties.getProperty('storeFile'))
+            setStorePassword properties.getProperty('storePassword')
         }
     }
     buildTypes {
         release {
-            minifyEnabled true
-            zipAlignEnabled true
+            setMinifyEnabled true
+            setZipAlignEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.release
+            setSigningConfig signingConfigs.release
         }
     }
 }

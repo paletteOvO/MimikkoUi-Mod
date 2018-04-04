@@ -6,6 +6,7 @@ import android.app.Application
 import android.content.*
 import android.graphics.Rect
 import android.os.Bundle
+import android.transition.TransitionInflater
 import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
@@ -25,22 +26,22 @@ import de.robv.android.xposed.callbacks.XC_InitPackageResources.InitPackageResou
 import de.robv.android.xposed.callbacks.XC_LoadPackage
 import me.manhong2112.mimikkouimod.BuildConfig
 import me.manhong2112.mimikkouimod.ConfigReceiver
-import me.manhong2112.mimikkouimod.common.Config
-import me.manhong2112.mimikkouimod.common.Const
+import me.manhong2112.mimikkouimod.R
+import me.manhong2112.mimikkouimod.common.*
 import me.manhong2112.mimikkouimod.common.Const.mimikkouiLauncherActName
 import me.manhong2112.mimikkouimod.common.Const.mimikkouiPackageName
 import me.manhong2112.mimikkouimod.common.Const.supportedVersionCode
 import me.manhong2112.mimikkouimod.common.Const.supportedVersionName
-import me.manhong2112.mimikkouimod.common.OnSwipeTouchListener
-import me.manhong2112.mimikkouimod.common.Utils
-import me.manhong2112.mimikkouimod.common.Utils.findMethod
+import me.manhong2112.mimikkouimod.common.ReflectionUtils.findMethod
+import me.manhong2112.mimikkouimod.common.ReflectionUtils.getField
+import me.manhong2112.mimikkouimod.common.ReflectionUtils.hook
+import me.manhong2112.mimikkouimod.common.ReflectionUtils.hookAsync
+import me.manhong2112.mimikkouimod.common.ReflectionUtils.invokeMethod
+import me.manhong2112.mimikkouimod.common.ReflectionUtils.replace
+import me.manhong2112.mimikkouimod.common.ReflectionUtils.setField
 import me.manhong2112.mimikkouimod.common.Utils.findViews
-import me.manhong2112.mimikkouimod.common.Utils.getField
-import me.manhong2112.mimikkouimod.common.Utils.hook
-import me.manhong2112.mimikkouimod.common.Utils.hookAsync
-import me.manhong2112.mimikkouimod.common.Utils.invokeMethod
 import me.manhong2112.mimikkouimod.common.Utils.log
-import me.manhong2112.mimikkouimod.common.Utils.replace
+import me.manhong2112.mimikkouimod.common.Utils.printCurrentStackTrace
 import me.manhong2112.mimikkouimod.setting.SettingsActivity
 import me.manhong2112.mimikkouimod.xposed.MimikkoUI.drawerSetSpanCountMethodName
 import org.jetbrains.anko.contentView
@@ -170,6 +171,14 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
          }
       }
 
+      launcherClass.findMethod("init").hook {
+         // com.mimikko.mimikkoui.launcher.activity.Launcher -> init()
+         p ->
+         val inflater = TransitionInflater.from(launcherAct)
+         val slideTransition = inflater.inflateTransition(R.transition.slide)
+         p.thisObject.setField("aPS", slideTransition)
+      }
+
       val appItemEntityClass = findClass("com.mimikko.common.beans.models.AppItemEntity", app.classLoader)
       appItemEntityClass.findMethod("getIcon").replace(::iconHook)
 
@@ -195,6 +204,14 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
                   rect.set(-s, -s, s, s)
                }
             }
+
+      View::class.java
+            .findMethod("setOnClickListener", View.OnClickListener::class.java)
+            .hook {
+               if ((it.thisObject as View).id == MimikkoUI.id.drawerButton) {
+                  printCurrentStackTrace()
+               }
+            }
    }
 
    private fun updateDrawerBackground(k: Config.Key?, v: Any?) {
@@ -202,7 +219,16 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
    }
 
    private fun bindConfigUpdateListener() {
-      Config.setOnChangeListener(Config.Key.DrawerBlurBackground, ::updateDrawerBackground)
+      Config.setOnChangeListener(Config.Key.DrawerBlurBackground, { k, v: Boolean ->
+         updateDrawerBackground(k, v)
+         drawer?.let {
+            if (v) {
+               DrawerBackground.enable(it)
+            } else {
+               DrawerBackground.disable(it)
+            }
+         }
+      })
       Config.setOnChangeListener(Config.Key.DrawerBlurBackgroundBlurRadius, ::updateDrawerBackground)
       Config.setOnChangeListener(Config.Key.DrawerDarkBackground, ::updateDrawerBackground)
       Config.setOnChangeListener(Config.Key.DrawerColumnSize, { _, _: Int ->
@@ -210,6 +236,17 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
             setDrawerColumnSize(it)
          }
       })
+      Config.setOnChangeListener(Config.Key.DrawerDrawUnderStatusBar) { k, v: Boolean ->
+         drawer?.let {
+            val lparams = it.layoutParams as RelativeLayout.LayoutParams
+            ValueBackup.drawerMarginTop = ValueBackup.drawerMarginTop ?: lparams.topMargin
+            if (v) {
+               lparams.topMargin = 0
+            } else {
+               lparams.topMargin = ValueBackup.drawerMarginTop!!
+            }
+         }
+      }
 
       Config.setOnChangeListener(Config.Key.GeneralDarkStatusBarIcon, { k, v: Boolean ->
          if (v) {
@@ -234,10 +271,10 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
          IconProvider.update(app)
       })
 
-      Config.setOnChangeListener(Config.Key.GeneralIconScale, { _, _: Int ->
+      Config.setOnChangeListener(Config.Key.GeneralIconScale, { _, scale: Int ->
          log("setOnChangeListener GeneralIconScale")
          refreshDrawerLayout()
-         val s = (launcherAct.resources.getDimension(MimikkoUI.dimen.app_icon_size) / 2 * Config.get<Int>(Config.Key.GeneralIconScale) / 100f).roundToInt()
+         val s = (launcherAct.resources.getDimension(MimikkoUI.dimen.app_icon_size) / 2 * scale / 100f).roundToInt()
          dockLayout?.forEachChild {
             (it as ViewGroup).getChildAt(1).let {
                it.invokeMethod<Any>("setIconRect", Rect(-s, -s, s, s))
@@ -266,6 +303,7 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
    }
 
    private fun rootHook(activity: Activity, root: RelativeLayout, param: XC_MethodHook.MethodHookParam) {
+      if (param.args[0] !is ViewGroup) return
       val innerLayout = param.args[0] as ViewGroup
       when (innerLayout) {
          is RelativeLayout -> {
@@ -336,8 +374,12 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
    }
 
    private fun initDrawer(activity: Activity, drawer: ViewGroup) {
-      DrawerBackground.setDrawerBackground(drawer)
       setDrawerColumnSize(drawer)
+      if (Config[Config.Key.DrawerBlurBackground]) {
+         DrawerBackground.enable(drawer)
+      } else {
+         DrawerBackground.disable(drawer)
+      }
    }
 
    private fun setDrawerColumnSize(drawer: ViewGroup) {

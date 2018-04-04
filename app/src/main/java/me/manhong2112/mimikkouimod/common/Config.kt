@@ -16,6 +16,7 @@ object Config {
       DrawerDarkBackground(false),
       DrawerBlurBackgroundBlurRadius(100),
       DrawerColumnSize(4),
+      DrawerDrawUnderStatusBar(false),
 
       GeneralIconPackFallback(listOf("default")),
       GeneralIconScale(100), // in %
@@ -125,11 +126,11 @@ object Config {
             value is String -> editor.put(key.name, value)
             value is Set<*> -> editor.put(key.name, value as Set<String>)
             value is List<*> && key.isList -> {
-               val contactsArray = JSONArray()
+               val jsonArr = JSONArray()
                value.forEach {
-                  contactsArray.put(it)
+                  jsonArr.put(it)
                }
-               editor.put(key.name, contactsArray.toString())
+               editor.put(key.name, jsonArr.toString())
             }
             else -> throw Exception("Type Error: type of $key is not supported")
          }
@@ -148,11 +149,11 @@ object Config {
          value is String -> editor.put(key.name, value)
          value is Set<*> -> editor.put(key.name, value as Set<String>)
          value is List<*> && key.isList -> {
-            val contactsArray = JSONArray()
+            val jsonArr = JSONArray()
             value.forEach {
-               contactsArray.put(it)
+               jsonArr.put(it)
             }
-            editor.put(key.name, contactsArray.toString())
+            editor.put(key.name, jsonArr.toString())
          }
          else -> throw Exception("Type Error: type of $key is not supported")
       }
