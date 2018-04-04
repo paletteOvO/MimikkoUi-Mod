@@ -27,10 +27,12 @@ object Config {
       GeneralShortcutTextSize(10f),
       GeneralShortcutTextColor(Color.WHITE),
       GeneralShortcutTextMaxLine(1),
+      GeneralShortcutTextOriginalName(false),
       GeneralShortcutTextShadowColor(Color.BLACK),
       GeneralShortcutTextShadowRadius(10f),
       GeneralShortcutTextShadowDx(0f),
       GeneralShortcutTextShadowDy(0f);
+
 
       private val mDefaultValue: Any
       val isList: Boolean

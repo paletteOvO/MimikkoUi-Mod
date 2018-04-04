@@ -123,7 +123,6 @@ object Utils {
    }
 
 
-   class CallOriginalMethod : Throwable()
 
    fun log(msg: String) {
       if (BuildConfig.DEBUG)

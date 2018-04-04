@@ -41,7 +41,6 @@ import me.manhong2112.mimikkouimod.common.ReflectionUtils.replace
 import me.manhong2112.mimikkouimod.common.ReflectionUtils.setField
 import me.manhong2112.mimikkouimod.common.Utils.findViews
 import me.manhong2112.mimikkouimod.common.Utils.log
-import me.manhong2112.mimikkouimod.common.Utils.printCurrentStackTrace
 import me.manhong2112.mimikkouimod.setting.SettingsActivity
 import me.manhong2112.mimikkouimod.xposed.MimikkoUI.drawerSetSpanCountMethodName
 import org.jetbrains.anko.contentView
@@ -180,7 +179,18 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
       }
 
       val appItemEntityClass = findClass("com.mimikko.common.beans.models.AppItemEntity", app.classLoader)
-      appItemEntityClass.findMethod("getIcon").replace(::iconHook)
+      appItemEntityClass.findMethod("getIcon").replace { param ->
+         val name = param.thisObject.invokeMethod<ComponentName>("getId")
+         return@replace IconProvider.getIcon(name) ?: throw ReflectionUtils.CallOriginalMethod
+      }
+      appItemEntityClass.findMethod("getLabel").replace { param ->
+         if (Config[Config.Key.GeneralShortcutTextOriginalName]) {
+            val name = param.thisObject.invokeMethod<ComponentName>("getId")
+            return@replace LabelProvider.getLabel(app, name)
+         } else {
+            throw ReflectionUtils.CallOriginalMethod
+         }
+      }
 
       injectSetting(app)
 
@@ -202,14 +212,6 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
 
                   val rect = p.thisObject.invokeMethod("getIconRect") as Rect
                   rect.set(-s, -s, s, s)
-               }
-            }
-
-      View::class.java
-            .findMethod("setOnClickListener", View.OnClickListener::class.java)
-            .hook {
-               if ((it.thisObject as View).id == MimikkoUI.id.drawerButton) {
-                  printCurrentStackTrace()
                }
             }
    }
@@ -297,11 +299,6 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
       ctx.sendBroadcast(intent)
    }
 
-   private fun iconHook(param: XC_MethodHook.MethodHookParam): Any {
-      val name = param.thisObject.invokeMethod<ComponentName>("getId")
-      return IconProvider.getIcon(name) ?: throw Utils.CallOriginalMethod()
-   }
-
    private fun rootHook(activity: Activity, root: RelativeLayout, param: XC_MethodHook.MethodHookParam) {
       if (param.args[0] !is ViewGroup) return
       val innerLayout = param.args[0] as ViewGroup
@@ -377,8 +374,6 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
       setDrawerColumnSize(drawer)
       if (Config[Config.Key.DrawerBlurBackground]) {
          DrawerBackground.enable(drawer)
-      } else {
-         DrawerBackground.disable(drawer)
       }
    }
 

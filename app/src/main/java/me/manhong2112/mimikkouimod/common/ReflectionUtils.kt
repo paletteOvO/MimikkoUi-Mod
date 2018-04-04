@@ -9,6 +9,8 @@ import java.lang.reflect.Member
 import java.lang.reflect.Method
 
 object ReflectionUtils {
+   object CallOriginalMethod : Throwable()
+
    fun Any.printAllField() {
       val obj = this
       Utils.log(obj::class.java.canonicalName)
@@ -53,7 +55,7 @@ object ReflectionUtils {
             try {
                val result = replacement(param)
                param.result = result
-            } catch (_: Utils.CallOriginalMethod) {
+            } catch (_: CallOriginalMethod) {
             }
          }
       })
