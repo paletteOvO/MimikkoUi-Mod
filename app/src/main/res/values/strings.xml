@@ -21,6 +21,7 @@
     <string name="pref_general_icon_pack">Icon pack</string>
     <string name="pref_general_none_icon_pack">None</string>
 
+    <string name="pref_general_icon_text_original_name">Use original name</string> <!-- not sure what it should be called -->
     <string name="pref_general_icon_text_size">Text size</string>
     <string name="pref_general_icon_text_color">Text color</string>
     <string name="pref_general_icon_text_max_lines">Text max lines</string>

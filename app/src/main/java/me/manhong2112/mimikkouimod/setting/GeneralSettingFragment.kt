@@ -25,6 +25,7 @@ class GeneralSettingFragment : SettingFragment() {
          selectorPreference(R.string.pref_general_icon_pack, key = Config.Key.GeneralIconPackFallback, displayName = iconPacks.map { it.first }, value = iconPacks.map { listOf(it.second) })
          seekBarPreference<Int>(R.string.pref_general_icon_size, R.string.pref_general_icon_size_num_format, key = Config.Key.GeneralIconScale)
 
+         switchPreference(R.string.pref_general_icon_text_original_name, key = Config.Key.GeneralShortcutTextOriginalName)
          editTextPreference(R.string.pref_general_icon_text_color,
                key = Config.Key.GeneralShortcutTextColor,
                displayParser = {

@@ -4,12 +4,9 @@ import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.view.MenuItem
-import me.manhong2112.mimikkouimod.R
 import me.manhong2112.mimikkouimod.common.Config
 import me.manhong2112.mimikkouimod.common.Const
 import me.manhong2112.mimikkouimod.common.Utils.log
-import me.manhong2112.mimikkouimod.layout.PreferenceLayout.Companion.preferenceLayout
-import me.manhong2112.mimikkouimod.layout.PreferenceLayout.Companion.preferencePage
 import org.jetbrains.anko.defaultSharedPreferences
 import java.io.Serializable
 
@@ -29,11 +26,7 @@ class SettingsActivity : AppCompatActivity() {
       Config.loadSharedPref(defaultSharedPreferences)
       Config.bindSharedPref(defaultSharedPreferences)
       supportActionBar?.setDisplayHomeAsUpEnabled(true)
-      preferenceLayout {
-         preferencePage(GeneralSettingFragment(), R.string.pref_page_general)
-         preferencePage(DrawerSettingFragment(), R.string.pref_page_drawer)
-         preferencePage(DockSettingFragment(), R.string.pref_page_dock)
-      }
+      MainSettingPageFragment().init(this)
    }
 
    override fun onOptionsItemSelected(item: MenuItem): Boolean {

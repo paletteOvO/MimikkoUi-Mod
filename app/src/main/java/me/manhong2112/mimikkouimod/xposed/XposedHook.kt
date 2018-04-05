@@ -375,6 +375,11 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
       if (Config[Config.Key.DrawerBlurBackground]) {
          DrawerBackground.enable(drawer)
       }
+      if (Config[Config.Key.DrawerDrawUnderStatusBar]) {
+         val lparams = drawer.layoutParams as RelativeLayout.LayoutParams
+         ValueBackup.drawerMarginTop = ValueBackup.drawerMarginTop ?: lparams.topMargin
+         lparams.topMargin = 0
+      }
    }
 
    private fun setDrawerColumnSize(drawer: ViewGroup) {

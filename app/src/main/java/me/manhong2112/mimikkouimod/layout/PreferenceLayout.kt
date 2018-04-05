@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.Drawable
-import android.support.v4.app.Fragment
 import android.support.v7.app.AppCompatActivity
 import android.view.Gravity
 import android.view.View
@@ -43,10 +42,10 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
          ankoView({ PreferenceLayout(it) }, 0, init)
       }
 
-      fun PreferenceLayout.preferencePage(page: Fragment, nameRes: Int, summaryRes: Int = 0, icon: Drawable? = null) =
+      fun PreferenceLayout.preferencePage(page: SettingFragment, nameRes: Int, summaryRes: Int = 0, icon: Drawable? = null) =
             preferencePage(page, ctx.getString(nameRes), if (summaryRes == 0) null else ctx.getString(summaryRes), icon)
 
-      fun PreferenceLayout.preferencePage(page: Fragment, name: String, summary: String? = null, icon: Drawable? = null) =
+      fun PreferenceLayout.preferencePage(page: SettingFragment, name: String, summary: String? = null, icon: Drawable? = null) =
             relativeLayout {
                id = View.generateViewId()
                backgroundDrawable = getSelectedItemDrawable(ctx)
@@ -61,31 +60,39 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
                   alignParentLeft()
                   centerInParent()
                }
-               verticalLayout {
-                  id = View.generateViewId()
+               if (summary !== null) {
+                  verticalLayout {
+                     id = View.generateViewId()
+                     textView {
+                        id = View.generateViewId()
+                        textSize = sp(6.5f).toFloat()
+                        text = name
+                     }
+                     textView {
+                        id = View.generateViewId()
+                        textSize = sp(6).toFloat()
+                        text = summary
+                        textColor = Color.DKGRAY
+                     }
+                  }.lparams {
+                     setPadding(0, dip(6), 0, dip(6))
+                     rightOf(iconImageView)
+                     centerInParent()
+                     gravity = Gravity.CENTER_VERTICAL
+                  }
+               } else {
                   textView {
                      id = View.generateViewId()
                      textSize = sp(6.5f).toFloat()
                      text = name
+                  }.lparams {
+                     setPadding(0, dip(6), 0, dip(6))
+                     rightOf(iconImageView)
+                     centerInParent()
                   }
-                  if (summary !== null) textView {
-                     id = View.generateViewId()
-                     textSize = sp(6).toFloat()
-                     text = summary
-                     textColor = Color.DKGRAY
-                  }
-               }.lparams {
-                  setPadding(0, dip(6), 0, dip(6))
-                  rightOf(iconImageView)
-                  centerInParent()
-                  gravity = Gravity.CENTER_VERTICAL
                }
                setOnClickListener {
-                  val ft = (ctx as AppCompatActivity).supportFragmentManager.beginTransaction()
-                  ft.setCustomAnimations(R.anim.fade_slide_in_bottom, R.anim.fade_slide_out_bottom, R.anim.fade_slide_in_bottom, R.anim.fade_slide_out_bottom)
-                  ft.add(android.R.id.content, page, null)
-                  ft.addToBackStack(null)
-                  ft.commit()
+                  page.open(ctx as AppCompatActivity)
                }
             }.lparams {
                width = matchParent
@@ -99,18 +106,28 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
          relativeLayout {
             backgroundDrawable = getSelectedItemDrawable(ctx)
             isClickable = true
-            verticalLayout {
+            if (summary !== null) {
+               verticalLayout {
+                  textView {
+                     text = name
+                  }
+                  textView {
+                     text = summary
+                  }
+               }.lparams {
+                  padding = dip(12)
+                  gravity = Gravity.CENTER_VERTICAL
+                  centerInParent()
+                  alignParentLeft()
+               }
+            } else {
                textView {
                   text = name
+               }.lparams {
+                  padding = dip(12)
+                  centerInParent()
+                  alignParentLeft()
                }
-               if (summary !== null) textView {
-                  text = summary
-               }
-            }.lparams {
-               padding = dip(12)
-               gravity = Gravity.CENTER_VERTICAL
-               centerInParent()
-               alignParentLeft()
             }
             val s = switch {
                isChecked = Config[key]
@@ -146,53 +163,63 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
                                                           displayParse: (T) -> Int = { it.toInt() },
                                                           valueParse: (Int) -> T = { it as T },
                                                           init: SeekBar.() -> Unit = {}) {
-         linearLayout {
+         relativeLayout {
             setPadding(dip(12), 0, dip(12), 0)
-
-            orientation = VERTICAL
             backgroundDrawable = getSelectedItemDrawable(ctx)
             isClickable = true
-            textView {
+            val title = textView {
+               id = View.generateViewId()
                text = name
                gravity = Gravity.CENTER_VERTICAL
             }.lparams {
                width = matchParent
-               weight = 0.5f
+               height = dip(Const.prefItemHeight) / 2
+               alignParentLeft()
+               alignParentTop()
             }
-            linearLayout {
-               gravity = Gravity.CENTER_VERTICAL
-               val numView = TextView(ctx)
-               val defaultValue = displayParse(Config[key]) - min
-               numFormat?.run {
-                  addView(numView, dip(36), wrapContent)
-                  numView.text = numFormat.format(Config.get<T>(key))
-                  numView.textSize = sp(5).toFloat()
-                  numView.gravity = Gravity.RIGHT or Gravity.CENTER_VERTICAL
+            lateinit var numView: TextView
+            val defaultValue = displayParse(Config[key]) - min
+            numFormat?.run {
+               numView = TextView(ctx)
+               numView.text = numFormat.format(Config.get<T>(key))
+               numView.textSize = sp(5).toFloat()
+               numView.gravity = Gravity.END or Gravity.CENTER_VERTICAL
+               numView.id = View.generateViewId()
+               numView.lparams {
+                  below(title)
+                  alignParentLeft()
+                  height = dip(Const.prefItemHeight) / 2
+                  width = dip(36)
                }
-               seekBar {
-                  setMax(max - min)
-                  incrementProgressBy(step)
-                  progress = defaultValue
-                  setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-                     override fun onProgressChanged(p0: SeekBar, value: Int, p2: Boolean) {
-                        numFormat?.run {
-                           numView.text = numFormat.format(valueParse(value + min))
-                        }
+               addView(numView)
+            }
+            seekBar {
+               setMax(max - min)
+               incrementProgressBy(step)
+               progress = defaultValue
+               setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                  override fun onProgressChanged(p0: SeekBar, value: Int, p2: Boolean) {
+                     numFormat?.run {
+                        numView.text = numFormat.format(valueParse(value + min))
                      }
+                  }
 
-                     override fun onStartTrackingTouch(p0: SeekBar) {
-                     }
+                  override fun onStartTrackingTouch(p0: SeekBar) {
+                  }
 
-                     override fun onStopTrackingTouch(p0: SeekBar) {
-                        Config[key] = valueParse(p0.progress + min)
-                     }
-                  })
-               }.lparams {
-                  width = matchParent
-               }
+                  override fun onStopTrackingTouch(p0: SeekBar) {
+                     Config[key] = valueParse(p0.progress + min)
+                  }
+               })
             }.lparams {
                width = matchParent
-               weight = 0.5f
+               height = dip(Const.prefItemHeight) / 2
+               alignParentBottom()
+               if (numFormat !== null) {
+                  rightOf(numView)
+               } else {
+                  alignParentLeft()
+               }
             }
          }.lparams {
             width = matchParent
@@ -216,18 +243,31 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
          relativeLayout {
             backgroundDrawable = getSelectedItemDrawable(ctx)
             isClickable = true
-            verticalLayout {
+            if (summary !== null) {
                textView {
                   text = name
+                  gravity = Gravity.BOTTOM or Gravity.START
+               }.lparams {
+                  height = dip(Const.prefItemHeight) / 2
+                  padding = dip(12)
+                  alignParentLeft()
                }
-               if (summary !== null) textView {
+               textView {
                   text = summary
+                  gravity = Gravity.TOP or Gravity.START
+               }.lparams {
+                  height = dip(Const.prefItemHeight) / 2
+                  padding = dip(12)
+                  alignParentLeft()
                }
-            }.lparams {
-               padding = dip(12)
-               gravity = Gravity.CENTER_VERTICAL
-               centerInParent()
-               alignParentLeft()
+            } else {
+               textView {
+                  text = name
+               }.lparams {
+                  padding = dip(12)
+                  centerInParent()
+                  alignParentLeft()
+               }
             }
             setOnClickListener {
                ctx.selector(name, displayName) { dialog, index ->
@@ -238,7 +278,6 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
             width = matchParent
             height = dip(Const.prefItemHeight)
          }
-
       }
 
       fun <T> PreferenceLayout.editTextPreference(nameRes: Int, summaryRes: Int = 0, hintRes: Int = 0, key: Config.Key, displayParser: (T) -> String = { it.toString() }, valueParser: (String) -> T = { it as T }) {
@@ -254,23 +293,33 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
          relativeLayout {
             backgroundDrawable = getSelectedItemDrawable(ctx)
             isClickable = true
-            verticalLayout {
-               textView {
-                  text = name
-               }
-               summary?.let {
-                  textView {
-                     text = it
-                  }
+            textView {
+               text = name
+               gravity = if (summary === null) {
+                  Gravity.CENTER_VERTICAL
+               } else {
+                  Gravity.BOTTOM or Gravity.START
                }
             }.lparams {
+               height = dip(Const.prefItemHeight) / 2
                padding = dip(12)
-               gravity = Gravity.CENTER_VERTICAL
-               centerInParent()
                alignParentLeft()
+               if (summary === null) {
+                  centerInParent()
+               }
+            }
+            summary?.let {
+               textView {
+                  text = it
+               }.lparams {
+                  alignParentLeft()
+                  height = dip(Const.prefItemHeight) / 2
+                  gravity = Gravity.TOP or Gravity.START
+                  padding = dip(12)
+               }
             }
             setOnClickListener {
-               this@editTextPreference.ctx.alert {
+               ctx.alert {
                   customView {
                      val text = editText {
                         this.hint = hint
