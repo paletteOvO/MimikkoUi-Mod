@@ -16,7 +16,8 @@ import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
 import java.lang.ref.WeakReference
 
-
+typealias IconPackName = String
+typealias IconPackPackageName = String
 object IconProvider {
    private lateinit var ctx: WeakReference<Context>
    private lateinit var iconPacks: List<IconPack>
@@ -78,7 +79,7 @@ object IconProvider {
       return false
    }
 
-   fun getAllIconPack(ctx: Context): List<Pair<String, String>> {
+   fun getAllIconPack(ctx: Context): List<Pair<IconPackName, IconPackPackageName>> {
       val pm = ctx.packageManager
 
       val list: MutableList<ResolveInfo> = pm.queryIntentActivities(Intent("com.novalauncher.THEME"), 0) // nova

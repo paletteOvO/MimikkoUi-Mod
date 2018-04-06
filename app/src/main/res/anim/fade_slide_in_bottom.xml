@@ -12,4 +12,5 @@
             android:fromYDelta="50"
             android:toAlpha="0">
     </translate>
+
 </set>

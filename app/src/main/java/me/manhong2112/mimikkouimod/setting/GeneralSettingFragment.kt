@@ -6,9 +6,10 @@ import me.manhong2112.mimikkouimod.common.Const
 import me.manhong2112.mimikkouimod.layout.PreferenceLayout
 import me.manhong2112.mimikkouimod.layout.PreferenceLayout.Companion.editTextPreference
 import me.manhong2112.mimikkouimod.layout.PreferenceLayout.Companion.seekBarPreference
-import me.manhong2112.mimikkouimod.layout.PreferenceLayout.Companion.selectorPreference
+import me.manhong2112.mimikkouimod.layout.PreferenceLayout.Companion.sortingPreference
 import me.manhong2112.mimikkouimod.layout.PreferenceLayout.Companion.switchPreference
 import me.manhong2112.mimikkouimod.layout.SettingFragment
+import me.manhong2112.mimikkouimod.xposed.IconPackPackageName
 import me.manhong2112.mimikkouimod.xposed.IconProvider
 import java.math.BigInteger
 
@@ -22,7 +23,26 @@ class GeneralSettingFragment : SettingFragment() {
          switchPreference(R.string.pref_general_dark_status_bar_icon, key = Config.Key.GeneralDarkStatusBarIcon)
 
          val iconPacks = IconProvider.getAllIconPack(context)
-         selectorPreference(R.string.pref_general_icon_pack, key = Config.Key.GeneralIconPackFallback, displayName = iconPacks.map { it.first }, value = iconPacks.map { listOf(it.second) })
+         val configList: List<IconPackPackageName> = Config[Config.Key.GeneralIconPackFallback]
+         val displayList = (configList.mapNotNull {
+            iconPacks.find { item -> item.second == it }?.first
+         } + iconPacks.mapNotNull { item ->
+            if (item.second !in configList) {
+               item.first
+            } else {
+               null
+            }
+         }).toMutableList()
+         val result = (configList + iconPacks.mapNotNull { item ->
+            if (item.second !in configList) {
+               item.second
+            } else {
+               null
+            }
+         }).toMutableList()
+
+         sortingPreference("Icon Pack", Config.Key.GeneralIconPackFallback, displayList, result)
+
          seekBarPreference<Int>(R.string.pref_general_icon_size, R.string.pref_general_icon_size_num_format, key = Config.Key.GeneralIconScale)
 
          switchPreference(R.string.pref_general_icon_text_original_name, key = Config.Key.GeneralShortcutTextOriginalName)

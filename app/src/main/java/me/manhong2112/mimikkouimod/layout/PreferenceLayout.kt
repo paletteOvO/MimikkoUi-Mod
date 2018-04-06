@@ -8,6 +8,7 @@ import android.support.v7.app.AppCompatActivity
 import android.view.Gravity
 import android.view.View
 import android.view.ViewManager
+import android.widget.ArrayAdapter
 import android.widget.SeekBar
 import android.widget.Switch
 import android.widget.TextView
@@ -336,6 +337,45 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
             height = dip(Const.prefItemHeight)
          }
       }
+
+      fun PreferenceLayout.sortingPreference(nameRes: Int, key: Config.Key, displayList: MutableList<String>, valueList: MutableList<String>) {
+         sortingPreference(name = context.getString(nameRes), key = key, displayList = displayList, valueList = valueList)
+      }
+
+      // TODO summary
+      fun PreferenceLayout.sortingPreference(name: String, key: Config.Key, displayList: MutableList<String>, valueList: MutableList<String>) =
+            relativeLayout {
+               gravity = Gravity.CENTER_VERTICAL
+               isClickable = true
+               backgroundDrawable = getSelectedItemDrawable(ctx)
+               textView {
+                  text = name
+                  gravity = Gravity.CENTER_VERTICAL
+               }.lparams {
+                  height = dip(Const.prefItemHeight) / 2
+                  padding = dip(12)
+               }
+               setOnClickListener {
+                  context.alert {
+                     customView {
+                        ankoView({ DragAndDropListView<String>(it) }, 0) {
+                           targetList = displayList
+                           adapter = ArrayAdapter(context, android.R.layout.simple_list_item_1, displayList)
+                           divider = null
+                           onItemSwapListener = { i1, i2 ->
+                              valueList.swap(i1, i2)
+                           }
+                        }
+                     }
+                     positiveButton("OK") {
+                        Config[key] = valueList
+                     }
+                  }.show()
+               }
+            }.lparams {
+               width = matchParent
+               height = dip(Const.prefItemHeight)
+            }
 
       private fun getSelectedItemDrawable(ctx: Context): Drawable {
          val ta = ctx.obtainStyledAttributes(intArrayOf(R.attr.selectableItemBackground))

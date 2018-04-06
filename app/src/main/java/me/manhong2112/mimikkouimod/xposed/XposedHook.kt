@@ -6,7 +6,6 @@ import android.app.Application
 import android.content.*
 import android.graphics.Rect
 import android.os.Bundle
-import android.transition.TransitionInflater
 import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
@@ -26,7 +25,6 @@ import de.robv.android.xposed.callbacks.XC_InitPackageResources.InitPackageResou
 import de.robv.android.xposed.callbacks.XC_LoadPackage
 import me.manhong2112.mimikkouimod.BuildConfig
 import me.manhong2112.mimikkouimod.ConfigReceiver
-import me.manhong2112.mimikkouimod.R
 import me.manhong2112.mimikkouimod.common.*
 import me.manhong2112.mimikkouimod.common.Const.mimikkouiLauncherActName
 import me.manhong2112.mimikkouimod.common.Const.mimikkouiPackageName
@@ -38,7 +36,6 @@ import me.manhong2112.mimikkouimod.common.ReflectionUtils.hook
 import me.manhong2112.mimikkouimod.common.ReflectionUtils.hookAsync
 import me.manhong2112.mimikkouimod.common.ReflectionUtils.invokeMethod
 import me.manhong2112.mimikkouimod.common.ReflectionUtils.replace
-import me.manhong2112.mimikkouimod.common.ReflectionUtils.setField
 import me.manhong2112.mimikkouimod.common.Utils.findViews
 import me.manhong2112.mimikkouimod.common.Utils.log
 import me.manhong2112.mimikkouimod.setting.SettingsActivity
@@ -168,14 +165,6 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
             dock
             dockLayout = dock.find(MimikkoUI.id.dock_layout)
          }
-      }
-
-      launcherClass.findMethod("init").hook {
-         // com.mimikko.mimikkoui.launcher.activity.Launcher -> init()
-         p ->
-         val inflater = TransitionInflater.from(launcherAct)
-         val slideTransition = inflater.inflateTransition(R.transition.slide)
-         p.thisObject.setField("aPS", slideTransition)
       }
 
       val appItemEntityClass = findClass("com.mimikko.common.beans.models.AppItemEntity", app.classLoader)
