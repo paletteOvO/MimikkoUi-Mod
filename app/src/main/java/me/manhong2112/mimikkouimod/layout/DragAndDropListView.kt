@@ -110,7 +110,7 @@ class DragAndDropListView<T> : ListView {
                   onItemSwapListener(hoverViewPos, hoverViewPos - 1)
                   targetList?.swap(hoverViewPos, hoverViewPos - 1)
                   hoverViewPos -= 1
-               } else if (lastY > rect.top + hoverView!!.height + hoverView!!.height / 2 && hoverViewPos < adapter.count) {
+               } else if (lastY > rect.top + hoverView!!.height + hoverView!!.height / 2 && hoverViewPos < adapter.count - 1) {
                   onItemSwapListener(hoverViewPos, hoverViewPos + 1)
                   targetList?.swap(hoverViewPos, hoverViewPos + 1)
                   hoverViewPos += 1
