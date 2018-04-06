@@ -35,5 +35,4 @@
     <string name="pref_general_icon_text_num_format">%.2f</string>
 
     <string name="pref_dock_swipe_up_gesture">Swipe up to open drawer</string>
-
 </resources>
