@@ -18,6 +18,7 @@ import java.lang.ref.WeakReference
 
 typealias IconPackName = String
 typealias IconPackPackageName = String
+
 object IconProvider {
    private lateinit var ctx: WeakReference<Context>
    private lateinit var iconPacks: List<IconPack>
@@ -64,6 +65,7 @@ object IconProvider {
    fun getIcon(componentName: ComponentName): Bitmap? {
       iconPacks.forEach {
          if (it.hasIcon(componentName)) {
+            log("getIcon from $it")
             return it.getIcon(componentName)
          }
       }
@@ -107,32 +109,35 @@ object IconProvider {
          ctx.get()?.packageManager?.getResourcesForApplication(packageName)
       }
 
+      override fun toString(): String {
+         return "IconPack($packageName)"
+      }
+
       open fun getIcon(componentName: ComponentName): Bitmap? {
-         res ?: run {
-            log("res is null")
-            return null
-         }
-         res!!
          val componentInfo = componentName.toString()
          if (componentInfo !in appFilter) {
             return null
          }
          val drawableName = appFilter[componentInfo]!!
          if (drawableName !in icons) {
-            log("load drawable $drawableName")
-            val id = res!!.getIdentifier(drawableName, "drawable", packageName)
-            if (id == 0) {
-               log("failed to get drawable")
-               return null
+            res?.let { res ->
+               log("load drawable $drawableName")
+               val id = res.getIdentifier(drawableName, "drawable", packageName)
+               if (id == 0) {
+                  log("failed to get drawable")
+                  return null
+               }
+               log("cache drawable")
+               icons[drawableName] = drawableToBitmap(res.getDrawable(id))
             }
-            log("cache drawable")
-            icons[drawableName] = drawableToBitmap(res!!.getDrawable(id))
          }
          return icons[drawableName]!!
       }
 
       open fun hasIcon(componentName: ComponentName): Boolean {
-         return componentName.toString() in appFilter
+         return (componentName.toString() in appFilter).also {
+            log("$packageName has icon $componentName == $it")
+         }
       }
 
       private fun loadAppFilter(): HashMap<String, String> {

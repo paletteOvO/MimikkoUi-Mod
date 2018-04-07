@@ -99,7 +99,7 @@ class DragAndDropListView<T> : ListView {
                lastX = ev.x.toInt()
                lastY = ev.y.toInt()
                it.bounds = hoverViewBound?.also {
-                  it.offset(0, dy)
+                  it.offset(dx, dy)
                }
                val rect = Rect()
                hoverView!!.getGlobalVisibleRect(rect)
@@ -132,12 +132,12 @@ class DragAndDropListView<T> : ListView {
    private fun createHoverViewDrawable(v: View) {
       val bitmap = Bitmap.createBitmap(v.width, v.height, Bitmap.Config.ARGB_8888)
       val canvas = Canvas(bitmap)
-      canvas.drawARGB(255, 255, 255, 255)
+      canvas.drawARGB(0xA0, 0xE5, 0xE5, 0xE5)
       canvas.save()
       v.draw(canvas)
       canvas.restore()
       val bitmapDrawable = BitmapDrawable(context.resources, bitmap)
-      bitmapDrawable.alpha = 128
+      bitmapDrawable.alpha = 160
       hoverViewBound = Rect(v.left, v.top, v.left + v.width, v.top + v.height)
       hoverViewDrawable = bitmapDrawable
 
