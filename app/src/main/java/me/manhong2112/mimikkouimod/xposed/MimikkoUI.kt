@@ -24,6 +24,8 @@ object MimikkoUI {
       const val bubble = 0x7f090048
       const val app_settings = 0x7f090026
       const val launcher_settings_main_container = 0x7f090134
+
+      const val ic_button_drawer = 0x7f08008d
    }
 
    object dimen {

@@ -1,17 +1,18 @@
 package me.manhong2112.mimikkouimod.xposed
 
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ResolveInfo
 import android.graphics.Bitmap
+import android.support.v4.content.ContextCompat
 import android.util.ArrayMap
 import me.manhong2112.mimikkouimod.R
 import me.manhong2112.mimikkouimod.common.Config
+import me.manhong2112.mimikkouimod.common.Const
 import me.manhong2112.mimikkouimod.common.Utils
 import me.manhong2112.mimikkouimod.common.Utils.arrayMapOf
-import me.manhong2112.mimikkouimod.common.Utils.drawableToBitmap
 import me.manhong2112.mimikkouimod.common.Utils.log
+import me.manhong2112.mimikkouimod.common.Utils.toBitmap
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
 import java.lang.ref.WeakReference
@@ -24,18 +25,23 @@ object IconProvider {
    private lateinit var iconPacks: List<IconPack>
    private val iconPacksCache: ArrayMap<String, IconPack> by lazy {
       arrayMapOf<String, IconPack>(
-            "default" to defaultIconPack
+            "default" to DefaultIconPack
       )
    }
-   private val defaultIconPack by lazy {
-      object : IconPack(ctx, "default") {
-         override fun getIcon(componentName: ComponentName): Bitmap? {
-            return null // IconHook will rollback to original method if icon is null
-         }
 
-         override fun hasIcon(componentName: ComponentName): Boolean {
-            return true
+   object DefaultIconPack : IconPack(ctx, "default") {
+      override fun getIcon(componentName: String): Bitmap? {
+         if (componentName == Const.drawerBtnDrawableComponentName) {
+            return ctx.get()?.let {
+               val res = it.packageManager.getResourcesForApplication(Const.mimikkouiPackageName)
+               ContextCompat.getDrawable(it, MimikkoUI.id.ic_button_drawer)?.toBitmap()
+            }
          }
+         return null // IconHook will rollback to original method if icon is null
+      }
+
+      override fun hasIcon(componentName: String): Boolean {
+         return true
       }
    }
 
@@ -62,17 +68,17 @@ object IconProvider {
 
    }
 
-   fun getIcon(componentName: ComponentName): Bitmap? {
+   fun getIcon(componentName: String): Bitmap? {
       iconPacks.forEach {
          if (it.hasIcon(componentName)) {
-            log("getIcon from $it")
+            // log("getIcon from $it")
             return it.getIcon(componentName)
          }
       }
       return null
    }
 
-   fun hasIcon(componentName: ComponentName): Boolean {
+   fun hasIcon(componentName: String): Boolean {
       iconPacks.forEach {
          if (it.hasIcon(componentName)) {
             return true
@@ -100,12 +106,12 @@ object IconProvider {
    }
 
 
-   open class IconPack(private val ctx: WeakReference<Context>, private val packageName: String) {
+   open class IconPack(protected val ctx: WeakReference<Context>, protected val packageName: String) {
       private val icons = HashMap<String, Bitmap>()
       private val appFilter by lazy {
          loadAppFilter()
       }
-      private val res by lazy {
+      protected val res by lazy {
          ctx.get()?.packageManager?.getResourcesForApplication(packageName)
       }
 
@@ -113,30 +119,29 @@ object IconProvider {
          return "IconPack($packageName)"
       }
 
-      open fun getIcon(componentName: ComponentName): Bitmap? {
-         val componentInfo = componentName.toString()
-         if (componentInfo !in appFilter) {
+      open fun getIcon(componentName: String): Bitmap? {
+         if (componentName !in appFilter) {
             return null
          }
-         val drawableName = appFilter[componentInfo]!!
+         val drawableName = appFilter[componentName]!!
          if (drawableName !in icons) {
             res?.let { res ->
-               log("load drawable $drawableName")
+               // log("load drawable $drawableName")
                val id = res.getIdentifier(drawableName, "drawable", packageName)
                if (id == 0) {
-                  log("failed to get drawable")
+                  log("failed to get drawable $drawableName from $packageName")
                   return null
                }
-               log("cache drawable")
-               icons[drawableName] = drawableToBitmap(res.getDrawable(id))
+               // log("cache drawable")
+               icons[drawableName] = res.getDrawable(id)!!.toBitmap()
             }
          }
          return icons[drawableName]!!
       }
 
-      open fun hasIcon(componentName: ComponentName): Boolean {
-         return (componentName.toString() in appFilter).also {
-            log("$packageName has icon $componentName == $it")
+      open fun hasIcon(componentName: String): Boolean {
+         return (componentName in appFilter).also {
+            // log("$packageName has icon $componentName == $it")
          }
       }
 

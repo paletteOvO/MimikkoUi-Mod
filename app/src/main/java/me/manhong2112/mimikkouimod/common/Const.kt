@@ -20,4 +20,6 @@ object Const {
    const val supportedVersionCode = 30
 
    const val drawerBackgroundId = 1641654
+
+   const val drawerBtnDrawableComponentName = ":LAUNCHER_ACTION_APP_DRAWER"
 }

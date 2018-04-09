@@ -34,7 +34,16 @@ object Utils {
       }
       return map
    }
-   fun drawableToBitmap(drawable: Drawable): Bitmap {
+
+   fun Drawable.toBitmap(): Bitmap {
+      return drawableToBitmap(this)
+   }
+
+   fun Bitmap.toDrawable(): BitmapDrawable {
+      return BitmapDrawable(this)
+   }
+
+   private fun drawableToBitmap(drawable: Drawable): Bitmap {
       if (drawable is BitmapDrawable) {
          if (drawable.bitmap != null) {
             return drawable.bitmap

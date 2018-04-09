@@ -19,7 +19,9 @@ object Config {
       DrawerDrawUnderStatusBar(false),
 
       GeneralIconPackFallback(listOf("default")),
+      GeneralIconPackApplyDrawerButton(false),
       GeneralIconScale(100), // in %
+      GeneralIconScaleApplyDrawerButton(false),
 
       GeneralTransparentStatusBar(false),
       GeneralDarkStatusBarIcon(false),
@@ -32,7 +34,6 @@ object Config {
       GeneralShortcutTextShadowRadius(10f),
       GeneralShortcutTextShadowDx(0f),
       GeneralShortcutTextShadowDy(0f);
-
 
       private val mDefaultValue: Any
       val isList: Boolean

@@ -41,9 +41,11 @@ class GeneralSettingFragment : SettingFragment() {
             }
          }).toMutableList()
 
-         sortingPreference("Icon Pack", Config.Key.GeneralIconPackFallback, displayList, result)
+         sortingPreference(R.string.pref_general_icon_pack, Config.Key.GeneralIconPackFallback, displayList, result)
+         switchPreference(R.string.pref_general_icon_pack_apply_to_drawer_btn, key = Config.Key.GeneralIconPackApplyDrawerButton)
 
          seekBarPreference<Int>(R.string.pref_general_icon_size, R.string.pref_general_icon_size_num_format, key = Config.Key.GeneralIconScale)
+         switchPreference(R.string.pref_general_icon_size_apply_to_drawer_btn, key = Config.Key.GeneralIconScaleApplyDrawerButton)
 
          switchPreference(R.string.pref_general_icon_text_original_name, key = Config.Key.GeneralShortcutTextOriginalName)
          editTextPreference(R.string.pref_general_icon_text_color,

@@ -13,12 +13,12 @@ import me.manhong2112.mimikkouimod.common.Config
 import me.manhong2112.mimikkouimod.common.Const.drawerBackgroundId
 import me.manhong2112.mimikkouimod.common.Utils
 import me.manhong2112.mimikkouimod.common.Utils.log
+import me.manhong2112.mimikkouimod.common.WeakReferenceDelegate.Companion.weak
 import org.jetbrains.anko.*
-import java.lang.ref.WeakReference
 
 object DrawerBackground {
    private var drawerBackground: Drawable? = null
-   private var imageView: WeakReference<ImageView>? = null
+   private var imageView: ImageView? by weak()
    fun enable(drawer: ViewGroup) {
       drawerBackground ?: return
       val parent = drawer.parent as RelativeLayout
@@ -27,8 +27,9 @@ object DrawerBackground {
       parent.padding = 0
 
       parent.findViewById<View?>(drawerBackgroundId) ?: run {
-         imageView = WeakReference(ImageView(drawer.context))
-         imageView!!.get()?.let {
+         imageView = ImageView(drawer.context)
+         imageView?.let {
+            it.scaleType = ImageView.ScaleType.CENTER_CROP
             it.id = drawerBackgroundId
             it.image = drawerBackground
             parent.addView(it, 0, RelativeLayout.LayoutParams(matchParent, matchParent))
@@ -65,7 +66,7 @@ object DrawerBackground {
                log("set drawerBackground br1")
                drawerBackground = BitmapDrawable(act.resources, wallpaper)
                act.runOnUiThread {
-                  imageView?.get()?.let {
+                  imageView?.let {
                      it.image = drawerBackground
                   }
                }

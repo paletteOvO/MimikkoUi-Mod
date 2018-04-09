@@ -5,6 +5,7 @@ import android.app.Activity
 import android.app.Application
 import android.content.*
 import android.graphics.Rect
+import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.View
@@ -43,6 +44,7 @@ import me.manhong2112.mimikkouimod.xposed.MimikkoUI.drawerSetSpanCountMethodName
 import org.jetbrains.anko.contentView
 import org.jetbrains.anko.find
 import org.jetbrains.anko.forEachChild
+import org.jetbrains.anko.image
 import java.io.File
 import kotlin.math.roundToInt
 import me.manhong2112.mimikkouimod.common.Config.Key as Cfg
@@ -73,29 +75,31 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
    private var drawer: ViewGroup? = null
       set(value) {
          field = value
-         initDrawer(launcherAct, value!!)
+         value?.let {
+            initDrawer(launcherAct, it)
+         }
       }
    private var workspace: ViewGroup? = null
       set(value) {
          field = value
-         initWorkspace(launcherAct, workspace!!)
+         value?.let {
+            initWorkspace(launcherAct, it)
+         }
       }
-   private val dock: RelativeLayout by lazy {
-      launcherAct.getField<RelativeLayout>("dock").also {
-         initDock(launcherAct, it)
+   private val dock: RelativeLayout
+      get() {
+         return launcherAct.getField<RelativeLayout>("dock").also {
+            initDock(launcherAct, it)
+         }
       }
-   }
    private var dockLayout: ViewGroup? = null
-   private val root: RelativeLayout by lazy {
-      launcherAct.getField<RelativeLayout>("root").also {
-         initRoot(launcherAct, it)
+   private var drawerBtn: ImageView? = null
+   private val root: RelativeLayout
+      get() {
+         return launcherAct.getField<RelativeLayout>("root").also {
+            initRoot(launcherAct, it)
+         }
       }
-   }
-   private val dragLayer: RelativeLayout by lazy {
-      launcherAct.getField<RelativeLayout>("dragLayer").also {}
-   }
-
-   private lateinit var drawerButton: ImageView
 
    override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
       if (lpparam.packageName != mimikkouiPackageName) return
@@ -121,10 +125,32 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
       // 設計時想了不少, 偏偏沒想到會把殼去掉..
       val launcherClass = findClass(mimikkouiLauncherActName, lpparam.classLoader)
       launcherClass.findMethod("onCreate", Bundle::class.java).hookAsync(after = { param ->
-         val app = (param.thisObject as Activity).application
-         onCreateHook(param)
+         log("onCreate")
+         launcherAct = param.thisObject as Activity
+         app = launcherAct.application
+
+         app.registerReceiver(configUpdateReceiver, IntentFilter(Const.configUpdateAction))
+         app.registerReceiver(wallpaperUpdateReceiver, IntentFilter(Intent.ACTION_WALLPAPER_CHANGED)) // well at least it still exist
+
+         bindConfigUpdateListener()
+         loadConfig(app)
+
+         IconProvider.update(app)
+         DrawerBackground.update(launcherAct)
+
+         drawer = null
+         workspace = null
+         dockLayout = null
+         drawerBtn = null
          realAppHook(app)
+         if (param.args[0] !== null) {
+            dockLayout = dock.find(MimikkoUI.id.dock_layout)
+         }
       })
+      launcherClass.findMethod("onDestroy").hook {
+         app.unregisterReceiver(configUpdateReceiver)
+         app.unregisterReceiver(wallpaperUpdateReceiver)
+      }
    }
 
    @Throws(Throwable::class)
@@ -132,17 +158,8 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
       if (resparam.packageName != mimikkouiPackageName) return
    }
 
-   private fun onCreateHook(param: XC_MethodHook.MethodHookParam) {
-      launcherAct = param.thisObject as Activity
-      app = launcherAct.application
-      app.registerReceiver(configUpdateReceiver, IntentFilter(Const.configUpdateAction))
-      app.registerReceiver(wallpaperUpdateReceiver, IntentFilter(Intent.ACTION_WALLPAPER_CHANGED)) // well at least it still exist
-
-      bindConfigUpdateListener()
-      loadConfig(app)
-
-      IconProvider.update(app)
-      DrawerBackground.update(launcherAct)
+   private fun realAppHook(app: Application) {
+      // com.mimikko.mimikkoui.launcher.components.cell.CellView
 
       val mAddViewVILp = root.findMethod("addView", View::class.java, Integer.TYPE, ViewGroup.LayoutParams::class.java)
       mAddViewVILp.hookAsync(after = {
@@ -150,10 +167,7 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
             rootHook(launcherAct, root, it)
          }
       })
-   }
 
-   private fun realAppHook(app: Application) {
-      // com.mimikko.mimikkoui.launcher.components.cell.CellView
       val launcherClass = findClass(mimikkouiLauncherActName, app.classLoader)
 //      launcherClass.findMethod("onCreate", Bundle::class.java).hook(after = ::onCreateHook)
 
@@ -161,8 +175,9 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
          // com.mimikko.mimikkoui.launcher.activity.Launcher -> load
          p ->
          // 鬼知道這數字甚麼意思, 我討厭殼 (好吧我承認是我渣
+         log("launcherClass load")
          if (p.args[0] as Int == 10) {
-            dock
+            log("load 10")
             dockLayout = dock.find(MimikkoUI.id.dock_layout)
          }
       }
@@ -170,7 +185,7 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
       val appItemEntityClass = findClass("com.mimikko.common.beans.models.AppItemEntity", app.classLoader)
       appItemEntityClass.findMethod("getIcon").replace { param ->
          val name = param.thisObject.invokeMethod<ComponentName>("getId")
-         return@replace IconProvider.getIcon(name) ?: throw ReflectionUtils.CallOriginalMethod
+         return@replace IconProvider.getIcon(name.toString()) ?: throw ReflectionUtils.CallOriginalMethod
       }
       appItemEntityClass.findMethod("getLabel").replace { param ->
          if (Config[Config.Key.GeneralShortcutTextOriginalName]) {
@@ -258,10 +273,29 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
       })
 
       Config.setOnChangeListener(Config.Key.GeneralIconPackFallback, { _, _: Any ->
-         log("setOnChangeListener GeneralIconPack")
+         log("setOnChangeListener GeneralIconPackFallback")
          IconProvider.update(app)
       })
 
+      Config.setOnChangeListener(Config.Key.GeneralIconPackApplyDrawerButton, { _, v: Boolean ->
+         log("setOnChangeListener GeneralIconPackApplyDrawerButton")
+         if (v) {
+            drawerBtn?.image = BitmapDrawable(launcherAct.resources, IconProvider.getIcon(Const.drawerBtnDrawableComponentName))
+         } else {
+            drawerBtn?.image = BitmapDrawable(launcherAct.resources, IconProvider.DefaultIconPack.getIcon(Const.drawerBtnDrawableComponentName))
+
+         }
+      })
+
+      Config.setOnChangeListener(Config.Key.GeneralIconScaleApplyDrawerButton, { _, v: Boolean ->
+         if (v) {
+            drawerBtn?.scaleX = Config.get<Int>(Config.Key.GeneralIconScale) / 100f
+            drawerBtn?.scaleY = Config.get<Int>(Config.Key.GeneralIconScale) / 100f
+         } else {
+            drawerBtn?.scaleX = 1f
+            drawerBtn?.scaleY = 1f
+         }
+      })
       Config.setOnChangeListener(Config.Key.GeneralIconScale, { _, scale: Int ->
          log("setOnChangeListener GeneralIconScale")
          refreshDrawerLayout()
@@ -330,18 +364,26 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
    }
 
    private fun initDock(act: Activity, dock: RelativeLayout) {
-      val drawerBtn = dock.findViewById(MimikkoUI.id.drawerButton) as View?
-      drawerBtn?.run {
-         setOnTouchListener(
+      log("initDock")
+      drawerBtn = drawerBtn ?: dock.findViewById(MimikkoUI.id.drawerButton) as ImageView?
+      drawerBtn?.let {
+         if (Config[Config.Key.GeneralIconPackApplyDrawerButton]) {
+            it.image = BitmapDrawable(act.resources, IconProvider.getIcon(Const.drawerBtnDrawableComponentName))
+         }
+         if (Config[Config.Key.GeneralIconScaleApplyDrawerButton]) {
+            it.scaleX = Config.get<Int>(Config.Key.GeneralIconScale) / 100f
+            it.scaleY = Config.get<Int>(Config.Key.GeneralIconScale) / 100f
+         }
+         it.setOnTouchListener(
                object : OnSwipeTouchListener(launcherAct) {
                   override fun onSwipeTop() {
                      if (Config[Config.Key.DockSwipeToDrawer]) {
                         onClick()
                      }
                   }
-
                   override fun onClick() {
-                     performClick()
+                     it.performClick()
+                     log("onClick")
                      drawer ?: run {
                         drawer = launcherAct.findViewById(MimikkoUI.id.drawer_layout) as ViewGroup
                      }

@@ -24,7 +24,6 @@ abstract class SettingFragment : Fragment() {
    }
    fun init(ctx: AppCompatActivity) {
       val ft = ctx.supportFragmentManager.beginTransaction()
-      ft.setCustomAnimations(R.anim.fade_slide_in_bottom, R.anim.fade_slide_out_bottom, R.anim.fade_slide_in_bottom, R.anim.fade_slide_out_bottom)
       ft.replace(android.R.id.content, this, null)
       ft.commitAllowingStateLoss()
    }
