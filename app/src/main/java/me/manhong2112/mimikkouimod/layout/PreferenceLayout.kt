@@ -377,6 +377,43 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
                height = dip(Const.prefItemHeight)
             }
 
+      fun PreferenceLayout.preferenceHeader(title: String) {
+         relativeLayout {
+            padding = dip(8)
+            val titleView = textView {
+               id = android.R.id.title // why?
+               text = title
+            }.lparams {
+               centerInParent()
+            }
+            view {
+               backgroundColor = 0xaaaaaa.opaque
+            }.lparams {
+               centerVertically()
+               height = dip(1.5f)
+               width = wrapContent
+
+               startOf(titleView)
+               marginStart = dip(64)
+               marginEnd = dip(16)
+            }
+            view {
+               backgroundColor = 0xaaaaaa.opaque
+            }.lparams {
+               centerVertically()
+               height = dip(1.5f)
+               width = wrapContent
+
+               endOf(titleView)
+               marginEnd = dip(64)
+               marginStart = dip(16)
+            }
+            lparams {
+               width = matchParent
+               height = wrapContent
+            }
+         }
+      }
       private fun getSelectedItemDrawable(ctx: Context): Drawable {
          val ta = ctx.obtainStyledAttributes(intArrayOf(R.attr.selectableItemBackground))
          val selectedItemDrawable = ta.getDrawable(0)
