@@ -33,4 +33,6 @@
     <string name="pref_general_icon_text_max_lines_num_format">%d</string>
 
     <string name="pref_dock_swipe_up_gesture">上划打开应用抽屉</string>
+    <string name="pref_general_icon_size_apply_to_drawer_btn">套用图标大小至抽屉按钮</string>
+    <string name="pref_general_icon_pack_apply_to_drawer_btn">套用图标包至抽屉按钮</string>
 </resources>

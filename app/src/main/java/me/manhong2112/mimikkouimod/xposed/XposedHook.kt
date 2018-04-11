@@ -125,7 +125,7 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
       // 設計時想了不少, 偏偏沒想到會把殼去掉..
       val launcherClass = findClass(mimikkouiLauncherActName, lpparam.classLoader)
       launcherClass.findMethod("onCreate", Bundle::class.java).hookAsync(after = { param ->
-         log("onCreate")
+         log("onCreate ${param.args.joinToString(", ")}")
          launcherAct = param.thisObject as Activity
          app = launcherAct.application
 
@@ -144,6 +144,7 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
          drawerBtn = null
          realAppHook(app)
          if (param.args[0] !== null) {
+            val bundle = param.args[0]
             dockLayout = dock.find(MimikkoUI.id.dock_layout)
          }
       })
@@ -411,6 +412,19 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
          ValueBackup.drawerMarginTop = ValueBackup.drawerMarginTop ?: lparams.topMargin
          lparams.topMargin = 0
       }
+//      if(Config[Config.Key.DrawerBatSwipeToSearch]) {
+//         val wrap = drawer.findViewById<FrameLayout?>(bat_wrap)
+//         wrap?.setOnTouchListener(object : OnSwipeTouchListener(activity) {
+//            override fun onClick() {
+//               performClick()
+//            }
+//
+//            override fun onSwipeTop() {
+//               activity.toast("SwipeTop")
+//            }
+//         })
+//      }
+
    }
 
    private fun setDrawerColumnSize(drawer: ViewGroup) {

@@ -17,6 +17,7 @@ object Config {
       DrawerBlurBackgroundBlurRadius(100),
       DrawerColumnSize(4),
       DrawerDrawUnderStatusBar(false),
+      DrawerBatSwipeToSearch(false),
 
       GeneralIconPackFallback(listOf("default")),
       GeneralIconPackApplyDrawerButton(false),
