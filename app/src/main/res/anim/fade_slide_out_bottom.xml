@@ -10,6 +10,6 @@
             android:interpolator="@android:interpolator/decelerate_cubic"
             android:duration="150"
             android:fromYDelta="0"
-            android:toAlpha="50">
+            android:toYDelta="50">
     </translate>
 </set>
