@@ -6,4 +6,5 @@
     <color name="colorPrimaryDark">#ffe75f75</color>
     <color name="colorRecommond">#ff00aaee</color>
     <color name="colorRecommondAccent">#ff4682b4</color>
+    <color name="backgroundNormal">#ffeeeeee</color>
 </resources>

@@ -33,7 +33,9 @@ abstract class SettingFragment : Fragment() {
       if (prefLayoutFuture === null) {
          prefLayoutFuture = doAsyncResult {
             log("init ${this.weakRef.get()?.javaClass?.name}")
-            val v = ctx.UI { preferenceLayout { createView(this@preferenceLayout) } }.view as ScrollView
+            val v = ctx.UI {
+               createView(preferenceLayout {})
+            }.view as ScrollView
             log("init-ed ${this.weakRef.get()?.javaClass?.name}")
             v
          }
