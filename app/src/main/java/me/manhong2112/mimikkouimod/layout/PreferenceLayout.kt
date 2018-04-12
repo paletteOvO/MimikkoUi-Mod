@@ -16,10 +16,12 @@ import me.manhong2112.mimikkouimod.R
 import me.manhong2112.mimikkouimod.common.Config
 import me.manhong2112.mimikkouimod.common.Const
 import org.jetbrains.anko.*
+import org.jetbrains.anko.cardview.v7.cardView
 import org.jetbrains.anko.custom.ankoView
 
 class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
    init {
+      id = View.generateViewId()
       orientation = VERTICAL
       lparams(matchParent, matchParent)
       backgroundColor = Color.WHITE
@@ -30,16 +32,19 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
    companion object {
       inline fun ViewManager.preferenceLayout(init: PreferenceLayout.() -> Unit = {}) = with(scrollView()) {
          isFillViewport = true
+         id = View.generateViewId()
          ankoView({ PreferenceLayout(it) }, 0, init)
       }
 
       inline fun Activity.preferenceLayout(init: PreferenceLayout.() -> Unit = {}) = with(scrollView()) {
          isFillViewport = true
+         id = View.generateViewId()
          ankoView({ PreferenceLayout(it) }, 0, init)
       }
 
       inline fun Context.preferenceLayout(init: PreferenceLayout.() -> Unit = {}) = with(scrollView()) {
          isFillViewport = true
+         id = View.generateViewId()
          ankoView({ PreferenceLayout(it) }, 0, init)
       }
 
@@ -105,6 +110,7 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
 
       fun PreferenceLayout.switchPreference(name: String, summary: String? = null, key: Config.Key, init: Switch.() -> Unit = {}) {
          relativeLayout {
+            id = View.generateViewId()
             backgroundDrawable = getSelectedItemDrawable(ctx)
             isClickable = true
             if (summary !== null) {
@@ -131,16 +137,17 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
                }
             }
             val s = switch {
-               isChecked = Config[key]
+               ctx.runOnUiThread {
+                  isChecked = Config[key]
+               }
                isClickable = false
             }.lparams {
-               width = wrapContent
                height = dip(Const.prefItemHeight)
                centerInParent()
                alignParentRight()
             }
             setOnClickListener {
-               s.isChecked = !s.isChecked
+               s.toggle()
                Config[key] = s.isChecked
             }
          }.lparams {
@@ -168,6 +175,7 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
             setPadding(dip(12), 0, dip(12), 0)
             backgroundDrawable = getSelectedItemDrawable(ctx)
             isClickable = true
+            id = View.generateViewId()
             val title = textView {
                id = View.generateViewId()
                text = name
@@ -244,6 +252,7 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
          relativeLayout {
             backgroundDrawable = getSelectedItemDrawable(ctx)
             isClickable = true
+            id = View.generateViewId()
             if (summary !== null) {
                textView {
                   text = name
@@ -292,6 +301,7 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
 
       fun <T> PreferenceLayout.editTextPreference(name: String, summary: String? = null, hint: String? = null, key: Config.Key, displayParser: (T) -> String = { it.toString() }, valueParser: (String) -> T = { it as T }) {
          relativeLayout {
+            id = View.generateViewId()
             backgroundDrawable = getSelectedItemDrawable(ctx)
             isClickable = true
             textView {
@@ -345,6 +355,7 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
       // TODO summary
       fun PreferenceLayout.sortingPreference(name: String, key: Config.Key, displayList: MutableList<String>, valueList: MutableList<String>) =
             relativeLayout {
+               id = View.generateViewId()
                gravity = Gravity.CENTER_VERTICAL
                isClickable = true
                backgroundDrawable = getSelectedItemDrawable(ctx)
@@ -379,6 +390,7 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
 
       fun PreferenceLayout.preferenceHeader(title: String) {
          relativeLayout {
+            id = View.generateViewId()
             padding = dip(8)
             val titleView = textView {
                id = android.R.id.title // why?
@@ -411,6 +423,15 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
             lparams {
                width = matchParent
                height = wrapContent
+            }
+         }
+      }
+
+      fun PreferenceLayout.preferenceGroup(init: _LinearLayout.() -> Unit = {}) {
+         cardView {
+            id = View.generateViewId()
+            linearLayout {
+               init()
             }
          }
       }

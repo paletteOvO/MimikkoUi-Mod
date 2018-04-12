@@ -32,13 +32,15 @@ dependencies {
 
     implementation "org.jetbrains.anko:anko-common:$anko_version"
     implementation "org.jetbrains.anko:anko-sdk25:$anko_version"
+    implementation "org.jetbrains.anko:anko-cardview-v7:$anko_version"
     // implementation "org.jetbrains.anko:anko-appcompat-v7:$anko_version"
 
     compileOnly files('lib/XposedBridgeApi-54.jar')
 
     implementation "com.android.support:appcompat-v7:$support_version"
     implementation "com.android.support:support-v4:$support_version"
-    implementation "com.android.support:preference-v14:$support_version"
+    implementation "com.android.support:cardview-v7:$support_version"
+    // implementation "com.android.support:preference-v14:$support_version"
     // compile 'com.android.support:support-vector-drawable:27.+'
 
     // implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.9.0.pr3'
