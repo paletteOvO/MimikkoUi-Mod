@@ -52,92 +52,20 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
       fun ViewGroup.preferencePage(page: SettingFragment, nameRes: Int, summaryRes: Int = 0, icon: Drawable? = null) =
             preferencePage(page, context.getString(nameRes), if (summaryRes == 0) null else context.getString(summaryRes), icon)
 
-      fun ViewGroup.preferencePage(page: SettingFragment, name: String, summary: String? = null, icon: Drawable? = null) =
-            relativeLayout {
-               id = View.generateViewId()
-               backgroundDrawable = getSelectedItemDrawable(context)
-               isClickable = true
-               val iconImageView = imageView {
-                  id = View.generateViewId()
-                  padding = dip(12)
-                  image = icon
-               }.lparams {
-                  width = dip(Const.prefIconWidth) + dip(12)
-                  height = dip(Const.prefIconHeight)
-                  alignParentLeft()
-                  centerInParent()
-               }
-               if (summary !== null) {
-                  verticalLayout {
-                     id = View.generateViewId()
-                     textView {
-                        id = View.generateViewId()
-                        textSize = sp(6.5f).toFloat()
-                        text = name
-                     }
-                     textView {
-                        id = View.generateViewId()
-                        textSize = sp(6).toFloat()
-                        text = summary
-                        textColor = Color.DKGRAY
-                     }
-                  }.lparams {
-                     setPadding(0, dip(6), 0, dip(6))
-                     rightOf(iconImageView)
-                     centerInParent()
-                     gravity = Gravity.CENTER_VERTICAL
-                  }
-               } else {
-                  textView {
-                     id = View.generateViewId()
-                     textSize = sp(6.5f).toFloat()
-                     text = name
-                  }.lparams {
-                     setPadding(0, dip(6), 0, dip(6))
-                     rightOf(iconImageView)
-                     centerInParent()
-                  }
-               }
-               setOnClickListener {
-                  page.open(context as AppCompatActivity)
-               }
-               lparams {
-                  width = matchParent
-                  height = dip(Const.prefItemHeight)
-               }
+      fun ViewGroup.preferencePage(page: SettingFragment, name: String, summary: String? = null, icon: Drawable? = null) {
+         basePreference(name, summary, icon) { _ ->
+            setOnClickListener {
+               page.open(this@preferencePage.context as AppCompatActivity)
             }
+         }
+      }
 
       fun ViewGroup.switchPreference(nameRes: Int, summaryRes: Int = 0, key: Config.Key, init: Switch.() -> Unit = {}) =
             switchPreference(context.getString(nameRes), if (summaryRes == 0) null else context.getString(summaryRes), key, init)
 
       fun ViewManager.switchPreference(name: String, summary: String? = null, key: Config.Key, init: Switch.() -> Unit = {}) {
-         relativeLayout {
-            id = View.generateViewId()
-            backgroundDrawable = getSelectedItemDrawable(context)
-            isClickable = true
-            if (summary !== null) {
-               verticalLayout {
-                  textView {
-                     text = name
-                  }
-                  textView {
-                     text = summary
-                  }
-               }.lparams {
-                  padding = dip(12)
-                  gravity = Gravity.CENTER_VERTICAL
-                  centerInParent()
-                  alignParentLeft()
-               }
-            } else {
-               textView {
-                  text = name
-               }.lparams {
-                  padding = dip(12)
-                  centerInParent()
-                  alignParentLeft()
-               }
-            }
+         basePreference(name, summary) {
+
             val s = switch {
                context.runOnUiThread {
                   isChecked = Config[key]
@@ -151,10 +79,6 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
             setOnClickListener {
                s.toggle()
                Config[key] = s.isChecked
-            }
-            lparams {
-               width = matchParent
-               height = dip(Const.prefItemHeight)
             }
          }
       }
@@ -205,10 +129,11 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
                }
                addView(numView)
             }
-            seekBar {
+            ankoView({ BubbleSeekBar(it) }, 0) {
                setMax(max - min)
                incrementProgressBy(step)
                progress = defaultValue
+
                setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                   override fun onProgressChanged(p0: SeekBar, value: Int, p2: Boolean) {
                      numFormat?.run {
@@ -305,35 +230,7 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
       }
 
       fun <T> ViewGroup.editTextPreference(name: String, summary: String? = null, hint: String? = null, key: Config.Key, displayParser: (T) -> String = { it.toString() }, valueParser: (String) -> T = { it as T }) {
-         relativeLayout {
-            id = View.generateViewId()
-            backgroundDrawable = getSelectedItemDrawable(context)
-            isClickable = true
-            textView {
-               text = name
-               gravity = if (summary === null) {
-                  Gravity.CENTER_VERTICAL
-               } else {
-                  Gravity.BOTTOM or Gravity.START
-               }
-            }.lparams {
-               height = dip(Const.prefItemHeight) / 2
-               padding = dip(12)
-               alignParentLeft()
-               if (summary === null) {
-                  centerInParent()
-               }
-            }
-            summary?.let {
-               textView {
-                  text = it
-               }.lparams {
-                  alignParentLeft()
-                  height = dip(Const.prefItemHeight) / 2
-                  gravity = Gravity.TOP or Gravity.START
-                  padding = dip(12)
-               }
-            }
+         basePreference(name, summary) { _ ->
             setOnClickListener {
                context.alert {
                   customView {
@@ -347,10 +244,6 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
                   }
                }.show()
             }
-            lparams {
-               width = matchParent
-               height = dip(Const.prefItemHeight)
-            }
          }
       }
 
@@ -358,42 +251,31 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
          sortingPreference(name = context.getString(nameRes), key = key, displayList = displayList, valueList = valueList)
       }
 
-      // TODO summary
-      fun ViewManager.sortingPreference(name: String, key: Config.Key, displayList: MutableList<String>, valueList: MutableList<String>) =
-            relativeLayout {
-               id = View.generateViewId()
-               gravity = Gravity.CENTER_VERTICAL
-               isClickable = true
-               backgroundDrawable = getSelectedItemDrawable(context)
-               textView {
-                  text = name
-                  gravity = Gravity.CENTER_VERTICAL
-               }.lparams {
-                  height = dip(Const.prefItemHeight) / 2
-                  padding = dip(12)
-               }
-               setOnClickListener {
-                  context.alert {
-                     customView {
-                        ankoView({ DragAndDropListView<String>(it) }, 0) {
-                           targetList = displayList
-                           adapter = ArrayAdapter(context, android.R.layout.simple_list_item_1, displayList)
-                           divider = null
-                           onItemSwapListener = { i1, i2 ->
-                              valueList.swap(i1, i2)
-                           }
+      fun ViewManager.sortingPreference(name: String, key: Config.Key, displayList: MutableList<String>, valueList: MutableList<String>) {
+         basePreference(name) {
+            setOnClickListener {
+               context.alert {
+                  customView {
+                     ankoView({ DragAndDropListView<String>(it) }, 0) {
+                        targetList = displayList
+                        adapter = ArrayAdapter(context, android.R.layout.simple_list_item_1, displayList)
+                        divider = null
+                        onItemSwapListener = { i1, i2 ->
+                           valueList.swap(i1, i2)
                         }
                      }
-                     positiveButton("OK") {
-                        Config[key] = valueList
-                     }
-                  }.show()
-               }
-               lparams {
-                  width = matchParent
-                  height = dip(Const.prefItemHeight)
-               }
+                  }
+                  positiveButton("OK") {
+                     Config[key] = valueList
+                  }
+               }.show()
             }
+            lparams {
+               width = matchParent
+               height = dip(Const.prefItemHeight)
+            }
+         }
+      }
 
       fun ViewManager.preferenceHeader(title: String) {
          relativeLayout {
@@ -449,6 +331,56 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
                }
             }
 
+      fun ViewManager.basePreference(name: String, summary: String? = null, icon: Drawable? = null, init: _RelativeLayout.(TextView?) -> Unit = { _ -> }) = relativeLayout {
+         id = View.generateViewId()
+         backgroundDrawable = getSelectedItemDrawable(context)
+         isClickable = true
+         val iconView = imageView {
+            id = View.generateViewId()
+            image = icon
+         }.lparams {
+            centerInParent()
+            alignParentStart()
+            padding = dip(8)
+            width = dip(Const.prefIconWidth)
+            height = dip(Const.prefIconHeight)
+         }
+
+         val nameView = textView {
+            id = View.generateViewId()
+            text = name
+            if (summary !== null) {
+               gravity = Gravity.BOTTOM
+            } else {
+               gravity = Gravity.CENTER_VERTICAL
+            }
+         }.lparams {
+            rightOf(iconView)
+            if (summary === null) {
+               centerInParent()
+            } else {
+               height = dip(Const.prefItemHeight / 2)
+            }
+         }
+         var summaryView: TextView? = null
+         if (summary !== null) {
+            summaryView = textView {
+               text = summary
+               id = View.generateViewId()
+               gravity = Gravity.TOP
+               textColorResource = Color.DKGRAY
+            }.lparams {
+               below(nameView)
+               height = dip(Const.prefItemHeight / 2)
+            }
+         }
+         init(this@relativeLayout, summaryView)
+         lparams {
+            height = dip(Const.prefItemHeight)
+            width = matchParent
+         }
+      }
+
       private fun getSelectedItemDrawable(ctx: Context): Drawable {
          val ta = ctx.obtainStyledAttributes(intArrayOf(R.attr.selectableItemBackground))
          val selectedItemDrawable = ta.getDrawable(0)
@@ -457,3 +389,4 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
       }
    }
 }
+

@@ -11,8 +11,8 @@ object Const {
 
    // in dip
    const val prefItemHeight = 64
-   const val prefIconHeight = 48
-   const val prefIconWidth = 48
+   const val prefIconHeight = prefItemHeight - 12 - 6
+   const val prefIconWidth = prefItemHeight - 12 - 6
 
    const val prefFloatPrecise = 10e2f
 

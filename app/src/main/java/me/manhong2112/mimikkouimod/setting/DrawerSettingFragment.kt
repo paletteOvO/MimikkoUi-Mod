@@ -11,7 +11,6 @@ class DrawerSettingFragment : SettingFragment() {
    override fun createView(layout: PreferenceLayout) {
       with(layout) {
          switchPreference(R.string.pref_drawer_blur_background, key = Config.Key.DrawerBlurBackground)
-         switchPreference(R.string.pref_drawer_blur_background, key = Config.Key.DrawerBlurBackground)
          seekBarPreference<Int>(R.string.pref_drawer_blur_background_radius, R.string.pref_drawer_blur_background_radius_num_format, Config.Key.DrawerBlurBackgroundBlurRadius, max = 999)
          switchPreference(R.string.pref_drawer_darken_background, key = Config.Key.DrawerDarkBackground)
 
