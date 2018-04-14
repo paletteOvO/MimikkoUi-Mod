@@ -31,9 +31,9 @@ class SettingsActivity : AppCompatActivity() {
       supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
       preferenceLayout {
-         preferencePage(GeneralSettingFragment().init(this@SettingsActivity), R.string.pref_page_general)
-         preferencePage(DrawerSettingFragment().init(this@SettingsActivity), R.string.pref_page_drawer)
-         preferencePage(DockSettingFragment().init(this@SettingsActivity), R.string.pref_page_dock)
+         preferencePage(GeneralSettingFragment(), R.string.pref_page_general)
+         preferencePage(DrawerSettingFragment(), R.string.pref_page_drawer)
+         preferencePage(DockSettingFragment(), R.string.pref_page_dock)
       }
    }
 

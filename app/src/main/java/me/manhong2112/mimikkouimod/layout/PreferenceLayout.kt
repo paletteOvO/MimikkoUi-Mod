@@ -50,6 +50,7 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
             preferencePage(page, context.getString(nameRes), if (summaryRes == 0) null else context.getString(summaryRes), icon)
 
       fun ViewGroup.preferencePage(page: SettingFragment, name: String, summary: String? = null, icon: Drawable? = null) {
+         page.init(context as Activity)
          basePreference(name, summary, icon) { _, _, _ ->
             setOnClickListener {
                page.open(this@preferencePage.context as AppCompatActivity)
@@ -96,6 +97,9 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
                                                    init: SeekBar.() -> Unit = {}) {
          basePreference(name, "") { iconView, nameView, _ ->
             ankoView({ BubbleSeekBar(it) }, 0) {
+               setPadding(25, 0, dip(8) + 25, 0)
+               minimumHeight = dip(Const.prefItemHeight) / 2
+               gravity = Gravity.CENTER
                setMax(max - min)
                incrementProgressBy(step)
                val value = displayParse(Config[key])
@@ -105,17 +109,22 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
                   override fun onProgressChanged(p0: SeekBar, value: Int, p2: Boolean) {
                      this@ankoView.progressText = numFormat?.format(valueParse(value + min)) ?: valueParse(value + min).toString()
                   }
+
                   override fun onStartTrackingTouch(p0: SeekBar) {
                   }
+
                   override fun onStopTrackingTouch(p0: SeekBar) {
                      Config[key] = valueParse(p0.progress + min)
                   }
                })
             }.lparams {
+               leftMargin = -25
+               rightMargin = -25
                width = matchParent
                height = dip(Const.prefItemHeight) / 2
                below(nameView)
                rightOf(iconView)
+               alignParentBottom()
             }
          }
       }
@@ -220,14 +229,11 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
                         }
                      }
                   }
+
                   positiveButton("OK") {
                      Config[key] = valueList
                   }
                }.show()
-            }
-            lparams {
-               width = matchParent
-               height = dip(Const.prefItemHeight)
             }
          }
       }
@@ -290,13 +296,14 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
          id = View.generateViewId()
          backgroundDrawable = getSelectedItemDrawable(context)
          isClickable = true
+         setPadding(dip(8), 0, dip(8), 0)
          val iconView = imageView {
+            padding = dip(8)
             id = View.generateViewId()
             image = icon
          }.lparams {
             centerInParent()
             alignParentStart()
-            padding = dip(8)
             width = dip(Const.prefIconWidth)
             height = dip(Const.prefIconHeight)
          }
@@ -311,10 +318,11 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
             }
          }.lparams {
             height = dip(Const.prefItemHeight / 2)
-
             rightOf(iconView)
             if (summary === null) {
                centerVertically()
+            } else {
+               alignParentTop()
             }
          }
          var summaryView: TextView? = null

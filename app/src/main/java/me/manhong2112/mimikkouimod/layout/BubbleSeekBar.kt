@@ -1,7 +1,6 @@
 package me.manhong2112.mimikkouimod.layout
 
 import android.animation.Animator
-import android.app.Activity
 import android.content.Context
 import android.graphics.*
 import android.support.v4.content.ContextCompat
@@ -36,8 +35,8 @@ class BubbleSeekBar : SeekBar {
                val rect = Rect(thumbPos.first - w / 2, thumbPos.second - h / 2, thumbPos.first - w / 2 + w, thumbPos.second - h / 2 + h)
                if (rect.contains(e.x.toInt(), e.y.toInt())) {
                   showBubble()
-                  return@setOnTouchListener true
                }
+               return@setOnTouchListener true
             }
          }
          false
@@ -67,15 +66,17 @@ class BubbleSeekBar : SeekBar {
    }
 
    private fun showBubble() {
-      if (((context as Activity).window.decorView as ViewGroup).findViewById<Bubble?>(mBubble.id) != null) {
+      if (mBubble.parent != null) {
          return
       }
-      ((context as Activity).window.decorView as ViewGroup).addView(mBubble, WindowManager.LayoutParams(wrapContent, wrapContent))
+      log("showBubble")
+      val lp = WindowManager.LayoutParams(wrapContent, wrapContent)
+      (rootView as ViewGroup).addView(mBubble, lp)
       mBubble.alpha = 1f
       mBubble.scaleX = 0f
       mBubble.scaleY = 0f
-      mBubble.pivotX = mBubble.mBubbleRadius / 2f * 3f
-      mBubble.pivotY = mBubble.mBubbleRadius * 3f
+      mBubble.pivotX = mBubble.radius / 2f * 3f
+      mBubble.pivotY = mBubble.radius * 3f
       mBubble.animate().scaleX(1f).scaleY(1f).setDuration(130).setListener(
             object : Animator.AnimatorListener {
                override fun onAnimationRepeat(animation: Animator?) {
@@ -95,8 +96,8 @@ class BubbleSeekBar : SeekBar {
    }
 
    private fun moveBubble() {
-      mBubble.x = getThumbPosOnScreen().first.toFloat() - (mBubble.mBubbleRadius * 3 / 2)
-      mBubble.y = getThumbPosOnScreen().second.toFloat() - mBubble.mBubbleRadius * 3 - dip(5)
+      mBubble.x = getThumbPosOnScreen().first.toFloat() - (mBubble.radius * 3 / 2)
+      mBubble.y = getThumbPosOnScreen().second.toFloat() - mBubble.radius * 3 - dip(5)
       mBubble.invalidate()
    }
 
@@ -107,11 +108,11 @@ class BubbleSeekBar : SeekBar {
                }
 
                override fun onAnimationEnd(animation: Animator?) {
-                  ((context as Activity).window.decorView as ViewGroup).removeView(mBubble)
+                  (rootView as ViewGroup).removeView(mBubble)
                }
 
                override fun onAnimationCancel(animation: Animator?) {
-                  ((context as Activity).window.decorView as ViewGroup).removeView(mBubble)
+                  (rootView as ViewGroup).removeView(mBubble)
                }
 
                override fun onAnimationStart(animation: Animator?) {
@@ -125,7 +126,7 @@ class BubbleSeekBar : SeekBar {
       return thumb.bounds.let {
          val arr: IntArray = intArrayOf(0, 0)
          getLocationOnScreen(arr)
-         (arr[0] + it.centerX() + thumb.intrinsicWidth / 2 - 6 to arr[1] + it.centerY()).also { // why 6 ??
+         (arr[0] + it.centerX() - thumb.intrinsicWidth / 2 + paddingLeft to arr[1] + it.centerY()).also { // why 6 ??
             value ->
             log(value.toString())
             log("${arr[0]}, ${arr[1]}")
@@ -146,7 +147,7 @@ class BubbleSeekBar : SeekBar {
       private val mBubblePath = Path()
       private val mBubbleRectF = RectF()
       private val mRect = Rect()
-      val mBubbleRadius = 48f
+      val radius = 48f
       private val mBubblePaint = Paint()
       private val mBubbleColor = ContextCompat.getColor(ctx, R.color.colorAccent)
       private val mBubbleTextColor = Color.WHITE
@@ -160,10 +161,10 @@ class BubbleSeekBar : SeekBar {
       override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
          super.onMeasure(widthMeasureSpec, heightMeasureSpec)
 
-         setMeasuredDimension(3 * mBubbleRadius.toInt(), 3 * mBubbleRadius.toInt())
+         setMeasuredDimension(3 * radius.toInt(), 3 * radius.toInt())
 
-         mBubbleRectF.set(measuredWidth / 2f - mBubbleRadius, 0f,
-               measuredWidth / 2f + mBubbleRadius, 2 * mBubbleRadius)
+         mBubbleRectF.set(measuredWidth / 2f - radius, 0f,
+               measuredWidth / 2f + radius, 2 * radius)
       }
 
       override fun onDraw(canvas: Canvas) {
@@ -171,17 +172,17 @@ class BubbleSeekBar : SeekBar {
 
          mBubblePath.reset()
          val x0 = measuredWidth / 2f
-         val y0 = measuredHeight - mBubbleRadius / 3f
+         val y0 = measuredHeight - radius / 3f
          mBubblePath.moveTo(x0, y0)
-         val x1 = (measuredWidth / 2f - Math.sqrt(3.0) / 2f * mBubbleRadius).toFloat()
-         val y1 = 3 / 2f * mBubbleRadius
+         val x1 = (measuredWidth / 2f - Math.sqrt(3.0) / 2f * radius).toFloat()
+         val y1 = 3 / 2f * radius
          mBubblePath.quadTo(
                x1 - dip(2), y1 - dip(2),
                x1, y1
          )
          mBubblePath.arcTo(mBubbleRectF, 150f, 240f)
 
-         val x2 = (measuredWidth / 2f + Math.sqrt(3.0) / 2f * mBubbleRadius).toFloat()
+         val x2 = (measuredWidth / 2f + Math.sqrt(3.0) / 2f * radius).toFloat()
          mBubblePath.quadTo(
                x2 + dip(2), y1 - dip(2),
                x0, y0
@@ -196,7 +197,7 @@ class BubbleSeekBar : SeekBar {
 
          mBubblePaint.getTextBounds(progressText, 0, progressText.length, mRect)
          val fm = mBubblePaint.fontMetrics
-         val baseline = mBubbleRadius + (fm.descent - fm.ascent) / 2f - fm.descent
+         val baseline = radius + (fm.descent - fm.ascent) / 2f - fm.descent
          canvas.drawText(progressText, measuredWidth / 2f, baseline, mBubblePaint)
       }
    }

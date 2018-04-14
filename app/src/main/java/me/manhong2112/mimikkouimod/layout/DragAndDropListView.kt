@@ -132,12 +132,12 @@ class DragAndDropListView<T> : ListView {
    private fun createHoverViewDrawable(v: View) {
       val bitmap = Bitmap.createBitmap(v.width, v.height, Bitmap.Config.ARGB_8888)
       val canvas = Canvas(bitmap)
-      canvas.drawARGB(0xA0, 0xE5, 0xE5, 0xE5)
+      canvas.drawARGB(0xFF, 0xE5, 0xE5, 0xE5)
       canvas.save()
       v.draw(canvas)
       canvas.restore()
       val bitmapDrawable = BitmapDrawable(context.resources, bitmap)
-      bitmapDrawable.alpha = 160
+      bitmapDrawable.alpha = 180
       hoverViewBound = Rect(v.left, v.top, v.left + v.width, v.top + v.height)
       hoverViewDrawable = bitmapDrawable
 
