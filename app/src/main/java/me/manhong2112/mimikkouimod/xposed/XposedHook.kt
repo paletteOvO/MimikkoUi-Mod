@@ -47,7 +47,7 @@ import org.jetbrains.anko.forEachChild
 import org.jetbrains.anko.image
 import java.io.File
 import kotlin.math.roundToInt
-import me.manhong2112.mimikkouimod.common.Config.Key as Cfg
+import me.manhong2112.mimikkouimod.common.Config.Key as K
 
 open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
    lateinit var app: Application
@@ -276,6 +276,9 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
       Config.setOnChangeListener(Config.Key.GeneralIconPackFallback, { _, _: Any ->
          log("setOnChangeListener GeneralIconPackFallback")
          IconProvider.update(app)
+         if (Config[K.GeneralIconPackApplyDrawerButton]) {
+            drawerBtn?.image = BitmapDrawable(launcherAct.resources, IconProvider.getIcon(Const.drawerBtnDrawableComponentName))
+         }
       })
 
       Config.setOnChangeListener(Config.Key.GeneralIconPackApplyDrawerButton, { _, v: Boolean ->
@@ -284,7 +287,6 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
             drawerBtn?.image = BitmapDrawable(launcherAct.resources, IconProvider.getIcon(Const.drawerBtnDrawableComponentName))
          } else {
             drawerBtn?.image = BitmapDrawable(launcherAct.resources, IconProvider.DefaultIconPack.getIcon(Const.drawerBtnDrawableComponentName))
-
          }
       })
 
@@ -310,6 +312,11 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
          workspace?.findViews(MimikkoUI.id.bubble)?.forEach {
             it.invokeMethod<Any>("setIconRect", Rect(-s, -s, s, s))
             it.invalidate()
+         }
+
+         if (Config[K.GeneralIconScaleApplyDrawerButton]) {
+            drawerBtn?.scaleX = Config.get<Int>(Config.Key.GeneralIconScale) / 100f
+            drawerBtn?.scaleY = Config.get<Int>(Config.Key.GeneralIconScale) / 100f
          }
       })
    }
