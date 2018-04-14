@@ -39,6 +39,7 @@ object DrawerBackground {
             parent.addView(it, 0, RelativeLayout.LayoutParams(matchParent, matchParent))
          }
       }
+      imageView?.visibility = View.VISIBLE
    }
 
    fun disable(drawer: ViewGroup) {

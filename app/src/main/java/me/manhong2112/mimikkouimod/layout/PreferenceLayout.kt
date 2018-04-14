@@ -9,10 +9,7 @@ import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewManager
-import android.widget.ArrayAdapter
-import android.widget.SeekBar
-import android.widget.Switch
-import android.widget.TextView
+import android.widget.*
 import me.manhong2112.mimikkouimod.R
 import me.manhong2112.mimikkouimod.common.Config
 import me.manhong2112.mimikkouimod.common.Const
@@ -53,7 +50,7 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
             preferencePage(page, context.getString(nameRes), if (summaryRes == 0) null else context.getString(summaryRes), icon)
 
       fun ViewGroup.preferencePage(page: SettingFragment, name: String, summary: String? = null, icon: Drawable? = null) {
-         basePreference(name, summary, icon) { _ ->
+         basePreference(name, summary, icon) { _, _, _ ->
             setOnClickListener {
                page.open(this@preferencePage.context as AppCompatActivity)
             }
@@ -64,8 +61,7 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
             switchPreference(context.getString(nameRes), if (summaryRes == 0) null else context.getString(summaryRes), key, init)
 
       fun ViewManager.switchPreference(name: String, summary: String? = null, key: Config.Key, init: Switch.() -> Unit = {}) {
-         basePreference(name, summary) {
-
+         basePreference(name, summary) { _, _, _ ->
             val s = switch {
                context.runOnUiThread {
                   isChecked = Config[key]
@@ -98,52 +94,19 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
                                                    displayParse: (T) -> Int = { it.toInt() },
                                                    valueParse: (Int) -> T = { it as T },
                                                    init: SeekBar.() -> Unit = {}) {
-         relativeLayout {
-            setPadding(dip(12), 0, dip(12), 0)
-            backgroundDrawable = getSelectedItemDrawable(context)
-            isClickable = true
-            id = View.generateViewId()
-            val title = textView {
-               id = View.generateViewId()
-               text = name
-               gravity = Gravity.CENTER_VERTICAL
-            }.lparams {
-               width = matchParent
-               height = dip(Const.prefItemHeight) / 2
-               alignParentLeft()
-               alignParentTop()
-            }
-            lateinit var numView: TextView
-            val defaultValue = displayParse(Config[key]) - min
-            numFormat?.run {
-               numView = TextView(context)
-               numView.text = numFormat.format(Config.get<T>(key))
-               numView.textSize = sp(5).toFloat()
-               numView.gravity = Gravity.END or Gravity.CENTER_VERTICAL
-               numView.id = View.generateViewId()
-               numView.lparams {
-                  below(title)
-                  alignParentLeft()
-                  height = dip(Const.prefItemHeight) / 2
-                  width = dip(36)
-               }
-               addView(numView)
-            }
+         basePreference(name, "") { iconView, nameView, _ ->
             ankoView({ BubbleSeekBar(it) }, 0) {
                setMax(max - min)
                incrementProgressBy(step)
-               progress = defaultValue
-
+               val value = displayParse(Config[key])
+               progress = value - min
+               progressText = numFormat?.format(valueParse(value)) ?: valueParse(value).toString()
                setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                   override fun onProgressChanged(p0: SeekBar, value: Int, p2: Boolean) {
-                     numFormat?.run {
-                        numView.text = numFormat.format(valueParse(value + min))
-                     }
+                     this@ankoView.progressText = numFormat?.format(valueParse(value + min)) ?: valueParse(value + min).toString()
                   }
-
                   override fun onStartTrackingTouch(p0: SeekBar) {
                   }
-
                   override fun onStopTrackingTouch(p0: SeekBar) {
                      Config[key] = valueParse(p0.progress + min)
                   }
@@ -151,16 +114,8 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
             }.lparams {
                width = matchParent
                height = dip(Const.prefItemHeight) / 2
-               alignParentBottom()
-               if (numFormat !== null) {
-                  rightOf(numView)
-               } else {
-                  alignParentLeft()
-               }
-            }
-            lparams {
-               width = matchParent
-               height = dip(Const.prefItemHeight)
+               below(nameView)
+               rightOf(iconView)
             }
          }
       }
@@ -230,7 +185,7 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
       }
 
       fun <T> ViewGroup.editTextPreference(name: String, summary: String? = null, hint: String? = null, key: Config.Key, displayParser: (T) -> String = { it.toString() }, valueParser: (String) -> T = { it as T }) {
-         basePreference(name, summary) { _ ->
+         basePreference(name, summary) { _, _, _ ->
             setOnClickListener {
                context.alert {
                   customView {
@@ -252,7 +207,7 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
       }
 
       fun ViewManager.sortingPreference(name: String, key: Config.Key, displayList: MutableList<String>, valueList: MutableList<String>) {
-         basePreference(name) {
+         basePreference(name) { _, _, _ ->
             setOnClickListener {
                context.alert {
                   customView {
@@ -331,7 +286,7 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
                }
             }
 
-      fun ViewManager.basePreference(name: String, summary: String? = null, icon: Drawable? = null, init: _RelativeLayout.(TextView?) -> Unit = { _ -> }) = relativeLayout {
+      fun ViewManager.basePreference(name: String, summary: String? = null, icon: Drawable? = null, init: _RelativeLayout.(ImageView, TextView, TextView?) -> Unit = { _, _, _ -> }) = relativeLayout {
          id = View.generateViewId()
          backgroundDrawable = getSelectedItemDrawable(context)
          isClickable = true
@@ -349,17 +304,17 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
          val nameView = textView {
             id = View.generateViewId()
             text = name
-            if (summary !== null) {
-               gravity = Gravity.BOTTOM
-            } else {
+            if (summary === null) {
                gravity = Gravity.CENTER_VERTICAL
+            } else {
+               gravity = Gravity.BOTTOM
             }
          }.lparams {
+            height = dip(Const.prefItemHeight / 2)
+
             rightOf(iconView)
             if (summary === null) {
-               centerInParent()
-            } else {
-               height = dip(Const.prefItemHeight / 2)
+               centerVertically()
             }
          }
          var summaryView: TextView? = null
@@ -368,13 +323,14 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
                text = summary
                id = View.generateViewId()
                gravity = Gravity.TOP
-               textColorResource = Color.DKGRAY
+               textColor = Color.DKGRAY
             }.lparams {
-               below(nameView)
                height = dip(Const.prefItemHeight / 2)
+               rightOf(iconView)
+               below(nameView)
             }
          }
-         init(this@relativeLayout, summaryView)
+         init(this@relativeLayout, iconView, nameView, summaryView)
          lparams {
             height = dip(Const.prefItemHeight)
             width = matchParent
