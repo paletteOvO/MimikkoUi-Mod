@@ -4,7 +4,6 @@ import android.app.Activity
 import android.app.WallpaperManager
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
-import android.graphics.drawable.Drawable
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -15,14 +14,19 @@ import me.manhong2112.mimikkouimod.common.Utils
 import me.manhong2112.mimikkouimod.common.Utils.log
 import me.manhong2112.mimikkouimod.common.WeakReferenceDelegate.Companion.weak
 import org.jetbrains.anko.*
+import java.util.concurrent.Future
 
 object DrawerBackground {
-   private var drawerBackground: Drawable? = null
+   private val drawerBackground: BitmapDrawable?
+      get() {
+         return drawerBackgroundFuture?.get()
+      }
+   private var drawerBackgroundFuture: Future<BitmapDrawable?>? = null
    private var imageView: ImageView? by weak()
+
    fun enable(drawer: ViewGroup) {
       drawerBackground ?: return
       val parent = drawer.parent as RelativeLayout
-      // drawerBGBackup = drawerBGBackup ?: parent.background
       (drawer.layoutParams as RelativeLayout.LayoutParams).setMargins(0, parent.topPadding, 0, 0)
       parent.padding = 0
 
@@ -38,42 +42,43 @@ object DrawerBackground {
    }
 
    fun disable(drawer: ViewGroup) {
-      val parent = drawer.parent as ViewGroup
-      parent.findViewById<View?>(drawerBackgroundId)?.let {
-         parent.removeView(it)
-      }
+      imageView?.visibility = View.GONE
    }
 
-   private val lock: Any = Any()
    fun update(act: Activity, drawer: View? = null) {
       log("update start")
-      val x = Config.get<Int>(Config.Key.DrawerBlurBackgroundBlurRadius)
-      doAsync {
-         synchronized(lock) {
-            if (Config[Config.Key.DrawerBlurBackground] && x != 0) {
-               val wallpaperManager = WallpaperManager.getInstance(act)
+      val v = Config.get<Int>(Config.Key.DrawerBlurBackgroundBlurRadius)
+      drawerBackground?.bitmap?.recycle()
+      drawerBackgroundFuture?.cancel(true)
+      drawerBackgroundFuture = if (Config[Config.Key.DrawerBlurBackground] && v != 0) {
+         log("set drawerBackground br1")
+         doAsyncResult {
+            val wallpaperManager = WallpaperManager.getInstance(act)
 
-               val scaleFactor = 1 - x / 1000f
-               val wallpaperBitmap = (wallpaperManager.drawable as BitmapDrawable).bitmap.copy(Bitmap.Config.ARGB_8888, true)
-               val bitmap = Utils.downscale(wallpaperBitmap, scaleFactor)
-               wallpaperBitmap.recycle()
+            val scaleFactor = 1 - v / 1000f
+            val wallpaperBitmap = (wallpaperManager.drawable as BitmapDrawable).bitmap.copy(Bitmap.Config.ARGB_8888, true)
+            val bitmap = Utils.downscale(wallpaperBitmap, scaleFactor)
+            wallpaperBitmap.recycle()
 
-               val wallpaper =
-                     if (Config[Config.Key.DrawerDarkBackground])
-                        Utils.darken(Utils.blur(act, bitmap, Config.get<Int>(Config.Key.DrawerBlurBackgroundBlurRadius).toFloat() / 40f))
-                     else
-                        Utils.blur(act, bitmap, Config.get<Int>(Config.Key.DrawerBlurBackgroundBlurRadius).toFloat() / 40f)
-               log("set drawerBackground br1")
-               drawerBackground = BitmapDrawable(act.resources, wallpaper)
-               act.runOnUiThread {
-                  imageView?.let {
-                     it.image = drawerBackground
-                  }
-               }
+            val wallpaper =
+                  if (Config[Config.Key.DrawerDarkBackground])
+                     Utils.darken(Utils.blur(act, bitmap, v.toFloat() / 40f))
+                  else
+                     Utils.blur(act, bitmap, v.toFloat() / 40f)
+            val result = BitmapDrawable(act.resources, wallpaper)
+
+            act.runOnUiThread {
+               imageView?.image = result
             }
+            return@doAsyncResult result
          }
+      } else {
+         log("set drawerBackground br2")
+         act.runOnUiThread {
+            imageView?.image = null
+         }
+         null
       }
-
       log("update end")
    }
 }
