@@ -16,7 +16,9 @@
 #   public *;
 #}
 -verbose
--keep class me.manhong2112.mimikkouimod.xposed.GeneralHook {*;}
+-keep class me.manhong2112.mimikkouimod.xposed.MainHook {
+    public void handleLoadPackage(de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam);
+}
 
 -optimizationpasses 99
 -dontoptimize

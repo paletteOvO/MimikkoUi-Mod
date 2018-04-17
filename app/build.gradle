@@ -63,7 +63,7 @@ android {
         abortOnError false
     }
     signingConfigs {
-        release {
+        config {
             setV1SigningEnabled true
             setV2SigningEnabled true
             Properties properties = new Properties()
@@ -79,7 +79,11 @@ android {
             setMinifyEnabled true
             setZipAlignEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            setSigningConfig signingConfigs.release
+            setSigningConfig signingConfigs.config
+        }
+        debug {
+            setZipAlignEnabled true
+            setSigningConfig signingConfigs.config
         }
     }
 }
