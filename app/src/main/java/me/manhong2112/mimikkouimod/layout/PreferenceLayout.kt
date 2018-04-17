@@ -50,7 +50,7 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
             preferencePage(page, context.getString(nameRes), if (summaryRes == 0) null else context.getString(summaryRes), icon)
 
       fun ViewGroup.preferencePage(page: SettingFragment, name: String, summary: String? = null, icon: Drawable? = null) {
-         page.init(context as Activity)
+         page.init(this@preferencePage.context as AppCompatActivity)
          basePreference(name, summary, icon) { _, _, _ ->
             setOnClickListener {
                page.open(this@preferencePage.context as AppCompatActivity)
@@ -63,7 +63,13 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
 
       fun ViewManager.switchPreference(name: String, summary: String? = null, key: Config.Key, init: Switch.() -> Unit = {}) {
          basePreference(name, summary) { _, _, _ ->
-            val s = switch {
+            val s = ankoView({
+               object : Switch(it) {
+                  override fun isLaidOut(): Boolean {
+                     return height > 0 && width > 0
+                  }
+               }
+            }, 0) {
                context.runOnUiThread {
                   isChecked = Config[key]
                }
@@ -292,58 +298,59 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
                }
             }
 
-      fun ViewManager.basePreference(name: String, summary: String? = null, icon: Drawable? = null, init: _RelativeLayout.(ImageView, TextView, TextView?) -> Unit = { _, _, _ -> }) = relativeLayout {
-         id = View.generateViewId()
-         backgroundDrawable = getSelectedItemDrawable(context)
-         isClickable = true
-         setPadding(dip(8), 0, dip(8), 0)
-         val iconView = imageView {
-            padding = dip(8)
-            id = View.generateViewId()
-            image = icon
-         }.lparams {
-            centerInParent()
-            alignParentStart()
-            width = dip(Const.prefIconWidth)
-            height = dip(Const.prefIconHeight)
-         }
-
-         val nameView = textView {
-            id = View.generateViewId()
-            text = name
-            if (summary === null) {
-               gravity = Gravity.CENTER_VERTICAL
-            } else {
-               gravity = Gravity.BOTTOM
-            }
-         }.lparams {
-            height = dip(Const.prefItemHeight / 2)
-            rightOf(iconView)
-            if (summary === null) {
-               centerVertically()
-            } else {
-               alignParentTop()
-            }
-         }
-         var summaryView: TextView? = null
-         if (summary !== null) {
-            summaryView = textView {
-               text = summary
+      fun ViewManager.basePreference(name: String, summary: String? = null, icon: Drawable? = null, init: _RelativeLayout.(ImageView, TextView, TextView?) -> Unit = { _, _, _ -> }) =
+            relativeLayout {
                id = View.generateViewId()
-               gravity = Gravity.TOP
-               textColor = Color.DKGRAY
-            }.lparams {
-               height = dip(Const.prefItemHeight / 2)
-               rightOf(iconView)
-               below(nameView)
+               backgroundDrawable = getSelectedItemDrawable(context)
+               isClickable = true
+               setPadding(dip(8), 0, dip(8), 0)
+               val iconView = imageView {
+                  padding = dip(8)
+                  id = View.generateViewId()
+                  image = icon
+               }.lparams {
+                  centerInParent()
+                  alignParentStart()
+                  width = dip(Const.prefIconWidth)
+                  height = dip(Const.prefIconHeight)
+               }
+
+               val nameView = textView {
+                  id = View.generateViewId()
+                  text = name
+                  if (summary === null) {
+                     gravity = Gravity.CENTER_VERTICAL
+                  } else {
+                     gravity = Gravity.BOTTOM
+                  }
+               }.lparams {
+                  height = dip(Const.prefItemHeight / 2)
+                  rightOf(iconView)
+                  if (summary === null) {
+                     centerVertically()
+                  } else {
+                     alignParentTop()
+                  }
+               }
+               var summaryView: TextView? = null
+               if (summary !== null) {
+                  summaryView = textView {
+                     text = summary
+                     id = View.generateViewId()
+                     gravity = Gravity.TOP
+                     textColor = Color.DKGRAY
+                  }.lparams {
+                     height = dip(Const.prefItemHeight / 2)
+                     rightOf(iconView)
+                     below(nameView)
+                  }
+               }
+               init(this@relativeLayout, iconView, nameView, summaryView)
+               lparams {
+                  height = dip(Const.prefItemHeight)
+                  width = matchParent
+               }
             }
-         }
-         init(this@relativeLayout, iconView, nameView, summaryView)
-         lparams {
-            height = dip(Const.prefItemHeight)
-            width = matchParent
-         }
-      }
 
       private fun getSelectedItemDrawable(ctx: Context): Drawable {
          val ta = ctx.obtainStyledAttributes(intArrayOf(R.attr.selectableItemBackground))
