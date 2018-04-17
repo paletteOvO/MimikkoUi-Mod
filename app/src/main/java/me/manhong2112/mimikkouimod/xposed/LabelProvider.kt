@@ -18,8 +18,21 @@ object LabelProvider {
 
    fun getLabelFromRes(ctx: Context, name: ComponentName): String {
       val packageManager = ctx.packageManager
+      val info = packageManager.getActivityInfo(name, 0)
+      return if (info.labelRes == 0) {
+         info.nonLocalizedLabel?.toString() ?: getApplicationLabel(ctx, name)
+      } else {
+         packageManager.getResourcesForApplication(name.packageName).getString(info.labelRes)
+      }
+   }
+
+   fun getApplicationLabel(ctx: Context, name: ComponentName): String {
+      val packageManager = ctx.packageManager
       val info = packageManager.getApplicationInfo(name.packageName, 0)
-      val stringId = info.labelRes
-      return if (stringId == 0) info.nonLocalizedLabel.toString() else packageManager.getResourcesForApplication(info).getString(stringId)
+      return if (info.labelRes == 0) {
+         info.nonLocalizedLabel.toString()
+      } else {
+         packageManager.getResourcesForApplication(name.packageName).getString(info.labelRes)
+      }
    }
 }
