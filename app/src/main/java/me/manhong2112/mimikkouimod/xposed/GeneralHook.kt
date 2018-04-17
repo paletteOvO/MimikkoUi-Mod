@@ -209,8 +209,8 @@ open class GeneralHook {
          }
 
          if (Config[K.GeneralIconScaleApplyDrawerButton]) {
-            drawerBtn?.scaleX = Config.get<Int>(Config.Key.GeneralIconScale) / 100f
-            drawerBtn?.scaleY = Config.get<Int>(Config.Key.GeneralIconScale) / 100f
+            drawerBtn?.scaleX = scale / 100f
+            drawerBtn?.scaleY = scale / 100f
          }
       })
    }
@@ -220,8 +220,6 @@ open class GeneralHook {
       val innerLayout = param.args[0] as ViewGroup
       when (innerLayout) {
          is RelativeLayout -> {
-            // it can be drawerLayout or Workspace
-            // drawerLayout : com.mimikko.mimikkoui.launcher.components.drawer.DrawerLayout
             if (workspace === null && innerLayout.findViewById<View?>(MimikkoUI.id.workspace) !== null) {
                workspace = innerLayout.findViewById(MimikkoUI.id.workspace) as ViewGroup
             }

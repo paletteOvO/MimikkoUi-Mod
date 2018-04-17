@@ -143,9 +143,24 @@ class DrawerHook {
          }
       }
 
+      Config.addOnChangeListener(K.DrawerBatSwipeToSearch, { _, v: Boolean ->
+         drawer?.let {
+            val parent = it.parent as ViewGroup
+            if (v) {
+               if (searchWrap.parent !== null) return@let
+               parent.find<FrameLayout>(MimikkoUI.id.bat_wrap).addView(searchWrap)
+            } else {
+               if (searchWrap.parent === null) return@let
+               (searchWrap.parent as ViewGroup).removeView(searchWrap)
+            }
+         }
+      })
+
       Config.addOnChangeListener(K.GeneralIconScale, { _, scale: Int ->
          refreshDrawerLayout()
       })
+
+
    }
 
    private fun initDrawer(activity: Activity, drawer: ViewGroup) {
@@ -158,7 +173,7 @@ class DrawerHook {
          ValueBackup.drawerMarginTop = ValueBackup.drawerMarginTop ?: lparams.topMargin
          lparams.topMargin = 0
       }
-      val h = activity.dip(48)
+
       val parent = drawer.parent as ViewGroup
       val batView = parent.find<TextView>(MimikkoUI.id.bat)
       parent.find<FrameLayout>(MimikkoUI.id.bat_wrap).addView(searchWrap)
@@ -169,13 +184,16 @@ class DrawerHook {
                }
 
                override fun onSwipeTop() {
-                  Utils.log("onSwipeTop")
-                  searchWrap.visibility = View.VISIBLE
-                  batView.visibility = View.INVISIBLE
-                  activity.window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN)
+                  if (Config[K.DrawerBatSwipeToSearch]) {
+                     Utils.log("onSwipeTop")
+                     searchWrap.visibility = View.VISIBLE
+                     batView.visibility = View.INVISIBLE
+                     activity.window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN)
+                  }
                }
             }
       )
+
       XposedHelpers.findAndHookMethod(launcherAct::class.java, "onBackPressed", object : XC_MethodHook() {
          override fun beforeHookedMethod(param: MethodHookParam) {
             if (searchWrap.visibility == View.VISIBLE) {

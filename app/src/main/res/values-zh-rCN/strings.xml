@@ -12,6 +12,7 @@
     <string name="pref_drawer_column_size">行大小</string>
     <string name="pref_drawer_column_size_num_format">%d</string>
     <string name="pref_drawer_draw_under_status_bar">允许图标显示在状态栏下</string>
+    <string name="pref_drawer_bat_swipe_to_search">批量整理上划搜索</string>
 
     <string name="pref_general_transparent_status_bar">状态栏透明</string>
     <string name="pref_general_dark_status_bar_icon">状态栏深色图标</string>
