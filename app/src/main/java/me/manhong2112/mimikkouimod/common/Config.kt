@@ -57,7 +57,7 @@ object Config {
    }
 
    private val data = arrayOfNulls<Any>(Key.values().size)
-   private val callbacks = arrayOfNulls<kotlin.Function2<Key, *, Unit>>(Key.values().size)
+   private val callbacks = arrayOfNulls<ArrayList<(Key, Any) -> Unit>>(Key.values().size)
    private var sharedPreferences: SharedPreferences? = null
    operator fun <R> get(key: Key): R {
       if (data[key.ordinal] === null) {
@@ -79,15 +79,33 @@ object Config {
       callCallback(key, value)
    }
 
-   fun <T> setOnChangeListener(key: Key, callback: (Key, T) -> Unit) {
-      callbacks[key.ordinal] = callback
+   fun <T> addOnChangeListener(key: Key, callback: (Key, T) -> Unit): Int {
+      if (callbacks[key.ordinal] === null) {
+         callbacks[key.ordinal] = arrayListOf(callback as (Key, Any) -> Unit)
+      } else {
+         callbacks[key.ordinal]!!.add(callback as (Key, Any) -> Unit)
+      }
+      return callbacks.size - 1 // Index
+   }
+
+   fun <T> removeOnChangeListener(key: Key, callback: (Key, T) -> Unit) {
+      callbacks[key.ordinal]?.remove<Any>(callback)
+   }
+
+   fun <T> removeOnChangeListener(key: Key, index: Int) {
+      callbacks[key.ordinal]?.removeAt(index)
    }
 
    fun callCallback(key: Key, value: Any) {
-      if (callbacks[key.ordinal] !== null) {
-         log("call $key callback")
-         callbacks[key.ordinal]!!(key, value)
+      log("call $key callback")
+      callbacks[key.ordinal]?.forEach {
+         it(key, value)
       }
+   }
+
+   fun callCallback(key: Key, index: Int, value: Any) {
+      log("call $key callback")
+      callbacks[key.ordinal]?.get(index)?.invoke(key, value)
    }
 
    fun loadSharedPref(pref: SharedPreferences, callCallback: Boolean = false) {

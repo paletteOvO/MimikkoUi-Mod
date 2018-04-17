@@ -8,6 +8,12 @@ object MimikkoUI {
    const val dockSceneVariableName = "aPH" // in Launcher class
    const val dockLayoutVariableName = "bag" // in DockScene class
 
+   const val packageName = "com.mimikko.mimikkoui"
+   const val appClsName = "com.mimikko.common.App"
+
+   const val launcherClsName = "com.mimikko.mimikkoui.launcher.activity.Launcher"
+   const val drawerLayoutClsName = "com.mimikko.mimikkoui.launcher.components.drawer.DrawerLayout"
+
    object id {
       const val dock_layout = 0x7f0900ad
       const val drawer_layout = 0x7f0900b4

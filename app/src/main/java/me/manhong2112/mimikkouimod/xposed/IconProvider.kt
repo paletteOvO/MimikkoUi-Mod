@@ -33,7 +33,7 @@ object IconProvider {
       override fun getIcon(componentName: String): Bitmap? {
          if (componentName == Const.drawerBtnDrawableComponentName) {
             return ctx.get()?.let {
-               val res = it.packageManager.getResourcesForApplication(Const.mimikkouiPackageName)
+               val res = it.packageManager.getResourcesForApplication(MimikkoUI.packageName)
                ContextCompat.getDrawable(it, MimikkoUI.drawable.ic_button_drawer)?.toBitmap()
             }
          }

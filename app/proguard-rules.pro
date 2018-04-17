@@ -16,7 +16,7 @@
 #   public *;
 #}
 -verbose
--keep class me.manhong2112.mimikkouimod.xposed.XposedHook {*;}
+-keep class me.manhong2112.mimikkouimod.xposed.GeneralHook {*;}
 
 -optimizationpasses 99
 -dontoptimize

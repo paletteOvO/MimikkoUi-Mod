@@ -99,7 +99,7 @@ class DragAndDropListView<T> : ListView {
                lastX = ev.x.toInt()
                lastY = ev.y.toInt()
                it.bounds = hoverViewBound?.also {
-                  it.offset(dx, dy)
+                  it.offset(0, dy)
                }
                val rect = Rect()
                hoverView!!.getGlobalVisibleRect(rect)

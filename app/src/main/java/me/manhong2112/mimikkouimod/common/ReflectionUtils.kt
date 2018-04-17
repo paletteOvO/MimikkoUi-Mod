@@ -21,8 +21,8 @@ object ReflectionUtils {
    }
 
 
-   inline fun hookMethodAsync(method: Member, crossinline before: (XC_MethodHook.MethodHookParam) -> Unit = {}, crossinline after: (XC_MethodHook.MethodHookParam) -> Unit = {}): XC_MethodHook.Unhook {
-      return XposedBridge.hookMethod(method, object : XC_MethodHook() {
+   inline fun hookMethodAsync(priority: Int = 50, method: Member, crossinline before: (XC_MethodHook.MethodHookParam) -> Unit = {}, crossinline after: (XC_MethodHook.MethodHookParam) -> Unit = {}): XC_MethodHook.Unhook {
+      return XposedBridge.hookMethod(method, object : XC_MethodHook(priority) {
          override fun beforeHookedMethod(param: MethodHookParam) {
             doAsync {
                before(param)
@@ -102,9 +102,9 @@ object ReflectionUtils {
       })
    }
 
-   inline fun Method.hook(crossinline before: (XC_MethodHook.MethodHookParam) -> Unit = {}, crossinline after: (XC_MethodHook.MethodHookParam) -> Unit = {}): XC_MethodHook.Unhook {
+   inline fun Method.hook(priority: Int = 50, crossinline before: (XC_MethodHook.MethodHookParam) -> Unit = {}, crossinline after: (XC_MethodHook.MethodHookParam) -> Unit = {}): XC_MethodHook.Unhook {
       this.isAccessible = true
-      return XposedBridge.hookMethod(this, object : XC_MethodHook() {
+      val hook = XposedBridge.hookMethod(this, object : XC_MethodHook(priority) {
          override fun beforeHookedMethod(param: MethodHookParam) {
             before(param)
          }
@@ -113,11 +113,12 @@ object ReflectionUtils {
             after(param)
          }
       })
+      return hook
    }
 
-   inline fun Method.hookAsync(crossinline before: (XC_MethodHook.MethodHookParam) -> Unit = {}, crossinline after: (XC_MethodHook.MethodHookParam) -> Unit = {}): XC_MethodHook.Unhook {
+   inline fun Method.hookAsync(priority: Int = 50, crossinline before: (XC_MethodHook.MethodHookParam) -> Unit = {}, crossinline after: (XC_MethodHook.MethodHookParam) -> Unit = {}): XC_MethodHook.Unhook {
       this.isAccessible = true
-      return hookMethodAsync(this, before = before, after = after)
+      return hookMethodAsync(priority, this, before = before, after = after)
    }
 
    inline fun <T> Constructor<T>.hook(crossinline before: (XC_MethodHook.MethodHookParam) -> Unit = {}, crossinline after: (XC_MethodHook.MethodHookParam) -> Unit = {}) {

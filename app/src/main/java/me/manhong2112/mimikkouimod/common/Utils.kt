@@ -17,9 +17,12 @@ import android.util.ArrayMap
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
+import de.robv.android.xposed.XposedHelpers
+import de.robv.android.xposed.callbacks.XC_LoadPackage
 import me.manhong2112.mimikkouimod.BuildConfig
 import org.jetbrains.anko.forEachChild
 import org.jetbrains.anko.opaque
+import java.io.File
 
 
 object Utils {
@@ -194,6 +197,20 @@ object Utils {
                func(it)
             }
          }
+      }
+   }
+
+   fun getPackageVersion(lpparam: XC_LoadPackage.LoadPackageParam): Pair<String, Int>? {
+      return try {
+         val parserCls = XposedHelpers.findClass("android.content.pm.PackageParser", lpparam.classLoader)
+         val parser = parserCls.newInstance()
+         val apkPath = File(lpparam.appInfo.sourceDir)
+         val pkg = XposedHelpers.callMethod(parser, "parsePackage", apkPath, 0)
+         val versionName = XposedHelpers.getObjectField(pkg, "mVersionName") as String
+         val versionCode = XposedHelpers.getIntField(pkg, "mVersionCode")
+         Pair(versionName, versionCode)
+      } catch (e: Throwable) {
+         null
       }
    }
 

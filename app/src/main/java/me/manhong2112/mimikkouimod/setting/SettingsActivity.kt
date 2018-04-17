@@ -10,6 +10,7 @@ import me.manhong2112.mimikkouimod.common.Const
 import me.manhong2112.mimikkouimod.common.Utils.log
 import me.manhong2112.mimikkouimod.layout.PreferenceLayout.Companion.preferenceLayout
 import me.manhong2112.mimikkouimod.layout.PreferenceLayout.Companion.preferencePage
+import me.manhong2112.mimikkouimod.xposed.MimikkoUI
 import org.jetbrains.anko.defaultSharedPreferences
 import java.io.Serializable
 
@@ -17,12 +18,12 @@ class SettingsActivity : AppCompatActivity() {
    override fun onCreate(savedInstanceState: Bundle?) {
       super.onCreate(savedInstanceState)
       Config.Key.values().forEach { key ->
-         Config.setOnChangeListener(key) { key, value: Any ->
+         Config.addOnChangeListener(key) { key, value: Any ->
             log("send config $key -> $value")
             val intent = Intent(Const.configUpdateAction)
             intent.putExtra("Key", key.name)
             intent.putExtra("Value", value as Serializable)
-            intent.`package` = Const.mimikkouiPackageName
+            intent.`package` = MimikkoUI.packageName
             sendBroadcast(intent)
          }
       }
