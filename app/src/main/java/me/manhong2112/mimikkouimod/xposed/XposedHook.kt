@@ -7,16 +7,15 @@ import android.content.*
 import android.graphics.Rect
 import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.view.WindowManager
-import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.RelativeLayout
-import android.widget.TextView
+import android.widget.*
 import de.robv.android.xposed.IXposedHookInitPackageResources
 import de.robv.android.xposed.IXposedHookLoadPackage
 import de.robv.android.xposed.XC_MethodHook
@@ -41,10 +40,9 @@ import me.manhong2112.mimikkouimod.common.Utils.findViews
 import me.manhong2112.mimikkouimod.common.Utils.log
 import me.manhong2112.mimikkouimod.setting.SettingsActivity
 import me.manhong2112.mimikkouimod.xposed.MimikkoUI.drawerSetSpanCountMethodName
-import org.jetbrains.anko.contentView
-import org.jetbrains.anko.find
-import org.jetbrains.anko.forEachChild
-import org.jetbrains.anko.image
+import me.manhong2112.mimikkouimod.xposed.MimikkoUI.id.bat
+import me.manhong2112.mimikkouimod.xposed.MimikkoUI.id.bat_wrap
+import org.jetbrains.anko.*
 import java.io.File
 import kotlin.math.roundToInt
 import me.manhong2112.mimikkouimod.common.Config.Key as K
@@ -52,6 +50,7 @@ import me.manhong2112.mimikkouimod.common.Config.Key as K
 open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources {
    lateinit var app: Application
    lateinit var launcherAct: Activity
+
 
    private val configUpdateReceiver by lazy {
       object : BroadcastReceiver() {
@@ -389,6 +388,7 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
                         onClick()
                      }
                   }
+
                   override fun onClick() {
                      it.performClick()
                      log("onClick")
@@ -419,19 +419,65 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
          ValueBackup.drawerMarginTop = ValueBackup.drawerMarginTop ?: lparams.topMargin
          lparams.topMargin = 0
       }
-//      if(Config[Config.Key.DrawerBatSwipeToSearch]) {
-//         val wrap = drawer.findViewById<FrameLayout?>(bat_wrap)
-//         wrap?.setOnTouchListener(object : OnSwipeTouchListener(activity) {
-//            override fun onClick() {
-//               performClick()
-//            }
-//
-//            override fun onSwipeTop() {
-//               activity.toast("SwipeTop")
-//            }
-//         })
-//      }
+      log("before h")
+      val h = activity.dip(48)
+      log("after h")
 
+      val parent = drawer.parent as ViewGroup
+      val batView = parent.find<TextView>(bat)
+      val searchWrap = parent.find<FrameLayout>(bat_wrap).relativeLayout {
+         visibility = View.INVISIBLE
+         lparams {
+            height = h
+            width = matchParent
+         }
+         editText {
+            addTextChangedListener(object : TextWatcher {
+               override fun afterTextChanged(s: Editable) {
+                  val adapter = drawer.invokeMethod<Any>("getAdapter")
+                  adapter.invokeMethod<Unit>("refresh")
+                  if (s.isNotEmpty()) {
+                     adapter.getField<ArrayList<Any>>("aLN").retainAll {
+                        it.invokeMethod<String>("getLabel").contains(s.toString(), true)
+                     }
+                  }
+                  drawer.findMethod("setAdapter", findClass("android.support.v7.widget.RecyclerView\$Adapter", app.classLoader))
+                        .invoke(drawer, adapter)
+               }
+
+               override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+               override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+
+            })
+         }.lparams {
+            height = matchParent
+            width = matchParent
+         }
+      }
+      batView.setOnTouchListener(
+            object : OnSwipeTouchListener(activity) {
+               override fun onClick() {
+                  batView.performClick()
+               }
+
+               override fun onSwipeTop() {
+                  log("onSwipeTop")
+                  searchWrap.visibility = View.VISIBLE
+                  batView.visibility = View.INVISIBLE
+                  activity.window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN)
+               }
+            }
+      )
+      XposedHelpers.findAndHookMethod(launcherAct::class.java, "onBackPressed", object : XC_MethodHook() {
+         override fun beforeHookedMethod(param: MethodHookParam) {
+            if (searchWrap.visibility == View.VISIBLE) {
+               drawer.invokeMethod<Any>("getAdapter").invokeMethod<Unit>("refresh")
+               searchWrap.visibility = View.INVISIBLE
+               batView.visibility = View.VISIBLE
+               param.result = null
+            }
+         }
+      })
    }
 
    private fun setDrawerColumnSize(drawer: ViewGroup) {
@@ -443,8 +489,8 @@ open class XposedHook : IXposedHookLoadPackage, IXposedHookInitPackageResources 
          // 哇這堆完全不知道原理是啥的玩意居然靠譜, 玄學編程玄學編程
          it.findMethod("setAdapter", findClass("android.support.v7.widget.RecyclerView\$Adapter", app.classLoader))
                .invoke(it, it.invokeMethod<Any>("getAdapter"))
-         it.findMethod("setLayoutManager", findClass("android.support.v7.widget.RecyclerView\$LayoutManager", app.classLoader))
-               .invoke(it, it.invokeMethod<Any>("getLayoutManager"))
+//         it.findMethod("setLayoutManager", findClass("android.support.v7.widget.RecyclerView\$LayoutManager", app.classLoader))
+//               .invoke(it, it.invokeMethod<Any>("getLayoutManager"))
       }
 
    }

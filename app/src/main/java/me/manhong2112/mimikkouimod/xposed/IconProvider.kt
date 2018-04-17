@@ -34,7 +34,7 @@ object IconProvider {
          if (componentName == Const.drawerBtnDrawableComponentName) {
             return ctx.get()?.let {
                val res = it.packageManager.getResourcesForApplication(Const.mimikkouiPackageName)
-               ContextCompat.getDrawable(it, MimikkoUI.id.ic_button_drawer)?.toBitmap()
+               ContextCompat.getDrawable(it, MimikkoUI.drawable.ic_button_drawer)?.toBitmap()
             }
          }
          return null // IconHook will rollback to original method if icon is null

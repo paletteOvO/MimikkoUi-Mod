@@ -138,6 +138,11 @@ object Utils {
          Log.d(Const.TAG, msg)
    }
 
+   fun log(msg: Any) {
+      if (BuildConfig.DEBUG)
+         Log.d(Const.TAG, msg.toString())
+   }
+
    operator fun String.times(n: Int): String {
       return this.repeat(n)
    }

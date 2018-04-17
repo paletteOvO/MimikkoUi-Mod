@@ -21,19 +21,7 @@ object ReflectionUtils {
    }
 
 
-   fun hookMethod(method: Member, before: (XC_MethodHook.MethodHookParam) -> Unit = {}, after: (XC_MethodHook.MethodHookParam) -> Unit = {}): XC_MethodHook.Unhook {
-      return XposedBridge.hookMethod(method, object : XC_MethodHook() {
-         override fun beforeHookedMethod(param: MethodHookParam) {
-            before(param)
-         }
-
-         override fun afterHookedMethod(param: MethodHookParam) {
-            after(param)
-         }
-      })
-   }
-
-   fun hookMethodAsync(method: Member, before: (XC_MethodHook.MethodHookParam) -> Unit = {}, after: (XC_MethodHook.MethodHookParam) -> Unit = {}): XC_MethodHook.Unhook {
+   inline fun hookMethodAsync(method: Member, crossinline before: (XC_MethodHook.MethodHookParam) -> Unit = {}, crossinline after: (XC_MethodHook.MethodHookParam) -> Unit = {}): XC_MethodHook.Unhook {
       return XposedBridge.hookMethod(method, object : XC_MethodHook() {
          override fun beforeHookedMethod(param: MethodHookParam) {
             doAsync {
@@ -49,7 +37,7 @@ object ReflectionUtils {
       })
    }
 
-   fun replaceMethod(method: Member, replacement: (XC_MethodHook.MethodHookParam) -> Any = {}): XC_MethodHook.Unhook {
+   inline fun replaceMethod(method: Member, crossinline replacement: (XC_MethodHook.MethodHookParam) -> Any = {}): XC_MethodHook.Unhook {
       return XposedBridge.hookMethod(method, object : XC_MethodHook() {
          override fun beforeHookedMethod(param: MethodHookParam) {
             try {
@@ -102,7 +90,7 @@ object ReflectionUtils {
       return this.javaClass.findMethod(methodName, *typeList)
    }
 
-   fun Class<*>.hookAllMethods(methodName: String, before: (XC_MethodHook.MethodHookParam) -> Unit = {}, after: (XC_MethodHook.MethodHookParam) -> Unit = {}) {
+   inline fun Class<*>.hookAllMethods(methodName: String, crossinline before: (XC_MethodHook.MethodHookParam) -> Unit = {}, crossinline after: (XC_MethodHook.MethodHookParam) -> Unit = {}) {
       XposedBridge.hookAllMethods(this, methodName, object : XC_MethodHook() {
          override fun beforeHookedMethod(param: MethodHookParam) {
             before(param)
@@ -114,21 +102,38 @@ object ReflectionUtils {
       })
    }
 
-   fun Method.hook(before: (XC_MethodHook.MethodHookParam) -> Unit = {}, after: (XC_MethodHook.MethodHookParam) -> Unit = {}): XC_MethodHook.Unhook {
+   inline fun Method.hook(crossinline before: (XC_MethodHook.MethodHookParam) -> Unit = {}, crossinline after: (XC_MethodHook.MethodHookParam) -> Unit = {}): XC_MethodHook.Unhook {
       this.isAccessible = true
-      return hookMethod(this, before = before, after = after)
+      return XposedBridge.hookMethod(this, object : XC_MethodHook() {
+         override fun beforeHookedMethod(param: MethodHookParam) {
+            before(param)
+         }
+
+         override fun afterHookedMethod(param: MethodHookParam) {
+            after(param)
+         }
+      })
    }
 
-   fun Method.hookAsync(before: (XC_MethodHook.MethodHookParam) -> Unit = {}, after: (XC_MethodHook.MethodHookParam) -> Unit = {}): XC_MethodHook.Unhook {
+   inline fun Method.hookAsync(crossinline before: (XC_MethodHook.MethodHookParam) -> Unit = {}, crossinline after: (XC_MethodHook.MethodHookParam) -> Unit = {}): XC_MethodHook.Unhook {
       this.isAccessible = true
       return hookMethodAsync(this, before = before, after = after)
    }
 
-   fun <T> Constructor<T>.hook(before: (XC_MethodHook.MethodHookParam) -> Unit = {}, after: (XC_MethodHook.MethodHookParam) -> Unit = {}) {
-      hookMethod(this, before, after)
+   inline fun <T> Constructor<T>.hook(crossinline before: (XC_MethodHook.MethodHookParam) -> Unit = {}, crossinline after: (XC_MethodHook.MethodHookParam) -> Unit = {}) {
+      this.isAccessible = true
+      XposedBridge.hookMethod(this, object : XC_MethodHook() {
+         override fun beforeHookedMethod(param: MethodHookParam) {
+            before(param)
+         }
+
+         override fun afterHookedMethod(param: MethodHookParam) {
+            after(param)
+         }
+      })
    }
 
-   fun Class<*>.hookAllMethod(name: String, before: (Method, XC_MethodHook.MethodHookParam) -> Unit = { _, _ -> }, after: (Method, XC_MethodHook.MethodHookParam) -> Unit = { _, _ -> }) {
+   inline fun Class<*>.hookAllMethod(name: String, crossinline before: (Method, XC_MethodHook.MethodHookParam) -> Unit = { _, _ -> }, crossinline after: (Method, XC_MethodHook.MethodHookParam) -> Unit = { _, _ -> }) {
       this.declaredMethods.filter { it.name == name }.map { it.hook(before = { p -> before(it, p) }, after = { p -> after(it, p) }) }
    }
 

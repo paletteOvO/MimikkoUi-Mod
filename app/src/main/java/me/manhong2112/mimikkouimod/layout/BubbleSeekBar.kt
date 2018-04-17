@@ -126,13 +126,7 @@ class BubbleSeekBar : SeekBar {
       return thumb.bounds.let {
          val arr: IntArray = intArrayOf(0, 0)
          getLocationOnScreen(arr)
-         (arr[0] + it.centerX() - thumb.intrinsicWidth / 2 + paddingLeft to arr[1] + it.centerY()).also { // why 6 ??
-            value ->
-            log(value.toString())
-            log("${arr[0]}, ${arr[1]}")
-            log("${it.centerX()}")
-            log("${thumb.intrinsicWidth / 2}")
-         }
+         (arr[0] + it.centerX() - thumb.intrinsicWidth / 2 + paddingLeft to arr[1] + it.centerY())
       }
    }
 

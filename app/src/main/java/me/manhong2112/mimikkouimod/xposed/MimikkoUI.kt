@@ -15,8 +15,16 @@ object MimikkoUI {
       const val drawerButton = 0x7f0900b3
       const val bubble = 0x7f090048
       const val app_settings = 0x7f090026
+      const val bat_bar = 0x7f090038
+      const val bat = 0x7f090037
+      const val bat_wrap = 0x7f09003c
 
+
+   }
+
+   object drawable {
       const val ic_button_drawer = 0x7f08008d
+
    }
 
    object dimen {

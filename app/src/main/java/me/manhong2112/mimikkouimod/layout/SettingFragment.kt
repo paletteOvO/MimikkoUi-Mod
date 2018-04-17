@@ -1,6 +1,5 @@
 package me.manhong2112.mimikkouimod.layout
 
-import android.app.Activity
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.support.v7.app.AppCompatActivity
@@ -17,19 +16,21 @@ import java.util.concurrent.Future
 
 
 abstract class SettingFragment : Fragment() {
-   private val prefLayout: ScrollView by lazy {
-      init(this.activity!!)
-      prefLayoutFuture!!.get()
+   private val prefLayout: ScrollView
+      get() {
+         init(this.context!! as AppCompatActivity)
+         return prefLayoutFuture!!.get()
    }
+
    private var prefLayoutFuture: Future<ScrollView>? = null
-   override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+   final override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
       with(this.activity!!) {
          log("onCreateView")
          return prefLayout
       }
    }
 
-   fun init(ctx: Activity): SettingFragment {
+   fun init(ctx: AppCompatActivity) {
       if (prefLayoutFuture === null) {
          prefLayoutFuture = doAsyncResult {
             log("init ${this.weakRef.get()?.javaClass?.name}")
@@ -40,7 +41,6 @@ abstract class SettingFragment : Fragment() {
             v
          }
       }
-      return this
    }
 
    fun open(ctx: AppCompatActivity, firstPage: Boolean = false) {

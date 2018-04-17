@@ -27,7 +27,7 @@ open class OnSwipeTouchListener(ctx: Context) : OnTouchListener {
    private inner class GestureListener : SimpleOnGestureListener() {
 
       override fun onDown(e: MotionEvent): Boolean {
-         return true
+         return this@OnSwipeTouchListener.onDown(e)
       }
 
       override fun onSingleTapUp(e: MotionEvent): Boolean {
@@ -77,4 +77,7 @@ open class OnSwipeTouchListener(ctx: Context) : OnTouchListener {
    open fun onClick() {}
    open fun onDoubleClick() {}
    open fun onLongClick() {}
+   open fun onDown(e: MotionEvent): Boolean {
+      return true
+   }
 }
