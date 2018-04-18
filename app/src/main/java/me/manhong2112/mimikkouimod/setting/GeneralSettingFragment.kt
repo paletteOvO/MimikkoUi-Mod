@@ -1,5 +1,6 @@
 package me.manhong2112.mimikkouimod.setting
 
+import android.os.Build
 import me.manhong2112.mimikkouimod.R
 import me.manhong2112.mimikkouimod.common.Config
 import me.manhong2112.mimikkouimod.common.Const
@@ -12,6 +13,7 @@ import me.manhong2112.mimikkouimod.layout.SettingFragment
 import me.manhong2112.mimikkouimod.xposed.IconPackPackageName
 import me.manhong2112.mimikkouimod.xposed.IconProvider
 import java.math.BigInteger
+import me.manhong2112.mimikkouimod.common.Config.Key as K
 
 class GeneralSettingFragment : SettingFragment() {
    override fun createView(layout: PreferenceLayout) {
@@ -19,7 +21,18 @@ class GeneralSettingFragment : SettingFragment() {
          val displayParse: (Float) -> Int = { (it * Const.prefFloatPrecise).toInt() }
          val valueParse: (Int) -> Float = { it / Const.prefFloatPrecise }
 
-         switchPreference(R.string.pref_general_transparent_status_bar, key = Config.Key.GeneralTransparentStatusBar)
+         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            editTextPreference(R.string.pref_general_status_bar_color,
+                  key = K.GeneralStatusBarColor,
+                  displayParser = {
+                     "%08X".format(it)
+                  },
+                  valueParser = {
+                     BigInteger(it, 16).toInt()
+                  })
+         } else {
+            switchPreference(R.string.pref_general_transparent_status_bar, key = Config.Key.GeneralTransparentStatusBar)
+         }
          switchPreference(R.string.pref_general_dark_status_bar_icon, key = Config.Key.GeneralDarkStatusBarIcon)
 
          val iconPacks = IconProvider.getAllIconPack(context)

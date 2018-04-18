@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Rect
 import android.graphics.drawable.BitmapDrawable
+import android.os.Build
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.View
@@ -43,6 +44,7 @@ import org.jetbrains.anko.forEachChild
 import org.jetbrains.anko.image
 import kotlin.math.roundToInt
 import me.manhong2112.mimikkouimod.common.Config.Key as K
+
 
 open class GeneralHook {
    private lateinit var classLoader: ClassLoader
@@ -97,11 +99,11 @@ open class GeneralHook {
    private fun realAppHook(app: Application) {
       // com.mimikko.mimikkoui.launcher.components.cell.CellView
       val mAddViewVILp = root.findMethod("addView", View::class.java, Integer.TYPE, ViewGroup.LayoutParams::class.java)
-      mAddViewVILp.hookAsync(after = {
+      mAddViewVILp.hookAsync {
          if ((it.thisObject as View).id == root.id) {
             rootHook(launcherAct, root, it)
          }
-      })
+      }
 
       launcherActCls.findMethod("load", Integer.TYPE).hook {
          // com.mimikko.mimikkoui.launcher.activity.Launcher -> load
@@ -162,14 +164,27 @@ open class GeneralHook {
          }
       })
       Config.addOnChangeListener(Config.Key.GeneralTransparentStatusBar, { _, v: Boolean ->
-         if (v) {
-            with(launcherAct.window) {
-               setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS, WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
+         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            if (v) {
+               val w = launcherAct.window
+               w.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
+               w.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
+               w.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
+            } else {
+               launcherAct.window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
             }
-         } else {
-            launcherAct.window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
          }
       })
+      Config.addOnChangeListener(K.GeneralStatusBarColor) { _, v: Int ->
+         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            val w = launcherAct.window
+            w.decorView.fitsSystemWindows = true
+            w.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
+            // w.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
+            w.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+            w.statusBarColor = v
+         }
+      }
       Config.addOnChangeListener(Config.Key.GeneralIconPackFallback, { _, _: Any ->
          log("setOnChangeListener GeneralIconPackFallback")
          IconProvider.update(app)

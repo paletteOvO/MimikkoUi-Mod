@@ -12,6 +12,7 @@ import android.text.TextWatcher
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.RelativeLayout
 import android.widget.TextView
@@ -55,7 +56,8 @@ class DrawerHook {
       }
    }
 
-   val searchWrap by lazy {
+   private lateinit var searchEditText: EditText
+   private val searchWrap by lazy {
       launcherAct.UI {
          relativeLayout {
             visibility = View.INVISIBLE
@@ -63,7 +65,7 @@ class DrawerHook {
                height = dip(48)
                width = matchParent
             }
-            editText {
+            searchEditText = editText {
                addTextChangedListener(object : TextWatcher {
                   override fun afterTextChanged(s: Editable) {
                      val adapter = drawer!!.invokeMethod<Any>("getAdapter")
@@ -188,7 +190,7 @@ class DrawerHook {
                      Utils.log("onSwipeTop")
                      searchWrap.visibility = View.VISIBLE
                      batView.visibility = View.INVISIBLE
-                     activity.window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN)
+                     activity.window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
                   }
                }
             }
@@ -197,6 +199,8 @@ class DrawerHook {
       XposedHelpers.findAndHookMethod(launcherAct::class.java, "onBackPressed", object : XC_MethodHook() {
          override fun beforeHookedMethod(param: MethodHookParam) {
             if (searchWrap.visibility == View.VISIBLE) {
+               if (searchEditText.text.isNotEmpty())
+                  searchEditText.setText("")
                drawer.invokeMethod<Any>("getAdapter").invokeMethod<Unit>("refresh")
                searchWrap.visibility = View.INVISIBLE
                batView.visibility = View.VISIBLE

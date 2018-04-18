@@ -25,6 +25,7 @@ object Config {
       GeneralIconScaleApplyDrawerButton(false),
 
       GeneralTransparentStatusBar(false),
+      GeneralStatusBarColor(0x99000000),
       GeneralDarkStatusBarIcon(false),
 
       GeneralShortcutTextSize(10f),
