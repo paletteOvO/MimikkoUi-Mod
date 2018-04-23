@@ -11,9 +11,7 @@ import android.view.View
 import android.widget.BaseAdapter
 import android.widget.ListView
 import me.manhong2112.mimikkouimod.common.Utils.log
-import java.lang.ref.WeakReference
-import kotlin.properties.ReadWriteProperty
-import kotlin.reflect.KProperty
+import me.manhong2112.mimikkouimod.common.WeakReferenceDelegate.Companion.weak
 
 
 class DragAndDropListView<T> : ListView {
@@ -21,17 +19,14 @@ class DragAndDropListView<T> : ListView {
 
    constructor(ctx: Context) : super(ctx) {
       this.ctx = ctx
-      init(ctx)
    }
 
    constructor(ctx: Context, attrs: AttributeSet) : super(ctx, attrs) {
       this.ctx = ctx
-      init(ctx)
    }
 
    constructor(ctx: Context, attrs: AttributeSet, resId: Int) : super(ctx, attrs, resId) {
       this.ctx = ctx
-      init(ctx)
    }
 
    fun MutableList<T>.swap(i1: Int, i2: Int) {
@@ -44,28 +39,14 @@ class DragAndDropListView<T> : ListView {
    private var hoverViewDrawable: BitmapDrawable? = null
    private var hoverViewBound: Rect? = null
 
-   private var hoverView: View? by object : ReadWriteProperty<ListView?, View?> {
-      private var value: WeakReference<View>? = null
-      override fun getValue(thisRef: ListView?, property: KProperty<*>): View? {
-         return value?.get()
-      }
-
-      override fun setValue(thisRef: ListView?, property: KProperty<*>, value: View?) {
-         value ?: run {
-            this.value = null
-            return
-         }
-         this.value = WeakReference(value)
-      }
-
-   }
+   private var hoverView: View? by weak<View>()
    private var hoverViewPos: Int = -1
 
    var onItemSwapListener = { _: Int, _: Int -> }
 
    var targetList: MutableList<T>? = null
 
-   private fun init(ctx: Context) {
+   init {
       setOnItemLongClickListener { parent, view, position, id ->
          createHoverViewDrawable(view)
          view.visibility = View.INVISIBLE
@@ -94,7 +75,7 @@ class DragAndDropListView<T> : ListView {
          }
          MotionEvent.ACTION_MOVE -> {
             hoverViewDrawable?.let {
-               val dx = ev.x.toInt() - lastX
+               //               val dx = ev.x.toInt() - lastX
                val dy = ev.y.toInt() - lastY
                lastX = ev.x.toInt()
                lastY = ev.y.toInt()

@@ -14,14 +14,14 @@ import java.io.Serializable
 class ConfigReceiver : BroadcastReceiver() {
    override fun onReceive(context: Context, intent: Intent) {
       log("received loadConfig")
-      Config.Key.values().forEach { key ->
-         Config.addOnChangeListener(key) { key, value: Any ->
+      Config.Key.values().forEach {
+         Config.addOnChangeListener(it) { key, value: Any ->
             log("send config update")
-            val intent = Intent(Const.configUpdateAction)
-            intent.putExtra("Key", key.name)
-            intent.putExtra("Value", value as Serializable)
-            intent.`package` = MimikkoUI.packageName
-            context.sendBroadcast(intent)
+            context.sendBroadcast(
+                  Intent(Const.configUpdateAction)
+                        .putExtra("Key", key.name)
+                        .putExtra("Value", value as Serializable)
+                        .setPackage(MimikkoUI.packageName))
             log("after send config update")
          }
       }

@@ -16,6 +16,10 @@ import me.manhong2112.mimikkouimod.common.Const
 import me.manhong2112.mimikkouimod.common.ReflectionUtils.findMethod
 import me.manhong2112.mimikkouimod.common.ReflectionUtils.hook
 import me.manhong2112.mimikkouimod.common.Utils
+import me.manhong2112.mimikkouimod.common.Utils.log
+import me.manhong2112.xposed.annotation.HookAfter
+import me.manhong2112.xposed.annotation.HookClass
+import me.manhong2112.xposed.annotation.HookPackage
 
 class MainHook : IXposedHookLoadPackage {
    private val configUpdateReceiver by lazy {
@@ -55,6 +59,7 @@ class MainHook : IXposedHookLoadPackage {
       DrawerHook().onLoad(lpparam.classLoader, lpparam)
    }
 
+
    private fun loadConfig(app: Context) {
       Utils.log("send loadConfig")
       val intent = Intent(Const.loadConfigAction)
@@ -64,4 +69,19 @@ class MainHook : IXposedHookLoadPackage {
       app.sendBroadcast(intent)
    }
 
+   companion object {
+      @HookPackage(MimikkoUI.packageName)
+      @HookClass(MimikkoUI.launcherClsName)
+      @HookAfter("onCreate", ["android.os.Bundle"])
+      fun testMethod(lpparam: XC_LoadPackage.LoadPackageParam) {
+         log("Main Hook testMethod")
+      }
+
+      @HookPackage(MimikkoUI.packageName)
+      @HookClass(MimikkoUI.launcherClsName)
+      @HookAfter("onCreate", ["android.os.Bundle"])
+      fun testMethod2(lpparam: XC_LoadPackage.LoadPackageParam) {
+         log("Main Hook testMethod2")
+      }
+   }
 }

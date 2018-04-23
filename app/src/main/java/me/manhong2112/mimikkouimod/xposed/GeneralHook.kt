@@ -25,10 +25,7 @@ import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.XposedHelpers.findClass
 import de.robv.android.xposed.callbacks.XC_LoadPackage
 import me.manhong2112.mimikkouimod.BuildConfig
-import me.manhong2112.mimikkouimod.common.Config
-import me.manhong2112.mimikkouimod.common.Const
-import me.manhong2112.mimikkouimod.common.OnSwipeTouchListener
-import me.manhong2112.mimikkouimod.common.ReflectionUtils
+import me.manhong2112.mimikkouimod.common.*
 import me.manhong2112.mimikkouimod.common.ReflectionUtils.findMethod
 import me.manhong2112.mimikkouimod.common.ReflectionUtils.getField
 import me.manhong2112.mimikkouimod.common.ReflectionUtils.hook
@@ -38,6 +35,9 @@ import me.manhong2112.mimikkouimod.common.ReflectionUtils.replace
 import me.manhong2112.mimikkouimod.common.Utils.findViews
 import me.manhong2112.mimikkouimod.common.Utils.log
 import me.manhong2112.mimikkouimod.setting.SettingsActivity
+import me.manhong2112.xposed.annotation.HookAfter
+import me.manhong2112.xposed.annotation.HookClass
+import me.manhong2112.xposed.annotation.HookPackage
 import org.jetbrains.anko.contentView
 import org.jetbrains.anko.find
 import org.jetbrains.anko.forEachChild
@@ -271,7 +271,7 @@ open class GeneralHook {
 
    private fun initDock(act: Activity, dock: RelativeLayout) {
       log("initDock")
-      drawerBtn = drawerBtn ?: dock.findViewById(MimikkoUI.id.drawerButton) as ImageView?
+      drawerBtn = drawerBtn ?: dock.findViewById(MimikkoUI.id.drawerButton) as ImageView
       drawerBtn?.let {
          if (Config[Config.Key.GeneralIconPackApplyDrawerButton]) {
             it.image = BitmapDrawable(act.resources, IconProvider.getIcon(Const.drawerBtnDrawableComponentName))
@@ -302,5 +302,15 @@ open class GeneralHook {
 
    private fun initRoot(activity: Activity, root: RelativeLayout): RelativeLayout {
       return root
+   }
+
+   companion object {
+
+      @HookPackage(MimikkoUI.packageName)
+      @HookClass(MimikkoUI.launcherClsName)
+      @HookAfter("onCreate", ["android.os.Bundle"])
+      fun testMethod2(lpparam: XC_LoadPackage.LoadPackageParam) {
+         Utils.log("General testMethod2")
+      }
    }
 }

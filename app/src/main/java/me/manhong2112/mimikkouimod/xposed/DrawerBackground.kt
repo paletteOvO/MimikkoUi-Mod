@@ -22,7 +22,7 @@ object DrawerBackground {
          return drawerBackgroundFuture?.get()
       }
    private var drawerBackgroundFuture: Future<BitmapDrawable?>? = null
-   private var imageView: ImageView? by weak()
+   private var imageView: ImageView? by weak<ImageView?>()
 
    fun enable(drawer: ViewGroup) {
       drawerBackground ?: return

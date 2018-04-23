@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">MimikkoUi-Mod</string>
+    <string name="app_name">MimikkoUI-Mod</string>
 
     <string name="pref_page_general">General</string>
     <string name="pref_page_drawer">Drawer</string>

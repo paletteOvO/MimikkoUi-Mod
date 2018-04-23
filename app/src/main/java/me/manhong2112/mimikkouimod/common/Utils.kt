@@ -3,6 +3,7 @@
 package me.manhong2112.mimikkouimod.common
 
 import android.content.Context
+import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.LightingColorFilter
@@ -42,8 +43,8 @@ object Utils {
       return drawableToBitmap(this)
    }
 
-   fun Bitmap.toDrawable(): BitmapDrawable {
-      return BitmapDrawable(this)
+   fun Bitmap.toDrawable(res: Resources): BitmapDrawable {
+      return BitmapDrawable(res, this)
    }
 
    private fun drawableToBitmap(drawable: Drawable): Bitmap {

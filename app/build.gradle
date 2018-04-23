@@ -1,5 +1,6 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-kapt'
 
 def getVersionCode = { ->
     def stdout = new ByteArrayOutputStream()
@@ -11,13 +12,10 @@ def getVersionCode = { ->
 }
 
 buildscript {
-    ext.kotlin_version = '1.2.31'
-    ext.anko_version = '0.10.4'
-    ext.support_version = '27.+'
+
     repositories {
-        maven { url "https://maven.google.com" }
+        google()
         jcenter()
-        mavenCentral()
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:3.1.0'
@@ -26,9 +24,15 @@ buildscript {
 }
 
 dependencies {
+    compileOnly project(":annotation")
+
+    compileOnly project(":processor")
+    kapt project(":processor")
+    annotationProcessor project(":processor")
+
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    // compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
 
     implementation "org.jetbrains.anko:anko-common:$anko_version"
     implementation "org.jetbrains.anko:anko-sdk25:$anko_version"
@@ -87,3 +91,4 @@ android {
         }
     }
 }
+

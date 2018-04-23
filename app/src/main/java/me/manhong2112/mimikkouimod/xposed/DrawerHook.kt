@@ -60,7 +60,8 @@ class DrawerHook {
    private val searchWrap by lazy {
       launcherAct.UI {
          relativeLayout {
-            visibility = View.INVISIBLE
+            id = View.generateViewId()
+            visibility = View.GONE
             lparams {
                height = dip(48)
                width = matchParent
@@ -178,7 +179,7 @@ class DrawerHook {
 
       val parent = drawer.parent as ViewGroup
       val batView = parent.find<TextView>(MimikkoUI.id.bat)
-      parent.find<FrameLayout>(MimikkoUI.id.bat_wrap).addView(searchWrap)
+      val wrap = parent.find<FrameLayout>(MimikkoUI.id.bat_wrap)
       batView.setOnTouchListener(
             object : OnSwipeTouchListener(activity) {
                override fun onClick() {
@@ -188,9 +189,11 @@ class DrawerHook {
                override fun onSwipeTop() {
                   if (Config[K.DrawerBatSwipeToSearch]) {
                      Utils.log("onSwipeTop")
+                     wrap.addView(searchWrap)
                      searchWrap.visibility = View.VISIBLE
-                     batView.visibility = View.INVISIBLE
+                     batView.visibility = View.GONE
                      activity.window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+
                   }
                }
             }
@@ -201,8 +204,7 @@ class DrawerHook {
             if (searchWrap.visibility == View.VISIBLE) {
                if (searchEditText.text.isNotEmpty())
                   searchEditText.setText("")
-               drawer.invokeMethod<Any>("getAdapter").invokeMethod<Unit>("refresh")
-               searchWrap.visibility = View.INVISIBLE
+               searchWrap.visibility = View.GONE
                batView.visibility = View.VISIBLE
                param.result = null
             }

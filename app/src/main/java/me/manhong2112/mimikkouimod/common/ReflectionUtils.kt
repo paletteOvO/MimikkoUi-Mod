@@ -8,6 +8,7 @@ import java.lang.reflect.Constructor
 import java.lang.reflect.Member
 import java.lang.reflect.Method
 
+@SuppressWarnings("unchecked")
 object ReflectionUtils {
    object CallOriginalMethod : Throwable()
 

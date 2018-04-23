@@ -33,7 +33,6 @@ object IconProvider {
       override fun getIcon(componentName: String): Bitmap? {
          if (componentName == Const.drawerBtnDrawableComponentName) {
             return ctx.get()?.let {
-               val res = it.packageManager.getResourcesForApplication(MimikkoUI.packageName)
                ContextCompat.getDrawable(it, MimikkoUI.drawable.ic_button_drawer)?.toBitmap()
             }
          }
@@ -60,7 +59,7 @@ object IconProvider {
          iconPacksCache[it] = iconPacksCache[it] ?: IconPack(WeakReference(ctx), it)
          iconPacksCache[it]!!
       }
-      iconPacksCache.foreach { k, v ->
+      iconPacksCache.foreach { k, _ ->
          if (k !in value) {
             iconPacksCache.remove(k)
          }

@@ -26,7 +26,7 @@ class BubbleSeekBar : SeekBar {
    private val mBubble = Bubble(context)
 
    init {
-      setOnTouchListener { v, e ->
+      setOnTouchListener { _, e ->
          when (e.action) {
             MotionEvent.ACTION_DOWN -> {
                val thumbPos = getThumbPosRelative()
