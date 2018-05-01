@@ -13,14 +13,15 @@ import me.manhong2112.mimikkouimod.layout.PreferenceLayout.Companion.preferenceP
 import me.manhong2112.mimikkouimod.xposed.MimikkoUI
 import org.jetbrains.anko.defaultSharedPreferences
 import java.io.Serializable
+import me.manhong2112.mimikkouimod.common.TypedKey as K
 
 class SettingsActivity : AppCompatActivity() {
    override fun onCreate(savedInstanceState: Bundle?) {
       super.onCreate(savedInstanceState)
-      Config.Key.values().forEach { key ->
+      K.values.forEach { key ->
          Config.addOnChangeListener(key) { key, value: Any ->
             log("send config $key -> $value")
-            val intent = Intent(Const.configUpdateAction)
+            val intent = Intent(Const.updateConfigAction)
             intent.putExtra("Key", key.name)
             intent.putExtra("Value", value as Serializable)
             intent.`package` = MimikkoUI.packageName

@@ -1,7 +1,6 @@
 package me.manhong2112.mimikkouimod.common
 
 import android.content.SharedPreferences
-import android.graphics.Color
 import me.manhong2112.mimikkouimod.common.Utils.log
 import org.json.JSONArray
 
@@ -9,62 +8,63 @@ import org.json.JSONArray
 
 @Suppress("UNCHECKED_CAST")
 object Config {
-   enum class Key {
-      DockSwipeToDrawer(false),
+//   
+//   enum class Key {
+//      DockSwipeToDrawer(false),
+//
+//      DrawerBlurBackground(false),
+//      DrawerDarkBackground(false),
+//      DrawerBlurBackgroundBlurRadius(100),
+//      DrawerColumnSize(4),
+//      DrawerDrawUnderStatusBar(false),
+//      DrawerBatSwipeToSearch(false),
+//
+//      GeneralIconPackFallback(listOf("default")),
+//      GeneralIconPackApplyDrawerButton(false),
+//      GeneralIconScale(100), // in %
+//      GeneralIconScaleApplyDrawerButton(false),
+//
+//      GeneralTransparentStatusBar(false),
+//      GeneralStatusBarColor(0x99000000),
+//      GeneralDarkStatusBarIcon(false),
+//
+//      GeneralShortcutTextSize(10f),
+//      GeneralShortcutTextColor(Color.WHITE),
+//      GeneralShortcutTextMaxLine(1),
+//      GeneralShortcutTextOriginalName(false),
+//      GeneralShortcutTextShadowColor(Color.BLACK),
+//      GeneralShortcutTextShadowRadius(10f),
+//      GeneralShortcutTextShadowDx(0f),
+//      GeneralShortcutTextShadowDy(0f);
+//
+//      private val mDefaultValue: Any
+//      val isList: Boolean
+//
+//      constructor(defaultValue: Any) {
+//         this.mDefaultValue = defaultValue
+//         isList = false
+//      }
+//
+//      // and we have String, Int, Long, Float ......為甚麼就不能全寫在一起呢...Union Type甚麼的...
+//      constructor(defaultValue: List<String>) {
+//         this.mDefaultValue = defaultValue
+//         isList = true
+//      }
+//
+//
+//      fun <T> getDefaultValue(): T {
+//         return mDefaultValue as T
+//      }
+//   }
 
-      DrawerBlurBackground(false),
-      DrawerDarkBackground(false),
-      DrawerBlurBackgroundBlurRadius(100),
-      DrawerColumnSize(4),
-      DrawerDrawUnderStatusBar(false),
-      DrawerBatSwipeToSearch(false),
-
-      GeneralIconPackFallback(listOf("default")),
-      GeneralIconPackApplyDrawerButton(false),
-      GeneralIconScale(100), // in %
-      GeneralIconScaleApplyDrawerButton(false),
-
-      GeneralTransparentStatusBar(false),
-      GeneralStatusBarColor(0x99000000),
-      GeneralDarkStatusBarIcon(false),
-
-      GeneralShortcutTextSize(10f),
-      GeneralShortcutTextColor(Color.WHITE),
-      GeneralShortcutTextMaxLine(1),
-      GeneralShortcutTextOriginalName(false),
-      GeneralShortcutTextShadowColor(Color.BLACK),
-      GeneralShortcutTextShadowRadius(10f),
-      GeneralShortcutTextShadowDx(0f),
-      GeneralShortcutTextShadowDy(0f);
-
-      private val mDefaultValue: Any
-      val isList: Boolean
-
-      constructor(defaultValue: Any) {
-         this.mDefaultValue = defaultValue
-         isList = false
-      }
-
-      // and we have String, Int, Long, Float ......為甚麼就不能全寫在一起呢...Union Type甚麼的...
-      constructor(defaultValue: List<String>) {
-         this.mDefaultValue = defaultValue
-         isList = true
-      }
-
-
-      fun <T> getDefaultValue(): T {
-         return mDefaultValue as T
-      }
-   }
-
-   private val data = arrayOfNulls<Any>(Key.values().size)
-   private val callbacks = arrayOfNulls<ArrayList<(Key, Any) -> Unit>>(Key.values().size)
+   private val data = arrayOfNulls<Any>(TypedKey.size)
+   private val callbacks = arrayOfNulls<ArrayList<(TypedKey<Any>, Any) -> Unit>>(TypedKey.size) // orz
    private var sharedPreferences: SharedPreferences? = null
-   operator fun <R> get(key: Key): R {
+   operator fun <T> get(key: TypedKey<T>): T {
       if (data[key.ordinal] === null) {
-         data[key.ordinal] = key.getDefaultValue()
+         data[key.ordinal] = key.defValue
       }
-      return data[key.ordinal] as R
+      return data[key.ordinal] as T
    }
 
    fun bindSharedPref(pref: SharedPreferences) {
@@ -72,7 +72,7 @@ object Config {
    }
 
    // 這Any搞得我就像在寫動態類型的語言...
-   operator fun set(key: Key, value: Any) {
+   operator fun <T> set(key: TypedKey<T>, value: T) where T : Any {
       data[key.ordinal] = value
       if (sharedPreferences !== null) {
          writeSharedPref(key, sharedPreferences!!)
@@ -80,42 +80,42 @@ object Config {
       callCallback(key, value)
    }
 
-   fun <T> addOnChangeListener(key: Key, callback: (Key, T) -> Unit): Int {
+   fun <T : Any> addOnChangeListener(key: TypedKey<T>, callback: (TypedKey<T>, T) -> Unit): Int {
       if (callbacks[key.ordinal] === null) {
-         callbacks[key.ordinal] = arrayListOf(callback as (Key, Any) -> Unit)
+         callbacks[key.ordinal] = arrayListOf(callback as (TypedKey<Any>, Any) -> Unit)
       } else {
-         callbacks[key.ordinal]!!.add(callback as (Key, Any) -> Unit)
+         callbacks[key.ordinal]!!.add(callback as (TypedKey<Any>, Any) -> Unit)
       }
       return callbacks.size - 1 // Index
    }
 
-   fun <T> removeOnChangeListener(key: Key, callback: (Key, T) -> Unit) {
+   fun <T> removeOnChangeListener(key: TypedKey<T>, callback: (TypedKey<T>, T) -> Unit) {
       callbacks[key.ordinal]?.remove<Any>(callback)
    }
 
-   fun <T> removeOnChangeListener(key: Key, index: Int) {
+   fun <T> removeOnChangeListener(key: TypedKey<T>, index: Int) {
       callbacks[key.ordinal]?.removeAt(index)
    }
 
-   fun callCallback(key: Key, value: Any) {
+   fun <T> callCallback(key: TypedKey<T>, value: T) where T : Any {
       log("call $key callback")
       callbacks[key.ordinal]?.forEach {
-         it(key, value)
+         it(key as TypedKey<Any>, value)
       }
    }
 
-   fun callCallback(key: Key, index: Int, value: Any) {
+   fun <T> callCallback(key: TypedKey<T>, index: Int, value: T) where T : Any {
       log("call $key callback")
-      callbacks[key.ordinal]?.get(index)?.invoke(key, value)
+      callbacks[key.ordinal]?.get(index)?.invoke(key as TypedKey<Any>, value)
    }
 
    fun loadSharedPref(pref: SharedPreferences, callCallback: Boolean = false) {
-      Key.values().forEach { key ->
+      TypedKey.values.forEach { key ->
          loadSharedPref(key, pref, callCallback)
       }
    }
 
-   fun loadSharedPref(key: Key, pref: SharedPreferences, callCallback: Boolean = false) {
+   fun <T> loadSharedPref(key: TypedKey<T>, pref: SharedPreferences, callCallback: Boolean = false) {
       log("loading $key")
       data[key.ordinal] = when {
          key.isList -> {
@@ -131,16 +131,16 @@ object Config {
          else -> {
             pref.all[key.name]
          }
-      } ?: key.getDefaultValue()
+      } ?: key.defValue
       if (callCallback) {
-         callCallback(key, data[key.ordinal]!!)
+         callCallback(key as TypedKey<Any>, data[key.ordinal]!!)
       }
    }
 
    fun writeSharedPref(pref: SharedPreferences) {
       val editor = pref.edit()
-      Key.values().forEach { key ->
-         val value = get(key) as Any
+      TypedKey.values.forEach { key ->
+         val value = get(key)
          when {
             value is Int -> editor.put(key.name, value)
             value is Boolean -> editor.put(key.name, value)
@@ -161,9 +161,9 @@ object Config {
       editor.apply()
    }
 
-   fun writeSharedPref(key: Key, pref: SharedPreferences) {
+   fun <T> writeSharedPref(key: TypedKey<T>, pref: SharedPreferences) {
       val editor = pref.edit()
-      val value = get(key) as Any
+      val value = get(key)
       when {
          value is Int -> editor.put(key.name, value)
          value is Boolean -> editor.put(key.name, value)

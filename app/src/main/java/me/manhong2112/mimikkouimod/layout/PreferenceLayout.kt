@@ -16,6 +16,7 @@ import me.manhong2112.mimikkouimod.common.Const
 import org.jetbrains.anko.*
 import org.jetbrains.anko.cardview.v7.cardView
 import org.jetbrains.anko.custom.ankoView
+import me.manhong2112.mimikkouimod.common.TypedKey as K
 
 class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
    init {
@@ -58,10 +59,10 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
          }
       }
 
-      fun ViewGroup.switchPreference(nameRes: Int, summaryRes: Int = 0, key: Config.Key, init: Switch.() -> Unit = {}) =
+      fun ViewGroup.switchPreference(nameRes: Int, summaryRes: Int = 0, key: K<Boolean>, init: Switch.() -> Unit = {}) =
             switchPreference(context.getString(nameRes), if (summaryRes == 0) null else context.getString(summaryRes), key, init)
 
-      fun ViewManager.switchPreference(name: String, summary: String? = null, key: Config.Key, init: Switch.() -> Unit = {}) {
+      fun ViewManager.switchPreference(name: String, summary: String? = null, key: K<Boolean>, init: Switch.() -> Unit = {}) {
          basePreference(name, summary) { _, _, _ ->
             val s = ankoView({
                object : Switch(it) {
@@ -87,7 +88,7 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
       }
 
       fun <T : Number> ViewGroup.seekBarPreference(nameRes: Int, numFormatRes: Int = 0,
-                                                   key: Config.Key,
+                                                   key: K<T>,
                                                    min: Int = 0, max: Int = 100, step: Int = 1,
                                                    displayParse: (T) -> Int = { it.toInt() },
                                                    valueParse: (Int) -> T = { it as T },
@@ -96,7 +97,7 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
       }
 
       fun <T : Number> ViewGroup.seekBarPreference(name: String, numFormat: String? = null,
-                                                   key: Config.Key,
+                                                   key: K<T>,
                                                    min: Int = 0, max: Int = 100, step: Int = 1,
                                                    displayParse: (T) -> Int = { it.toInt() },
                                                    valueParse: (Int) -> T = { it as T },
@@ -135,19 +136,19 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
          }
       }
 
-      fun ViewGroup.selectorPreference(nameRes: Int, summaryRes: Int = 0, items: List<Pair<String, Any>>, key: Config.Key, init: () -> Unit = {}) {
+      fun <T> ViewGroup.selectorPreference(nameRes: Int, summaryRes: Int = 0, items: List<Pair<String, Any>>, key: K<T>, init: () -> Unit = {}) where T : Any {
          selectorPreference(nameRes, summaryRes, items.map { it.first }, items.map { it.second }, key, init)
       }
 
-      fun ViewGroup.selectorPreference(name: String, summary: String? = null, items: List<Pair<String, Any>>, key: Config.Key, init: () -> Unit = {}) {
+      fun <T> ViewGroup.selectorPreference(name: String, summary: String? = null, items: List<Pair<String, Any>>, key: K<T>, init: () -> Unit = {}) where T : Any {
          selectorPreference(name, summary, items.map { it.first }, items.map { it.second }, key, init)
       }
 
-      fun ViewGroup.selectorPreference(nameRes: Int, summaryRes: Int = 0, displayName: List<String>, value: List<Any>? = null, key: Config.Key, init: () -> Unit = {}) {
+      fun <T> ViewGroup.selectorPreference(nameRes: Int, summaryRes: Int = 0, displayName: List<String>, value: List<Any>? = null, key: K<T>, init: () -> Unit = {}) where T : Any {
          selectorPreference(context.getString(nameRes), if (summaryRes == 0) null else context.getString(summaryRes), displayName, value, key, init)
       }
 
-      fun ViewGroup.selectorPreference(name: String, summary: String? = null, displayName: List<String>, value: List<Any>? = null, key: Config.Key, init: () -> Unit = {}) {
+      fun <T> ViewGroup.selectorPreference(name: String, summary: String? = null, displayName: List<String>, value: List<Any>? = null, key: K<T>, init: () -> Unit = {}) where T : Any {
          relativeLayout {
             backgroundDrawable = getSelectedItemDrawable(context)
             isClickable = true
@@ -180,7 +181,7 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
             }
             setOnClickListener {
                context.selector(name, displayName) { dialog, index ->
-                  Config[key] = (value ?: displayName)[index]
+                  Config[key] = (value ?: displayName)[index] as T
                }
             }
             lparams {
@@ -190,7 +191,8 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
          }
       }
 
-      fun <T> ViewGroup.editTextPreference(nameRes: Int, summaryRes: Int = 0, hintRes: Int = 0, key: Config.Key, displayParser: (T) -> String = { it.toString() }, valueParser: (String) -> T = { it as T }) {
+      fun <T> ViewGroup.editTextPreference(nameRes: Int, summaryRes: Int = 0, hintRes: Int = 0, key: K<T>, displayParser: (T) -> String = { it.toString() }, valueParser: (String) -> T = { it as T })
+            where T : Any {
          editTextPreference(context.getString(nameRes),
                if (summaryRes == 0) null else context.getString(summaryRes),
                if (hintRes == 0) null else context.getString(hintRes),
@@ -199,7 +201,8 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
                valueParser)
       }
 
-      fun <T> ViewGroup.editTextPreference(name: String, summary: String? = null, hint: String? = null, key: Config.Key, displayParser: (T) -> String = { it.toString() }, valueParser: (String) -> T = { it as T }) {
+      fun <T> ViewGroup.editTextPreference(name: String, summary: String? = null, hint: String? = null, key: K<T>, displayParser: (T) -> String = { it.toString() }, valueParser: (String) -> T = { it as T })
+            where T : Any {
          basePreference(name, summary) { _, _, _ ->
             setOnClickListener {
                context.alert {
@@ -209,7 +212,7 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
                         setText(displayParser(Config[key]))
                      }
                      positiveButton("OK") {
-                        Config[key] = valueParser(text.text.toString()) as Any
+                        Config[key] = valueParser(text.text.toString())
                      }
                   }
                }.show()
@@ -217,11 +220,11 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
          }
       }
 
-      fun ViewGroup.sortingPreference(nameRes: Int, key: Config.Key, displayList: MutableList<String>, valueList: MutableList<String>) {
+      fun ViewGroup.sortingPreference(nameRes: Int, key: K<List<String>>, displayList: MutableList<String>, valueList: MutableList<String>) {
          sortingPreference(name = context.getString(nameRes), key = key, displayList = displayList, valueList = valueList)
       }
 
-      fun ViewManager.sortingPreference(name: String, key: Config.Key, displayList: MutableList<String>, valueList: MutableList<String>) {
+      fun ViewManager.sortingPreference(name: String, key: K<List<String>>, displayList: MutableList<String>, valueList: MutableList<String>) {
          basePreference(name) { _, _, _ ->
             setOnClickListener {
                context.alert {

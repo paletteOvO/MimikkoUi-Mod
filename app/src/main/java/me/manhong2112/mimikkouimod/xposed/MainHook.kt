@@ -16,10 +16,7 @@ import me.manhong2112.mimikkouimod.common.Const
 import me.manhong2112.mimikkouimod.common.ReflectionUtils.findMethod
 import me.manhong2112.mimikkouimod.common.ReflectionUtils.hook
 import me.manhong2112.mimikkouimod.common.Utils
-import me.manhong2112.mimikkouimod.common.Utils.log
-import me.manhong2112.xposed.annotation.HookAfter
-import me.manhong2112.xposed.annotation.HookClass
-import me.manhong2112.xposed.annotation.HookPackage
+import me.manhong2112.mimikkouimod.common.TypedKey as K
 
 class MainHook : IXposedHookLoadPackage {
    private val configUpdateReceiver by lazy {
@@ -28,9 +25,21 @@ class MainHook : IXposedHookLoadPackage {
             val key = intent.getStringExtra("Key")
             val value = intent.getSerializableExtra("Value")
             Utils.log("receive config $key -> $value")
-            Config[Config.Key.valueOf(key)] = value
+            Config[K.valueOf(key)] = value as Any
          }
       }
+   }
+   private val servantPrefReceiver by lazy {
+      servantSetting.Receiver()
+   }
+   private val generalHook by lazy {
+      GeneralHook()
+   }
+   private val drawerHook by lazy {
+      DrawerHook()
+   }
+   private val servantSetting by lazy {
+      ServantSetting()
    }
 
    override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
@@ -48,15 +57,19 @@ class MainHook : IXposedHookLoadPackage {
       val launcherClass = XposedHelpers.findClass(MimikkoUI.launcherClsName, lpparam.classLoader)
       launcherClass.findMethod("onCreate", Bundle::class.java).hook(0) { param ->
          val app = (param.thisObject as Activity).application
-         app.registerReceiver(configUpdateReceiver, IntentFilter(Const.configUpdateAction))
+         app.registerReceiver(configUpdateReceiver, IntentFilter(Const.updateConfigAction))
+         app.registerReceiver(servantPrefReceiver, IntentFilter(Const.updateServantPrefAction))
          loadConfig(app)
       }
+
       launcherClass.findMethod("onDestroy").hook { param ->
          val app = (param.thisObject as Activity).application
          app.unregisterReceiver(configUpdateReceiver)
+         app.unregisterReceiver(servantPrefReceiver)
       }
-      GeneralHook().onLoad(lpparam.classLoader, lpparam)
-      DrawerHook().onLoad(lpparam.classLoader, lpparam)
+      generalHook.onLoad(lpparam.classLoader, lpparam)
+      drawerHook.onLoad(lpparam.classLoader, lpparam)
+      servantSetting.onLoad(lpparam.classLoader, lpparam)
    }
 
 
@@ -67,21 +80,5 @@ class MainHook : IXposedHookLoadPackage {
       intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
       intent.setClassName(BuildConfig.APPLICATION_ID, ConfigReceiver::class.java.name)
       app.sendBroadcast(intent)
-   }
-
-   companion object {
-      @HookPackage(MimikkoUI.packageName)
-      @HookClass(MimikkoUI.launcherClsName)
-      @HookAfter("onCreate", ["android.os.Bundle"])
-      fun testMethod(lpparam: XC_LoadPackage.LoadPackageParam) {
-         log("Main Hook testMethod")
-      }
-
-      @HookPackage(MimikkoUI.packageName)
-      @HookClass(MimikkoUI.launcherClsName)
-      @HookAfter("onCreate", ["android.os.Bundle"])
-      fun testMethod2(lpparam: XC_LoadPackage.LoadPackageParam) {
-         log("Main Hook testMethod2")
-      }
    }
 }

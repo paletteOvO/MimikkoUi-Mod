@@ -25,7 +25,10 @@ import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.XposedHelpers.findClass
 import de.robv.android.xposed.callbacks.XC_LoadPackage
 import me.manhong2112.mimikkouimod.BuildConfig
-import me.manhong2112.mimikkouimod.common.*
+import me.manhong2112.mimikkouimod.common.Config
+import me.manhong2112.mimikkouimod.common.Const
+import me.manhong2112.mimikkouimod.common.OnSwipeTouchListener
+import me.manhong2112.mimikkouimod.common.ReflectionUtils
 import me.manhong2112.mimikkouimod.common.ReflectionUtils.findMethod
 import me.manhong2112.mimikkouimod.common.ReflectionUtils.getField
 import me.manhong2112.mimikkouimod.common.ReflectionUtils.hook
@@ -35,15 +38,12 @@ import me.manhong2112.mimikkouimod.common.ReflectionUtils.replace
 import me.manhong2112.mimikkouimod.common.Utils.findViews
 import me.manhong2112.mimikkouimod.common.Utils.log
 import me.manhong2112.mimikkouimod.setting.SettingsActivity
-import me.manhong2112.xposed.annotation.HookAfter
-import me.manhong2112.xposed.annotation.HookClass
-import me.manhong2112.xposed.annotation.HookPackage
 import org.jetbrains.anko.contentView
 import org.jetbrains.anko.find
 import org.jetbrains.anko.forEachChild
 import org.jetbrains.anko.image
 import kotlin.math.roundToInt
-import me.manhong2112.mimikkouimod.common.Config.Key as K
+import me.manhong2112.mimikkouimod.common.TypedKey as K
 
 
 open class GeneralHook {
@@ -124,7 +124,7 @@ open class GeneralHook {
       }
 
       appItemEntityClass.findMethod("getLabel").replace { param ->
-         if (Config[Config.Key.GeneralShortcutTextOriginalName]) {
+         if (Config[K.GeneralShortcutTextOriginalName]) {
             val name = param.thisObject.invokeMethod<ComponentName>("getId")
             return@replace LabelProvider.getLabel(app, name)
          } else {
@@ -138,15 +138,15 @@ open class GeneralHook {
                it.hook { p ->
                   val shortcut = p.thisObject as TextView
                   shortcut.setShadowLayer(
-                        Config[Config.Key.GeneralShortcutTextShadowRadius],
-                        Config[Config.Key.GeneralShortcutTextShadowDx],
-                        Config[Config.Key.GeneralShortcutTextShadowDy],
-                        Config[Config.Key.GeneralShortcutTextShadowColor])
-                  shortcut.maxLines = Config[Config.Key.GeneralShortcutTextMaxLine]
-                  shortcut.setTextColor(Config.get<Int>(Config.Key.GeneralShortcutTextColor))
-                  shortcut.setTextSize(TypedValue.COMPLEX_UNIT_SP, Config[Config.Key.GeneralShortcutTextSize])
+                        Config[K.GeneralShortcutTextShadowRadius],
+                        Config[K.GeneralShortcutTextShadowDx],
+                        Config[K.GeneralShortcutTextShadowDy],
+                        Config[K.GeneralShortcutTextShadowColor])
+                  shortcut.maxLines = Config[K.GeneralShortcutTextMaxLine]
+                  shortcut.setTextColor(Config.get<Int>(K.GeneralShortcutTextColor))
+                  shortcut.setTextSize(TypedValue.COMPLEX_UNIT_SP, Config[K.GeneralShortcutTextSize])
 
-                  val s = (launcherAct.resources.getDimension(MimikkoUI.dimen.app_icon_size) / 2 * Config.get<Int>(Config.Key.GeneralIconScale) / 100f).roundToInt()
+                  val s = (launcherAct.resources.getDimension(MimikkoUI.dimen.app_icon_size) / 2 * Config.get<Int>(K.GeneralIconScale) / 100f).roundToInt()
 
                   val rect = p.thisObject.invokeMethod("getIconRect") as Rect
                   rect.set(-s, -s, s, s)
@@ -156,14 +156,14 @@ open class GeneralHook {
 
 
    private fun bindConfigUpdateListener() {
-      Config.addOnChangeListener(Config.Key.GeneralDarkStatusBarIcon, { k, v: Boolean ->
+      Config.addOnChangeListener(K.GeneralDarkStatusBarIcon, { k, v: Boolean ->
          if (v) {
             launcherAct.window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
          } else {
             launcherAct.window.decorView.systemUiVisibility = 0
          }
       })
-      Config.addOnChangeListener(Config.Key.GeneralTransparentStatusBar, { _, v: Boolean ->
+      Config.addOnChangeListener(K.GeneralTransparentStatusBar, { _, v: Boolean ->
          if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
             if (v) {
                val w = launcherAct.window
@@ -185,14 +185,14 @@ open class GeneralHook {
             w.statusBarColor = v
          }
       }
-      Config.addOnChangeListener(Config.Key.GeneralIconPackFallback, { _, _: Any ->
+      Config.addOnChangeListener(K.GeneralIconPackFallback, { _, _: Any ->
          log("setOnChangeListener GeneralIconPackFallback")
          IconProvider.update(app)
          if (Config[K.GeneralIconPackApplyDrawerButton]) {
             drawerBtn?.image = BitmapDrawable(launcherAct.resources, IconProvider.getIcon(Const.drawerBtnDrawableComponentName))
          }
       })
-      Config.addOnChangeListener(Config.Key.GeneralIconPackApplyDrawerButton, { _, v: Boolean ->
+      Config.addOnChangeListener(K.GeneralIconPackApplyDrawerButton, { _, v: Boolean ->
          log("setOnChangeListener GeneralIconPackApplyDrawerButton")
          if (v) {
             drawerBtn?.image = BitmapDrawable(launcherAct.resources, IconProvider.getIcon(Const.drawerBtnDrawableComponentName))
@@ -200,16 +200,16 @@ open class GeneralHook {
             drawerBtn?.image = BitmapDrawable(launcherAct.resources, IconProvider.DefaultIconPack.getIcon(Const.drawerBtnDrawableComponentName))
          }
       })
-      Config.addOnChangeListener(Config.Key.GeneralIconScaleApplyDrawerButton, { _, v: Boolean ->
+      Config.addOnChangeListener(K.GeneralIconScaleApplyDrawerButton, { _, v: Boolean ->
          if (v) {
-            drawerBtn?.scaleX = Config.get<Int>(Config.Key.GeneralIconScale) / 100f
-            drawerBtn?.scaleY = Config.get<Int>(Config.Key.GeneralIconScale) / 100f
+            drawerBtn?.scaleX = Config.get<Int>(K.GeneralIconScale) / 100f
+            drawerBtn?.scaleY = Config.get<Int>(K.GeneralIconScale) / 100f
          } else {
             drawerBtn?.scaleX = 1f
             drawerBtn?.scaleY = 1f
          }
       })
-      Config.addOnChangeListener(Config.Key.GeneralIconScale, { _, scale: Int ->
+      Config.addOnChangeListener(K.GeneralIconScale, { _, scale: Int ->
          log("setOnChangeListener GeneralIconScale")
          val s = (launcherAct.resources.getDimension(MimikkoUI.dimen.app_icon_size) / 2 * scale / 100f).roundToInt()
          dockLayout?.forEachChild {
@@ -273,17 +273,17 @@ open class GeneralHook {
       log("initDock")
       drawerBtn = drawerBtn ?: dock.findViewById(MimikkoUI.id.drawerButton) as ImageView
       drawerBtn?.let {
-         if (Config[Config.Key.GeneralIconPackApplyDrawerButton]) {
+         if (Config[K.GeneralIconPackApplyDrawerButton]) {
             it.image = BitmapDrawable(act.resources, IconProvider.getIcon(Const.drawerBtnDrawableComponentName))
          }
-         if (Config[Config.Key.GeneralIconScaleApplyDrawerButton]) {
-            it.scaleX = Config.get<Int>(Config.Key.GeneralIconScale) / 100f
-            it.scaleY = Config.get<Int>(Config.Key.GeneralIconScale) / 100f
+         if (Config[K.GeneralIconScaleApplyDrawerButton]) {
+            it.scaleX = Config.get<Int>(K.GeneralIconScale) / 100f
+            it.scaleY = Config.get<Int>(K.GeneralIconScale) / 100f
          }
          it.setOnTouchListener(
                object : OnSwipeTouchListener(launcherAct) {
                   override fun onSwipeTop() {
-                     if (Config[Config.Key.DockSwipeToDrawer]) {
+                     if (Config[K.DockSwipeToDrawer]) {
                         onClick()
                      }
                   }
@@ -302,15 +302,5 @@ open class GeneralHook {
 
    private fun initRoot(activity: Activity, root: RelativeLayout): RelativeLayout {
       return root
-   }
-
-   companion object {
-
-      @HookPackage(MimikkoUI.packageName)
-      @HookClass(MimikkoUI.launcherClsName)
-      @HookAfter("onCreate", ["android.os.Bundle"])
-      fun testMethod2(lpparam: XC_LoadPackage.LoadPackageParam) {
-         Utils.log("General testMethod2")
-      }
    }
 }

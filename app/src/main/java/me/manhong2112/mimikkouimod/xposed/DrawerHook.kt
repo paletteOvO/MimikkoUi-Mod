@@ -28,7 +28,8 @@ import me.manhong2112.mimikkouimod.common.ReflectionUtils.invokeMethod
 import me.manhong2112.mimikkouimod.common.Utils
 import me.manhong2112.mimikkouimod.common.ValueBackup
 import org.jetbrains.anko.*
-import me.manhong2112.mimikkouimod.common.Config.Key as K
+import me.manhong2112.mimikkouimod.common.TypedKey as K
+
 
 class DrawerHook {
    private lateinit var classLoader: ClassLoader
@@ -51,7 +52,7 @@ class DrawerHook {
    private val wallpaperUpdateReceiver by lazy {
       object : BroadcastReceiver() {
          override fun onReceive(ctx: Context, intent: Intent) {
-            updateDrawerBackground(null, null)
+            updateDrawerBackground()
          }
       }
    }
@@ -112,13 +113,13 @@ class DrawerHook {
       }
    }
 
-   private fun updateDrawerBackground(k: K?, v: Any?) {
+   private fun updateDrawerBackground() {
       DrawerBackground.update(launcherAct, drawer)
    }
 
    private fun bindConfigUpdateListener() {
       Config.addOnChangeListener(K.DrawerBlurBackground, { k, v: Boolean ->
-         updateDrawerBackground(k, v)
+         updateDrawerBackground()
          drawer?.let {
             if (v) {
                DrawerBackground.enable(it)
@@ -127,8 +128,8 @@ class DrawerHook {
             }
          }
       })
-      Config.addOnChangeListener(K.DrawerBlurBackgroundBlurRadius, ::updateDrawerBackground)
-      Config.addOnChangeListener(K.DrawerDarkBackground, ::updateDrawerBackground)
+      Config.addOnChangeListener(K.DrawerBlurBackgroundBlurRadius, { _, _ -> updateDrawerBackground() })
+      Config.addOnChangeListener(K.DrawerDarkBackground, { _, _ -> updateDrawerBackground() })
       Config.addOnChangeListener(K.DrawerColumnSize, { _, v: Int ->
          drawer?.let {
             setDrawerColumnSize(it, v)
@@ -167,11 +168,11 @@ class DrawerHook {
    }
 
    private fun initDrawer(activity: Activity, drawer: ViewGroup) {
-      setDrawerColumnSize(drawer, Config[Config.Key.DrawerColumnSize])
-      if (Config[Config.Key.DrawerBlurBackground]) {
+      setDrawerColumnSize(drawer, Config[K.DrawerColumnSize])
+      if (Config[K.DrawerBlurBackground]) {
          DrawerBackground.enable(drawer)
       }
-      if (Config[Config.Key.DrawerDrawUnderStatusBar]) {
+      if (Config[K.DrawerDrawUnderStatusBar]) {
          val lparams = drawer.layoutParams as RelativeLayout.LayoutParams
          ValueBackup.drawerMarginTop = ValueBackup.drawerMarginTop ?: lparams.topMargin
          lparams.topMargin = 0

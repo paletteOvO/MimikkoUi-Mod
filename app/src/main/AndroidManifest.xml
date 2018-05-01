@@ -22,7 +22,7 @@
                 android:enabled="true"
                 android:name="ConfigReceiver">
             <intent-filter>
-                <action android:name="me.manhong2112.mimikkouimod.action.loadConfigAction"/>
+                <action android:name="me.manhong2112.mimikkouimod.action.updateConfig"/>
             </intent-filter>
         </receiver>
 

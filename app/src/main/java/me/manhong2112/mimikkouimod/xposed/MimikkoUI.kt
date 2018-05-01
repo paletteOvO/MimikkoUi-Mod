@@ -13,6 +13,7 @@ object MimikkoUI {
 
    const val launcherClsName = "com.mimikko.mimikkoui.launcher.activity.Launcher"
    const val drawerLayoutClsName = "com.mimikko.mimikkoui.launcher.components.drawer.DrawerLayout"
+   const val servantSettingClsName = "com.mimikko.servant.activity.ServantSettingsActivity"
 
    object id {
       const val dock_layout = 0x7f0900ad

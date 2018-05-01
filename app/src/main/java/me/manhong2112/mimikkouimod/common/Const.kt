@@ -1,8 +1,10 @@
 package me.manhong2112.mimikkouimod.common
 
 object Const {
-   const val configUpdateAction = "me.manhong2112.mimikkouimod.action.configUpdate"
+   const val updateConfigAction = "me.manhong2112.mimikkouimod.action.updateConfig"
    const val loadConfigAction = "me.manhong2112.mimikkouimod.action.loadConfig"
+
+   const val updateServantPrefAction = "me.manhong2112.mimikkouimod.action.updateServantPref"
 
    const val TAG = "MimikkoUI-Mod"
 

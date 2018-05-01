@@ -16,6 +16,7 @@ import me.manhong2112.mimikkouimod.common.Utils.toBitmap
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
 import java.lang.ref.WeakReference
+import me.manhong2112.mimikkouimod.common.TypedKey as K
 
 typealias IconPackName = String
 typealias IconPackPackageName = String
@@ -53,7 +54,7 @@ object IconProvider {
    fun update(ctx: Context) {
       Utils.log("IconProvider update")
       this.ctx = WeakReference(ctx)
-      val value = Config.get<List<String>>(Config.Key.GeneralIconPackFallback) + "default"
+      val value = Config.get<List<String>>(K.GeneralIconPackFallback) + "default"
       iconPacks = value.map {
          log("loading iconpack $it")
          iconPacksCache[it] = iconPacksCache[it] ?: IconPack(WeakReference(ctx), it)

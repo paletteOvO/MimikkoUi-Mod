@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import me.manhong2112.mimikkouimod.common.Config
 import me.manhong2112.mimikkouimod.common.Const
+import me.manhong2112.mimikkouimod.common.TypedKey
 import me.manhong2112.mimikkouimod.common.Utils
 import me.manhong2112.mimikkouimod.common.Utils.log
 import me.manhong2112.mimikkouimod.xposed.MimikkoUI
@@ -14,11 +15,11 @@ import java.io.Serializable
 class ConfigReceiver : BroadcastReceiver() {
    override fun onReceive(context: Context, intent: Intent) {
       log("received loadConfig")
-      Config.Key.values().forEach {
+      TypedKey.values.forEach {
          Config.addOnChangeListener(it) { key, value: Any ->
             log("send config update")
             context.sendBroadcast(
-                  Intent(Const.configUpdateAction)
+                  Intent(Const.updateConfigAction)
                         .putExtra("Key", key.name)
                         .putExtra("Value", value as Serializable)
                         .setPackage(MimikkoUI.packageName))

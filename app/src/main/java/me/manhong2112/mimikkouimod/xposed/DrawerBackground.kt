@@ -15,6 +15,7 @@ import me.manhong2112.mimikkouimod.common.Utils.log
 import me.manhong2112.mimikkouimod.common.WeakReferenceDelegate.Companion.weak
 import org.jetbrains.anko.*
 import java.util.concurrent.Future
+import me.manhong2112.mimikkouimod.common.TypedKey as K
 
 object DrawerBackground {
    private val drawerBackground: BitmapDrawable?
@@ -48,10 +49,10 @@ object DrawerBackground {
 
    fun update(act: Activity, drawer: View? = null) {
       log("update start")
-      val v = Config.get<Int>(Config.Key.DrawerBlurBackgroundBlurRadius)
+      val v = Config.get<Int>(K.DrawerBlurBackgroundBlurRadius)
       drawerBackground?.bitmap?.recycle()
       drawerBackgroundFuture?.cancel(true)
-      drawerBackgroundFuture = if (Config[Config.Key.DrawerBlurBackground] && v != 0) {
+      drawerBackgroundFuture = if (Config[K.DrawerBlurBackground] && v != 0) {
          log("set drawerBackground br1")
          doAsyncResult {
             val wallpaperManager = WallpaperManager.getInstance(act)
@@ -62,7 +63,7 @@ object DrawerBackground {
             wallpaperBitmap.recycle()
 
             val wallpaper =
-                  if (Config[Config.Key.DrawerDarkBackground])
+                  if (Config[K.DrawerDarkBackground])
                      Utils.darken(Utils.blur(act, bitmap, v.toFloat() / 40f))
                   else
                      Utils.blur(act, bitmap, v.toFloat() / 40f)
