@@ -3,17 +3,12 @@ package me.manhong2112.mimikkouimod.common
 import org.json.JSONArray
 import java.util.*
 
-class JSONList<T>(val jsonArray: JSONArray) : List<T> {
+class JSONList<T>(val jsonArray: JSONArray) : List<T>, java.io.Serializable {
    override val size: Int
       get() = jsonArray.length()
 
    override fun contains(element: T): Boolean {
-      for (i in 0 until size) {
-         if (jsonArray.get(i) as T == element) {
-            return true
-         }
-      }
-      return false
+      return indexOf(element) != -1
    }
 
 
@@ -32,7 +27,7 @@ class JSONList<T>(val jsonArray: JSONArray) : List<T> {
 
    override fun indexOf(element: T): Int {
       for (i in 0 until size) {
-         if (jsonArray.get(i) as T == element) {
+         if (jsonArray.get(i) == element) {
             return i
          }
       }
@@ -49,7 +44,7 @@ class JSONList<T>(val jsonArray: JSONArray) : List<T> {
 
    override fun lastIndexOf(element: T): Int {
       for (i in size - 1..0) {
-         if (jsonArray.get(i) as T == element) {
+         if (jsonArray.get(i) == element) {
             return i
          }
       }
