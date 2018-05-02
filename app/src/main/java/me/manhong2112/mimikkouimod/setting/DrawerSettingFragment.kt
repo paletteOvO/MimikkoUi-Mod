@@ -1,13 +1,13 @@
 package me.manhong2112.mimikkouimod.setting
 
+import android.view.ViewGroup
 import me.manhong2112.mimikkouimod.R
-import me.manhong2112.mimikkouimod.layout.PreferenceLayout
 import me.manhong2112.mimikkouimod.layout.PreferenceLayout.Companion.seekBarPreference
 import me.manhong2112.mimikkouimod.layout.PreferenceLayout.Companion.switchPreference
 import me.manhong2112.mimikkouimod.layout.SettingFragment
 import me.manhong2112.mimikkouimod.common.TypedKey as K
 class DrawerSettingFragment : SettingFragment() {
-   override fun createView(layout: PreferenceLayout) {
+   override fun createView(layout: ViewGroup) {
       with(layout) {
          switchPreference(R.string.pref_drawer_blur_background, key = K.DrawerBlurBackground)
          seekBarPreference(R.string.pref_drawer_blur_background_radius, R.string.pref_drawer_blur_background_radius_num_format, K.DrawerBlurBackgroundBlurRadius, max = 999)

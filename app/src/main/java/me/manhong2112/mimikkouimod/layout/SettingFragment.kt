@@ -1,5 +1,6 @@
 package me.manhong2112.mimikkouimod.layout
 
+import android.content.Context
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.support.v7.app.AppCompatActivity
@@ -18,11 +19,11 @@ import java.util.concurrent.Future
 abstract class SettingFragment : Fragment() {
    private val prefLayout: ScrollView
       get() {
-         init(this.context!! as AppCompatActivity)
-         return prefLayoutFuture!!.get()
-   }
+         init(this.context!!)
+         return future!!.get()
+      }
+   private var future: Future<ScrollView>? = null
 
-   private var prefLayoutFuture: Future<ScrollView>? = null
    final override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
       with(this.activity!!) {
          log("onCreateView")
@@ -30,19 +31,15 @@ abstract class SettingFragment : Fragment() {
       }
    }
 
-   fun init(ctx: AppCompatActivity) {
-      if (prefLayoutFuture === null) {
-         prefLayoutFuture = doAsyncResult {
-            log("init ${this.weakRef.get()?.javaClass?.name}")
-            val v = ctx.UI {
+   fun init(ctx: Context) {
+      if (future === null) {
+         future = doAsyncResult {
+            ctx.UI {
                createView(preferenceLayout {})
             }.view as ScrollView
-            log("init-ed ${this.weakRef.get()?.javaClass?.name}")
-            v
          }
       }
    }
-
    fun open(ctx: AppCompatActivity, firstPage: Boolean = false) {
       val ft = ctx.supportFragmentManager.beginTransaction()
       if (firstPage) {
@@ -54,7 +51,8 @@ abstract class SettingFragment : Fragment() {
       }
       ft.commit()
    }
-   abstract fun createView(layout: PreferenceLayout)
+
+   abstract fun createView(layout: ViewGroup)
 }
 
 

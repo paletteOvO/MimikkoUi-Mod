@@ -31,6 +31,8 @@ object Utils {
    val EmptyFunction2: (Any, Any) -> Any = { _, _ -> }
    val EmptyFunction3: (Any, Any, Any) -> Any = { _, _, _ -> }
 
+   fun <T> id(it: T) = it
+
    fun <K, V> arrayMapOf(vararg items: Pair<K, V>): ArrayMap<K, V> {
       val map = ArrayMap<K, V>(items.size)
       items.forEach {

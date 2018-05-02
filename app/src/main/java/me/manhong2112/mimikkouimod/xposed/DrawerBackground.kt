@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.WallpaperManager
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -18,15 +19,10 @@ import java.util.concurrent.Future
 import me.manhong2112.mimikkouimod.common.TypedKey as K
 
 object DrawerBackground {
-   private val drawerBackground: BitmapDrawable?
-      get() {
-         return drawerBackgroundFuture?.get()
-      }
-   private var drawerBackgroundFuture: Future<BitmapDrawable?>? = null
+   private var future: Future<Drawable?>? = null
    private var imageView: ImageView? by weak<ImageView?>()
 
    fun enable(drawer: ViewGroup) {
-      drawerBackground ?: return
       val parent = drawer.parent as RelativeLayout
       (drawer.layoutParams as RelativeLayout.LayoutParams).setMargins(0, parent.topPadding, 0, 0)
       parent.padding = 0
@@ -36,7 +32,7 @@ object DrawerBackground {
          imageView?.let {
             it.scaleType = ImageView.ScaleType.CENTER_CROP
             it.id = drawerBackgroundId
-            it.image = drawerBackground
+            it.image = future?.get()
             parent.addView(it, 0, RelativeLayout.LayoutParams(matchParent, matchParent))
          }
       }
@@ -49,15 +45,15 @@ object DrawerBackground {
 
    fun update(act: Activity, drawer: View? = null) {
       log("update start")
-      val v = Config.get<Int>(K.DrawerBlurBackgroundBlurRadius)
-      drawerBackground?.bitmap?.recycle()
-      drawerBackgroundFuture?.cancel(true)
-      drawerBackgroundFuture = if (Config[K.DrawerBlurBackground] && v != 0) {
-         log("set drawerBackground br1")
-         doAsyncResult {
+      val v = Config[K.DrawerBlurBackgroundBlurRadius]
+      // load and blur background
+      future?.cancel(true)
+      future = doAsyncResult {
+         val img = if (Config[K.DrawerBlurBackground] && v != 0) {
+            log("future br1")
             val wallpaperManager = WallpaperManager.getInstance(act)
 
-            val scaleFactor = 1 - v / 1000f
+            val scaleFactor = 1f - v / 1000f
             val wallpaperBitmap = (wallpaperManager.drawable as BitmapDrawable).bitmap.copy(Bitmap.Config.ARGB_8888, true)
             val bitmap = Utils.downscale(wallpaperBitmap, scaleFactor)
             wallpaperBitmap.recycle()
@@ -67,19 +63,15 @@ object DrawerBackground {
                      Utils.darken(Utils.blur(act, bitmap, v.toFloat() / 40f))
                   else
                      Utils.blur(act, bitmap, v.toFloat() / 40f)
-            val result = BitmapDrawable(act.resources, wallpaper)
-
-            act.runOnUiThread {
-               imageView?.image = result
-            }
-            return@doAsyncResult result
+            BitmapDrawable(act.resources, wallpaper)
+         } else {
+            log("future br2")
+            null
          }
-      } else {
-         log("set drawerBackground br2")
          act.runOnUiThread {
-            imageView?.image = null
+            imageView?.image = img
          }
-         null
+         img
       }
       log("update end")
    }

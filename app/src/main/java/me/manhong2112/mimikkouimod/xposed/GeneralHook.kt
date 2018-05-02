@@ -48,8 +48,11 @@ import me.manhong2112.mimikkouimod.common.TypedKey as K
 
 open class GeneralHook {
    private lateinit var classLoader: ClassLoader
-   private lateinit var app: Application
    private lateinit var launcherAct: Activity
+   private val app: Application
+      get() {
+         return launcherAct.application
+      }
    private val launcherActCls by lazy {
       XposedHelpers.findClass(MimikkoUI.launcherClsName, classLoader)
    }
@@ -81,7 +84,6 @@ open class GeneralHook {
       launcherActCls.findMethod("onCreate", Bundle::class.java).hookAsync(after = { param ->
          log("onCreate ${param.args.joinToString(", ")}")
          launcherAct = param.thisObject as Activity
-         app = launcherAct.application
 
          bindConfigUpdateListener()
 
@@ -154,7 +156,6 @@ open class GeneralHook {
             }
    }
 
-
    private fun bindConfigUpdateListener() {
       Config.addOnChangeListener(K.GeneralDarkStatusBarIcon, { k, v: Boolean ->
          if (v) {
@@ -164,19 +165,17 @@ open class GeneralHook {
          }
       })
       Config.addOnChangeListener(K.GeneralTransparentStatusBar, { _, v: Boolean ->
-         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            if (v) {
-               val w = launcherAct.window
-               w.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
-               w.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
-               w.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
-            } else {
-               launcherAct.window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
-            }
+         if (v) {
+            val w = launcherAct.window
+            w.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
+            w.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
+            w.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
+         } else {
+            launcherAct.window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
          }
       })
       Config.addOnChangeListener(K.GeneralStatusBarColor) { _, v: Int ->
-         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+         if (!Config[K.GeneralTransparentStatusBar] && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             val w = launcherAct.window
             w.decorView.fitsSystemWindows = true
             w.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
@@ -224,8 +223,9 @@ open class GeneralHook {
          }
 
          if (Config[K.GeneralIconScaleApplyDrawerButton]) {
-            drawerBtn?.scaleX = scale / 100f
-            drawerBtn?.scaleY = scale / 100f
+            val v = scale / 100f
+            drawerBtn?.scaleX = v
+            drawerBtn?.scaleY = v
          }
       })
    }
@@ -277,8 +277,9 @@ open class GeneralHook {
             it.image = BitmapDrawable(act.resources, IconProvider.getIcon(Const.drawerBtnDrawableComponentName))
          }
          if (Config[K.GeneralIconScaleApplyDrawerButton]) {
-            it.scaleX = Config.get<Int>(K.GeneralIconScale) / 100f
-            it.scaleY = Config.get<Int>(K.GeneralIconScale) / 100f
+            val v = Config[K.GeneralIconScale] / 100f
+            it.scaleX = v
+            it.scaleY = v
          }
          it.setOnTouchListener(
                object : OnSwipeTouchListener(launcherAct) {

@@ -13,45 +13,47 @@ import android.widget.*
 import me.manhong2112.mimikkouimod.R
 import me.manhong2112.mimikkouimod.common.Config
 import me.manhong2112.mimikkouimod.common.Const
+import me.manhong2112.mimikkouimod.common.Utils
 import org.jetbrains.anko.*
 import org.jetbrains.anko.cardview.v7.cardView
 import org.jetbrains.anko.custom.ankoView
 import me.manhong2112.mimikkouimod.common.TypedKey as K
 
-class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
-   init {
-      id = View.generateViewId()
-      orientation = VERTICAL
-      lparams(matchParent, matchParent)
-      backgroundColorResource = R.color.backgroundNormal
-      setOnTouchListener { _, _ -> true }
-      Config.bindSharedPref(ctx.defaultSharedPreferences)
-   }
-
+class PreferenceLayout {
    companion object {
-      inline fun ViewManager.preferenceLayout(init: ViewGroup.() -> Unit = {}) = with(scrollView()) {
-         isFillViewport = true
-         id = View.generateViewId()
-         ankoView({ PreferenceLayout(it) }, 0, init)
-      }
-
       inline fun Activity.preferenceLayout(init: ViewGroup.() -> Unit = {}) = with(scrollView()) {
+         Config.bindSharedPref(context.defaultSharedPreferences)
          isFillViewport = true
          id = View.generateViewId()
-         ankoView({ PreferenceLayout(it) }, 0, init)
+         verticalLayout {
+            id = View.generateViewId()
+            backgroundColorResource = R.color.backgroundNormal
+
+            lparams(matchParent, matchParent)
+            setOnTouchListener { _, _ -> true }
+            init()
+         }
       }
 
-      inline fun Context.preferenceLayout(init: ViewGroup.() -> Unit = {}) = with(scrollView()) {
+      inline fun ViewManager.preferenceLayout(init: ViewGroup.() -> Unit = {}) = with(scrollView()) {
+         Config.bindSharedPref(context.defaultSharedPreferences)
          isFillViewport = true
          id = View.generateViewId()
-         ankoView({ PreferenceLayout(it) }, 0, init)
+         verticalLayout {
+            id = View.generateViewId()
+            backgroundColorResource = R.color.backgroundNormal
+
+            lparams(matchParent, matchParent)
+            setOnTouchListener { _, _ -> true }
+            init()
+         }
       }
 
       fun ViewGroup.preferencePage(page: SettingFragment, nameRes: Int, summaryRes: Int = 0, icon: Drawable? = null) =
             preferencePage(page, context.getString(nameRes), if (summaryRes == 0) null else context.getString(summaryRes), icon)
 
       fun ViewGroup.preferencePage(page: SettingFragment, name: String, summary: String? = null, icon: Drawable? = null) {
-         page.init(this@preferencePage.context as AppCompatActivity)
+         page.init(context as AppCompatActivity)
          basePreference(name, summary, icon) { _, _, _ ->
             setOnClickListener {
                page.open(this@preferencePage.context as AppCompatActivity)
@@ -71,6 +73,7 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
                   }
                }
             }, 0) {
+               this.init()
                context.runOnUiThread {
                   isChecked = Config[key]
                }
@@ -87,21 +90,52 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
          }
       }
 
+
+      fun ViewGroup.seekBarPreference(nameRes: Int, numFormatRes: Int = 0,
+                                      key: K<Int>,
+                                      min: Int = 0, max: Int = 100, step: Int = 1,
+                                      init: SeekBar.() -> Unit = {}) {
+         return seekBarPreference(context.getString(nameRes), if (numFormatRes == 0) null else context.getString(numFormatRes), key, min, max, step, init)
+      }
+
+      fun ViewManager.seekBarPreference(name: String, numFormat: String? = null,
+                                        key: K<Int>,
+                                        min: Int = 0, max: Int = 100, step: Int = 1,
+                                        init: SeekBar.() -> Unit = {}) {
+         seekBarPreference(name, numFormat, key, min, max, step, Utils::id, Utils::id, init)
+      }
+
+      fun ViewManager.seekBarPreference(name: String, numFormat: String? = null,
+                                        key: K<Float>,
+                                        min: Float = 0f, max: Float = 100f, step: Float = 0.01f,
+                                        init: SeekBar.() -> Unit = {}) {
+         val displayParse: (Float) -> Int = { (it * Const.prefFloatPrecise).toInt() }
+         val valueParse: (Int) -> Float = { it / Const.prefFloatPrecise }
+         seekBarPreference(name, numFormat, key, (min * Const.prefFloatPrecise).toInt(), (max * Const.prefFloatPrecise).toInt(), (step * Const.prefFloatPrecise).toInt(), displayParse, valueParse, init)
+      }
+
+      fun ViewGroup.seekBarPreference(nameRes: Int, numFormatRes: Int = 0,
+                                      key: K<Float>,
+                                      min: Float = 0f, max: Float = 100f, step: Float = 0.01f,
+                                      init: SeekBar.() -> Unit = {}) {
+         return seekBarPreference(context.getString(nameRes), if (numFormatRes == 0) null else context.getString(numFormatRes), key, min, max, step, init)
+      }
+
       fun <T : Number> ViewGroup.seekBarPreference(nameRes: Int, numFormatRes: Int = 0,
                                                    key: K<T>,
                                                    min: Int = 0, max: Int = 100, step: Int = 1,
-                                                   displayParse: (T) -> Int = { it.toInt() },
-                                                   valueParse: (Int) -> T = { it as T },
+                                                   displayParse: (T) -> Int,
+                                                   valueParse: (Int) -> T,
                                                    init: SeekBar.() -> Unit = {}) {
          return seekBarPreference(context.getString(nameRes), if (numFormatRes == 0) null else context.getString(numFormatRes), key, min, max, step, displayParse, valueParse, init)
       }
 
-      fun <T : Number> ViewGroup.seekBarPreference(name: String, numFormat: String? = null,
-                                                   key: K<T>,
-                                                   min: Int = 0, max: Int = 100, step: Int = 1,
-                                                   displayParse: (T) -> Int = { it.toInt() },
-                                                   valueParse: (Int) -> T = { it as T },
-                                                   init: SeekBar.() -> Unit = {}) {
+      fun <T : Number> ViewManager.seekBarPreference(name: String, numFormat: String? = null,
+                                                     key: K<T>,
+                                                     min: Int = 0, max: Int = 100, step: Int = 1,
+                                                     displayParse: (T) -> Int,
+                                                     valueParse: (Int) -> T,
+                                                     init: SeekBar.() -> Unit = {}) {
          basePreference(name, "") { iconView, nameView, _ ->
             ankoView({ BubbleSeekBar(it) }, 0) {
                setPadding(25, 0, dip(8) + 25, 0)
@@ -124,6 +158,7 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
                      Config[key] = valueParse(p0.progress + min)
                   }
                })
+               init()
             }.lparams {
                leftMargin = -25
                rightMargin = -25
@@ -291,8 +326,7 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
                radius = dip(4).toFloat()
                cardElevation = 0f
                id = View.generateViewId()
-               linearLayout {
-                  orientation = VERTICAL
+               verticalLayout {
                   init()
                }
                lparams {
@@ -354,6 +388,7 @@ class PreferenceLayout(private val ctx: Context) : _LinearLayout(ctx) {
                   width = matchParent
                }
             }
+
 
       private fun getSelectedItemDrawable(ctx: Context): Drawable {
          val ta = ctx.obtainStyledAttributes(intArrayOf(R.attr.selectableItemBackground))
