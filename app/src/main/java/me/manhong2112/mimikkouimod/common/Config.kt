@@ -5,58 +5,8 @@ import me.manhong2112.mimikkouimod.common.Utils.log
 import org.json.JSONArray
 
 
-
 @Suppress("UNCHECKED_CAST")
 object Config {
-//   
-//   enum class Key {
-//      DockSwipeToDrawer(false),
-//
-//      DrawerBlurBackground(false),
-//      DrawerDarkBackground(false),
-//      DrawerBlurBackgroundBlurRadius(100),
-//      DrawerColumnSize(4),
-//      DrawerDrawUnderStatusBar(false),
-//      DrawerBatSwipeToSearch(false),
-//
-//      GeneralIconPackFallback(listOf("default")),
-//      GeneralIconPackApplyDrawerButton(false),
-//      GeneralIconScale(100), // in %
-//      GeneralIconScaleApplyDrawerButton(false),
-//
-//      GeneralTransparentStatusBar(false),
-//      GeneralStatusBarColor(0x99000000),
-//      GeneralDarkStatusBarIcon(false),
-//
-//      GeneralShortcutTextSize(10f),
-//      GeneralShortcutTextColor(Color.WHITE),
-//      GeneralShortcutTextMaxLine(1),
-//      GeneralShortcutTextOriginalName(false),
-//      GeneralShortcutTextShadowColor(Color.BLACK),
-//      GeneralShortcutTextShadowRadius(10f),
-//      GeneralShortcutTextShadowDx(0f),
-//      GeneralShortcutTextShadowDy(0f);
-//
-//      private val mDefaultValue: Any
-//      val isList: Boolean
-//
-//      constructor(defaultValue: Any) {
-//         this.mDefaultValue = defaultValue
-//         isList = false
-//      }
-//
-//      // and we have String, Int, Long, Float ......為甚麼就不能全寫在一起呢...Union Type甚麼的...
-//      constructor(defaultValue: List<String>) {
-//         this.mDefaultValue = defaultValue
-//         isList = true
-//      }
-//
-//
-//      fun <T> getDefaultValue(): T {
-//         return mDefaultValue as T
-//      }
-//   }
-
    private val data = arrayOfNulls<Any>(TypedKey.size)
    private val callbacks = arrayOfNulls<ArrayList<(TypedKey<Any>, Any) -> Unit>>(TypedKey.size) // orz
    private var sharedPreferences: SharedPreferences? = null
@@ -67,11 +17,6 @@ object Config {
       return data[key.ordinal] as T
    }
 
-   fun bindSharedPref(pref: SharedPreferences) {
-      sharedPreferences = pref
-   }
-
-   // 這Any搞得我就像在寫動態類型的語言...
    operator fun <T> set(key: TypedKey<T>, value: T) where T : Any {
       data[key.ordinal] = value
       if (sharedPreferences !== null) {
@@ -80,7 +25,7 @@ object Config {
       callCallback(key, value)
    }
 
-   fun <T : Any> addOnChangeListener(key: TypedKey<T>, callback: (TypedKey<T>, T) -> Unit): Int {
+   fun <T> addOnChangeListener(key: TypedKey<T>, callback: (TypedKey<T>, T) -> Unit): Int where T : Any {
       if (callbacks[key.ordinal] === null) {
          callbacks[key.ordinal] = arrayListOf(callback as (TypedKey<Any>, Any) -> Unit)
       } else {
@@ -89,11 +34,11 @@ object Config {
       return callbacks.size - 1 // Index
    }
 
-   fun <T> removeOnChangeListener(key: TypedKey<T>, callback: (TypedKey<T>, T) -> Unit) {
+   fun <T> removeOnChangeListener(key: TypedKey<T>, callback: (TypedKey<T>, T) -> Unit) where T : Any {
       callbacks[key.ordinal]?.remove<Any>(callback)
    }
 
-   fun <T> removeOnChangeListener(key: TypedKey<T>, index: Int) {
+   fun <T> removeOnChangeListener(key: TypedKey<T>, index: Int) where T : Any {
       callbacks[key.ordinal]?.removeAt(index)
    }
 
@@ -109,23 +54,12 @@ object Config {
       callbacks[key.ordinal]?.get(index)?.invoke(key as TypedKey<Any>, value)
    }
 
-   fun loadSharedPref(pref: SharedPreferences, callCallback: Boolean = false) {
-      TypedKey.values.forEach { key ->
-         loadSharedPref(key, pref, callCallback)
-      }
-   }
-
-   fun <T> loadSharedPref(key: TypedKey<T>, pref: SharedPreferences, callCallback: Boolean = false) {
+   fun <T> loadSharedPref(key: TypedKey<T>, pref: SharedPreferences, callCallback: Boolean = false) where T : Any {
       log("loading $key")
       data[key.ordinal] = when {
          key.isList -> {
             pref.all[key.name]?.let {
-               val arr = JSONArray(it as String)
-               val result = arrayOfNulls<Any>(arr.length())
-               for (i in 0 until arr.length()) {
-                  result[i] = arr.get(i)
-               }
-               (result as Array<Any>).asList()
+               JSONList<String>(JSONArray(it as String))
             }
          }
          else -> {
@@ -134,6 +68,38 @@ object Config {
       } ?: key.defValue
       if (callCallback) {
          callCallback(key as TypedKey<Any>, data[key.ordinal]!!)
+      }
+   }
+
+   fun <T> writeSharedPref(key: TypedKey<T>, pref: SharedPreferences) where T : Any {
+      val editor = pref.edit()
+      val value = get(key)
+      when {
+         value is Int -> editor.put(key.name, value)
+         value is Boolean -> editor.put(key.name, value)
+         value is Float -> editor.put(key.name, value)
+         value is Long -> editor.put(key.name, value)
+         value is String -> editor.put(key.name, value)
+         value is Set<*> -> editor.put(key.name, value as Set<String>)
+         value is List<*> && key.isList -> {
+            val jsonArr = JSONArray()
+            value.forEach {
+               jsonArr.put(it)
+            }
+            editor.put(key.name, jsonArr.toString())
+         }
+         else -> throw Exception("Type Error: type of $key is not supported")
+      }
+      editor.apply()
+   }
+
+   fun bindSharedPref(pref: SharedPreferences) {
+      sharedPreferences = pref
+   }
+
+   fun loadSharedPref(pref: SharedPreferences, callCallback: Boolean = false) {
+      TypedKey.values.forEach { key ->
+         loadSharedPref(key, pref, callCallback)
       }
    }
 
@@ -157,28 +123,6 @@ object Config {
             }
             else -> throw Exception("Type Error: type of $key is not supported")
          }
-      }
-      editor.apply()
-   }
-
-   fun <T> writeSharedPref(key: TypedKey<T>, pref: SharedPreferences) {
-      val editor = pref.edit()
-      val value = get(key)
-      when {
-         value is Int -> editor.put(key.name, value)
-         value is Boolean -> editor.put(key.name, value)
-         value is Float -> editor.put(key.name, value)
-         value is Long -> editor.put(key.name, value)
-         value is String -> editor.put(key.name, value)
-         value is Set<*> -> editor.put(key.name, value as Set<String>)
-         value is List<*> && key.isList -> {
-            val jsonArr = JSONArray()
-            value.forEach {
-               jsonArr.put(it)
-            }
-            editor.put(key.name, jsonArr.toString())
-         }
-         else -> throw Exception("Type Error: type of $key is not supported")
       }
       editor.apply()
    }
