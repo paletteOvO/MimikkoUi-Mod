@@ -32,9 +32,8 @@ sealed class TypedKey<T>(val defValue: T, val isList: Boolean = false) {
    object GeneralShortcutTextShadowDx : TypedKey<Float>(0f)
    object GeneralShortcutTextShadowDy : TypedKey<Float>(0f)
 
-   val name: String by lazy {
-      this::class.java.simpleName
-   }
+   @Suppress("LeakingThis")
+   val name: String = this::class.java.simpleName
    val ordinal: Int by lazy {
       values.forEachWithIndex { index, value ->
          if (value::class.java === this::class.java) {
@@ -44,6 +43,10 @@ sealed class TypedKey<T>(val defValue: T, val isList: Boolean = false) {
       throw IllegalStateException()
    }
 
+   val value: T
+      get() {
+         return Config[this]
+      }
    override fun equals(other: Any?): Boolean {
       return other !== null && other is TypedKey<*> && this.hashCode() == other.hashCode()
    }
@@ -53,10 +56,6 @@ sealed class TypedKey<T>(val defValue: T, val isList: Boolean = false) {
    }
 
    companion object {
-      val size: Int by lazy {
-         values.size
-      }
-
       fun valueOf(name: String): TypedKey<Any> {
          values.forEach {
             if (it.name == name) {
@@ -66,12 +65,12 @@ sealed class TypedKey<T>(val defValue: T, val isList: Boolean = false) {
          throw IllegalStateException()
       }
 
-      val values: Array<TypedKey<Any>> by lazy {
-         TypedKey::class.java.declaredClasses.mapNotNull {
+      val values: Array<TypedKey<Any>> = TypedKey::class.java.declaredClasses.mapNotNull {
             if (it.superclass === TypedKey::class.java) {
                it.getField("INSTANCE").get(it) as? TypedKey<Any>
             } else null
          }.toTypedArray()
-      }
+
+      val size: Int = values.size
    }
 }

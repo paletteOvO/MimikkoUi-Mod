@@ -53,16 +53,16 @@ object DrawerBackground {
             log("future br1")
             val wallpaperManager = WallpaperManager.getInstance(act)
 
-            val scaleFactor = 1f - v / 1000f
+            val scaleFactor = 1f - 9.5f * v / 10000f
             val wallpaperBitmap = (wallpaperManager.drawable as BitmapDrawable).bitmap.copy(Bitmap.Config.ARGB_8888, true)
             val bitmap = Utils.downscale(wallpaperBitmap, scaleFactor)
             wallpaperBitmap.recycle()
 
             val wallpaper =
                   if (Config[K.DrawerDarkBackground])
-                     Utils.darken(Utils.blur(act, bitmap, v.toFloat() / 40f))
+                     Utils.darken(Utils.blur(act, bitmap, v.toFloat() / 50f + 5))
                   else
-                     Utils.blur(act, bitmap, v.toFloat() / 40f)
+                     Utils.blur(act, bitmap, v.toFloat() / 50f + 5)
             BitmapDrawable(act.resources, wallpaper)
          } else {
             log("future br2")

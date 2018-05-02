@@ -27,10 +27,6 @@ import java.io.File
 
 
 object Utils {
-   val EmptyFunction1: (Any) -> Any = { }
-   val EmptyFunction2: (Any, Any) -> Any = { _, _ -> }
-   val EmptyFunction3: (Any, Any, Any) -> Any = { _, _, _ -> }
-
    fun <T> id(it: T) = it
 
    fun <K, V> arrayMapOf(vararg items: Pair<K, V>): ArrayMap<K, V> {
