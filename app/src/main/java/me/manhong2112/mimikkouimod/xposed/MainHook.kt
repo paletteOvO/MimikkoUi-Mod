@@ -1,6 +1,7 @@
 package me.manhong2112.mimikkouimod.xposed
 
 import android.app.Activity
+import android.app.Application
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -29,16 +30,7 @@ class MainHook : IXposedHookLoadPackage {
 
    override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
       if (lpparam.packageName != MimikkoUI.packageName) return
-      Utils.getPackageVersion(lpparam)?.run {
-         val versionName = first
-         val versionCode = second
-         if (versionCode != Const.supportedVersionCode || versionName != Const.supportedVersionName) {
-            return
-         }
-      } ?: run {
-         Utils.log("null version info")
-         return
-      }
+      injectId(lpparam)
       val launcherClass = XposedHelpers.findClass(MimikkoUI.launcherClsName, lpparam.classLoader)
       launcherClass.findMethod("onCreate", Bundle::class.java).hook(0) { param ->
          val app = (param.thisObject as Activity).application
@@ -53,5 +45,29 @@ class MainHook : IXposedHookLoadPackage {
       GeneralHook().onLoad(lpparam.classLoader, lpparam)
       DrawerHook().onLoad(lpparam.classLoader, lpparam)
       ServantSetting().onLoad(lpparam.classLoader, lpparam)
+   }
+
+   private fun injectId(lpparam: XC_LoadPackage.LoadPackageParam) {
+      XposedHelpers.findClass(MimikkoUI.appClsName, lpparam.classLoader)
+            .findMethod("onCreate")
+            .hook(priority = 99) {
+               val app = it.thisObject as Application
+               val res = app.resources
+
+               MimikkoUI.id.dock_layout = res.getIdentifier("dock_layout", "id", MimikkoUI.packageName)
+               MimikkoUI.id.drawer_layout = res.getIdentifier("drawer_layout", "id", MimikkoUI.packageName)
+               MimikkoUI.id.workspace = res.getIdentifier("workspace", "id", MimikkoUI.packageName)
+               MimikkoUI.id.drawerButton = res.getIdentifier("drawerButton", "id", MimikkoUI.packageName)
+               MimikkoUI.id.bubble = res.getIdentifier("bubble", "id", MimikkoUI.packageName)
+               MimikkoUI.id.app_settings = res.getIdentifier("app_settings", "id", MimikkoUI.packageName)
+               MimikkoUI.id.bat_bar = res.getIdentifier("bat_bar", "id", MimikkoUI.packageName)
+               MimikkoUI.id.bat = res.getIdentifier("bat", "id", MimikkoUI.packageName)
+               MimikkoUI.id.bat_wrap = res.getIdentifier("bat_wrap", "id", MimikkoUI.packageName)
+
+               MimikkoUI.drawable.ic_button_drawer = res.getIdentifier("ic_button_drawer", "drawable", MimikkoUI.packageName)
+
+               MimikkoUI.dimen.app_icon_size = res.getIdentifier("app_icon_size", "dimen", MimikkoUI.packageName)
+            }
+
    }
 }
