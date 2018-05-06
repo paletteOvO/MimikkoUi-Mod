@@ -25,8 +25,6 @@ object MimikkoUI {
       const val bat_bar = 0x7f090038
       const val bat = 0x7f090037
       const val bat_wrap = 0x7f09003c
-
-
    }
 
    object drawable {

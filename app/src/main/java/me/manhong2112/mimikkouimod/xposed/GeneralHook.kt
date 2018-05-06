@@ -25,16 +25,7 @@ import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.XposedHelpers.findClass
 import de.robv.android.xposed.callbacks.XC_LoadPackage
 import me.manhong2112.mimikkouimod.BuildConfig
-import me.manhong2112.mimikkouimod.common.Config
-import me.manhong2112.mimikkouimod.common.Const
-import me.manhong2112.mimikkouimod.common.OnSwipeTouchListener
-import me.manhong2112.mimikkouimod.common.ReflectionUtils
-import me.manhong2112.mimikkouimod.common.ReflectionUtils.findMethod
-import me.manhong2112.mimikkouimod.common.ReflectionUtils.getField
-import me.manhong2112.mimikkouimod.common.ReflectionUtils.hook
-import me.manhong2112.mimikkouimod.common.ReflectionUtils.hookAsync
-import me.manhong2112.mimikkouimod.common.ReflectionUtils.invokeMethod
-import me.manhong2112.mimikkouimod.common.ReflectionUtils.replace
+import me.manhong2112.mimikkouimod.common.*
 import me.manhong2112.mimikkouimod.common.Utils.findViews
 import me.manhong2112.mimikkouimod.common.Utils.log
 import me.manhong2112.mimikkouimod.setting.SettingsActivity
@@ -81,7 +72,7 @@ open class GeneralHook {
 
    fun onLoad(clsLoader: ClassLoader, lpparam: XC_LoadPackage.LoadPackageParam) {
       classLoader = clsLoader
-      launcherActCls.findMethod("onCreate", Bundle::class.java).hookAsync(after = { param ->
+      launcherActCls.findMethod("onCreate", Bundle::class.java).hook(after = { param ->
          log("onCreate ${param.args.joinToString(", ")}")
          launcherAct = param.thisObject as Activity
 
@@ -101,7 +92,7 @@ open class GeneralHook {
    private fun realAppHook(app: Application) {
       // com.mimikko.mimikkoui.launcher.components.cell.CellView
       val mAddViewVILp = root.findMethod("addView", View::class.java, Integer.TYPE, ViewGroup.LayoutParams::class.java)
-      mAddViewVILp.hookAsync {
+      mAddViewVILp.hook {
          if ((it.thisObject as View).id == root.id) {
             rootHook(launcherAct, root, it)
          }
@@ -122,7 +113,7 @@ open class GeneralHook {
 
       appItemEntityClass.findMethod("getIcon").replace { param ->
          val name = param.thisObject.invokeMethod<ComponentName>("getId")
-         return@replace IconProvider.getIcon(name.toString()) ?: throw ReflectionUtils.CallOriginalMethod
+         return@replace IconProvider.getIcon(name.toString()) ?: throw CallOriginalMethod
       }
 
       appItemEntityClass.findMethod("getLabel").replace { param ->
@@ -130,7 +121,7 @@ open class GeneralHook {
             val name = param.thisObject.invokeMethod<ComponentName>("getId")
             return@replace LabelProvider.getLabel(app, name)
          } else {
-            throw ReflectionUtils.CallOriginalMethod
+            throw CallOriginalMethod
          }
       }
 

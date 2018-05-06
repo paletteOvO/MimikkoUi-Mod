@@ -4,13 +4,16 @@ import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.Bundle
 import android.preference.PreferenceActivity
 import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.callbacks.XC_LoadPackage
+import me.manhong2112.mimikkouimod.common.Config
 import me.manhong2112.mimikkouimod.common.Const
-import me.manhong2112.mimikkouimod.common.ReflectionUtils.findMethod
-import me.manhong2112.mimikkouimod.common.ReflectionUtils.hook
+import me.manhong2112.mimikkouimod.common.Utils.log
+import me.manhong2112.mimikkouimod.common.findMethod
+import me.manhong2112.mimikkouimod.common.hook
 import org.jetbrains.anko.defaultSharedPreferences
 
 class ServantSetting {
@@ -25,7 +28,7 @@ class ServantSetting {
       ServantMute("key_servant_mute"),
       ServantTouchable("key_servant_touchable"),
       ServantLocked("key_servant_locked"),
-      ServantPosReset("key_servant_pos_reset")
+      ServantPosReset("key_servant_pos_reset"),
       ;
 
       val prefName: String = name
@@ -42,6 +45,17 @@ class ServantSetting {
       actCls.findMethod("onCreate", Bundle::class.java).hook {
          servantSettingAct = it.thisObject as Activity
       }
+      val launcherClass = XposedHelpers.findClass(MimikkoUI.launcherClsName, lpparam.classLoader)
+      launcherClass.findMethod("onCreate", Bundle::class.java).hook(0) { param ->
+         val app = (param.thisObject as Activity).application
+         app.registerReceiver(receiver, IntentFilter(Const.updateServantPrefAction))
+         Config.loadConfig(app)
+      }
+
+      launcherClass.findMethod("onDestroy").hook { param ->
+         val app = (param.thisObject as Activity).application
+         app.unregisterReceiver(receiver)
+      }
    }
 
    fun handle(key: SettingName, value: Any) {
@@ -49,12 +63,13 @@ class ServantSetting {
             .defaultSharedPreferences
             .edit()
             .also {
+               log("putBoolean ${key.prefName} $value")
                it.putBoolean(key.prefName, value as Boolean)
             }
             .apply()
    }
 
-   inner class Receiver : BroadcastReceiver() {
+   val receiver = object : BroadcastReceiver() {
       override fun onReceive(context: Context, intent: Intent) {
          if (intent.action == Const.updateServantPrefAction) {
             handle(SettingName.valueOf(intent.getStringExtra("Key")), intent.getSerializableExtra("Value"))

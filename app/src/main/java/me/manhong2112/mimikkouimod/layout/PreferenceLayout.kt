@@ -49,8 +49,9 @@ class PreferenceLayout {
          }
       }
 
-      fun ViewGroup.preferencePage(page: SettingFragment, nameRes: Int, summaryRes: Int = 0, icon: Drawable? = null) =
-            preferencePage(page, context.getString(nameRes), if (summaryRes == 0) null else context.getString(summaryRes), icon)
+      fun ViewGroup.preferencePage(page: SettingFragment, nameRes: Int, summaryRes: Int = 0, icon: Drawable? = null) {
+         preferencePage(page, context.getString(nameRes), if (summaryRes == 0) null else context.getString(summaryRes), icon)
+      }
 
       fun ViewGroup.preferencePage(page: SettingFragment, name: String, summary: String? = null, icon: Drawable? = null) {
          page.init(context as AppCompatActivity)
@@ -61,8 +62,9 @@ class PreferenceLayout {
          }
       }
 
-      fun ViewGroup.switchPreference(nameRes: Int, summaryRes: Int = 0, key: K<Boolean>, init: Switch.() -> Unit = {}) =
-            switchPreference(context.getString(nameRes), if (summaryRes == 0) null else context.getString(summaryRes), key, init)
+      fun ViewGroup.switchPreference(nameRes: Int, summaryRes: Int = 0, key: K<Boolean>, init: Switch.() -> Unit = {}) {
+         switchPreference(context.getString(nameRes), if (summaryRes == 0) null else context.getString(summaryRes), key, init)
+      }
 
       fun ViewManager.switchPreference(name: String, summary: String? = null, key: K<Boolean>, init: Switch.() -> Unit = {}) {
          basePreference(name, summary) { _, _, _ ->
@@ -390,7 +392,7 @@ class PreferenceLayout {
             }
 
 
-      private fun getSelectedItemDrawable(ctx: Context): Drawable {
+      fun getSelectedItemDrawable(ctx: Context): Drawable {
          val ta = ctx.obtainStyledAttributes(intArrayOf(R.attr.selectableItemBackground))
          val selectedItemDrawable = ta.getDrawable(0)
          ta.recycle()

@@ -94,3 +94,17 @@ class JSONList<T>(val jsonArray: JSONArray) : List<T>, java.io.Serializable {
       TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
    }
 }
+
+fun <T> JSONArray.toList(): List<T> {
+   return JSONList(this)
+}
+
+fun <T> List<T>.toJSONArray(): JSONArray {
+   return if (this is JSONList<T>) {
+      this.jsonArray
+   } else {
+      JSONArray().also { arr ->
+         forEach { ele -> arr.put(ele) }
+      }
+   }
+}

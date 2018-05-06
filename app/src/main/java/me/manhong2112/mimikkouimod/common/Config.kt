@@ -1,23 +1,34 @@
 package me.manhong2112.mimikkouimod.common
 
+import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
+import me.manhong2112.mimikkouimod.BuildConfig
+import me.manhong2112.mimikkouimod.ConfigReceiver
+import me.manhong2112.mimikkouimod.common.Const.keyExtraName
 import me.manhong2112.mimikkouimod.common.Utils.log
+import me.manhong2112.mimikkouimod.xposed.MimikkoUI
 import org.json.JSONArray
+import java.io.Serializable
+import me.manhong2112.mimikkouimod.common.TypedKey as K
 
 
 @Suppress("UNCHECKED_CAST")
 object Config {
-   private val data = arrayOfNulls<Any>(TypedKey.size)
-   private val callbacks = arrayOfNulls<ArrayList<(TypedKey<Any>, Any) -> Unit>>(TypedKey.size) // orz
+   private val data = arrayOfNulls<Any>(K.size)
+   private val callbacks = arrayOfNulls<ArrayList<(K<Any>, Any) -> Unit>>(K.size) // orz
    private var sharedPreferences: SharedPreferences? = null
-   operator fun <T> get(key: TypedKey<T>): T {
-      if (data[key.ordinal] === null) {
-         data[key.ordinal] = key.defValue
-      }
+   operator fun <T> get(key: K<T>): T where T : Any {
+      data[key.ordinal] = data[key.ordinal] ?: sharedPreferences?.let {
+         when {
+            key.defValue is List<*> -> JSONArray(it.all[key.name] as String).toList<String>()
+            else -> it.all[key.name]
+         }
+      } ?: key.defValue
       return data[key.ordinal] as T
    }
 
-   operator fun <T> set(key: TypedKey<T>, value: T) where T : Any {
+   operator fun <T> set(key: K<T>, value: T) where T : Any {
       data[key.ordinal] = value
       if (sharedPreferences !== null) {
          writeSharedPref(key, sharedPreferences!!)
@@ -25,68 +36,47 @@ object Config {
       callCallback(key, value)
    }
 
-   fun <T> addOnChangeListener(key: TypedKey<T>, callback: (TypedKey<T>, T) -> Unit): Int where T : Any {
+   fun <T> addOnChangeListener(key: K<T>, callback: (K<T>, T) -> Unit): Int where T : Any {
       if (callbacks[key.ordinal] === null) {
-         callbacks[key.ordinal] = arrayListOf(callback as (TypedKey<Any>, Any) -> Unit)
+         callbacks[key.ordinal] = arrayListOf(callback as (K<Any>, Any) -> Unit)
       } else {
-         callbacks[key.ordinal]!!.add(callback as (TypedKey<Any>, Any) -> Unit)
+         callbacks[key.ordinal]!!.add(callback as (K<Any>, Any) -> Unit)
       }
       return callbacks.size - 1 // Index
    }
 
-   fun <T> removeOnChangeListener(key: TypedKey<T>, callback: (TypedKey<T>, T) -> Unit) where T : Any {
+   fun <T> removeOnChangeListener(key: K<T>, callback: (K<T>, T) -> Unit) where T : Any {
       callbacks[key.ordinal]?.remove<Any>(callback)
    }
 
-   fun <T> removeOnChangeListener(key: TypedKey<T>, index: Int) where T : Any {
+   fun <T> removeOnChangeListener(key: K<T>, index: Int) where T : Any {
       callbacks[key.ordinal]?.removeAt(index)
    }
 
-   fun <T> callCallback(key: TypedKey<T>, value: T) where T : Any {
+   fun <T> callCallback(key: K<T>, value: T) where T : Any {
       log("call $key callback")
       callbacks[key.ordinal]?.forEach {
-         it(key as TypedKey<Any>, value)
+         it(key as K<Any>, value)
       }
    }
 
-   fun <T> callCallback(key: TypedKey<T>, index: Int, value: T) where T : Any {
+   fun <T> callCallback(key: K<T>, index: Int, value: T) where T : Any {
       log("call $key callback")
-      callbacks[key.ordinal]?.get(index)?.invoke(key as TypedKey<Any>, value)
+      callbacks[key.ordinal]?.get(index)?.invoke(key as K<Any>, value)
    }
 
-   fun <T> loadSharedPref(key: TypedKey<T>, pref: SharedPreferences, callCallback: Boolean = false) where T : Any {
-      log("loading $key")
-      data[key.ordinal] = when {
-         key.isList -> {
-            pref.all[key.name]?.let {
-               JSONList<String>(JSONArray(it as String))
-            }
-         }
-         else -> {
-            pref.all[key.name]
-         }
-      } ?: key.defValue
-      if (callCallback) {
-         callCallback(key as TypedKey<Any>, data[key.ordinal]!!)
-      }
-   }
-
-   fun <T> writeSharedPref(key: TypedKey<T>, pref: SharedPreferences) where T : Any {
+   fun <T> writeSharedPref(key: K<T>, pref: SharedPreferences) where T : Any {
       val editor = pref.edit()
       val value = get(key)
-      when {
-         value is Int -> editor.put(key.name, value)
-         value is Boolean -> editor.put(key.name, value)
-         value is Float -> editor.put(key.name, value)
-         value is Long -> editor.put(key.name, value)
-         value is String -> editor.put(key.name, value)
-         value is Set<*> -> editor.put(key.name, value as Set<String>)
-         value is List<*> && key.isList -> {
-            val jsonArr = JSONArray()
-            value.forEach {
-               jsonArr.put(it)
-            }
-            editor.put(key.name, jsonArr.toString())
+      when (value) {
+         is Int -> editor.put(key.name, value)
+         is Boolean -> editor.put(key.name, value)
+         is Float -> editor.put(key.name, value)
+         is Long -> editor.put(key.name, value)
+         is String -> editor.put(key.name, value)
+         is Set<*> -> editor.put(key.name, value as Set<String>)
+         is List<*> -> {
+            editor.put(key.name, value.toJSONArray().toString())
          }
          else -> throw Exception("Type Error: type of $key is not supported")
       }
@@ -97,29 +87,19 @@ object Config {
       sharedPreferences = pref
    }
 
-   fun loadSharedPref(pref: SharedPreferences, callCallback: Boolean = false) {
-      TypedKey.values.forEach { key ->
-         loadSharedPref(key, pref, callCallback)
-      }
-   }
-
    fun writeSharedPref(pref: SharedPreferences) {
       val editor = pref.edit()
-      TypedKey.values.forEach { key ->
+      K.values.forEach { key ->
          val value = get(key)
-         when {
-            value is Int -> editor.put(key.name, value)
-            value is Boolean -> editor.put(key.name, value)
-            value is Float -> editor.put(key.name, value)
-            value is Long -> editor.put(key.name, value)
-            value is String -> editor.put(key.name, value)
-            value is Set<*> -> editor.put(key.name, value as Set<String>)
-            value is List<*> && key.isList -> {
-               val jsonArr = JSONArray()
-               value.forEach {
-                  jsonArr.put(it)
-               }
-               editor.put(key.name, jsonArr.toString())
+         when (value) {
+            is Int -> editor.put(key.name, value)
+            is Boolean -> editor.put(key.name, value)
+            is Float -> editor.put(key.name, value)
+            is Long -> editor.put(key.name, value)
+            is String -> editor.put(key.name, value)
+            is Set<*> -> editor.put(key.name, value as Set<String>)
+            is List<*> -> {
+               editor.put(key.name, value.toJSONArray().toString())
             }
             else -> throw Exception("Type Error: type of $key is not supported")
          }
@@ -127,27 +107,43 @@ object Config {
       editor.apply()
    }
 
-   inline fun SharedPreferences.Editor.put(key: String, value: Int) {
-      this.putInt(key, value)
+   private inline fun SharedPreferences.Editor.put(key: String, value: Int) = putInt(key, value)
+
+   private inline fun SharedPreferences.Editor.put(key: String, value: Boolean) = putBoolean(key, value)
+
+   private inline fun SharedPreferences.Editor.put(key: String, value: Float) = putFloat(key, value)
+
+   private inline fun SharedPreferences.Editor.put(key: String, value: Long) = putLong(key, value)
+
+   private inline fun SharedPreferences.Editor.put(key: String, value: String) = putString(key, value)
+
+   private inline fun SharedPreferences.Editor.put(key: String, value: Set<String>) = putStringSet(key, value)
+
+   fun updateConfig(ctx: Context, key: K<*>) {
+      log("updateConfig $key")
+      ctx.sendBroadcast(
+            Intent(Const.updateConfigAction)
+                  .putExtra(Const.keyExtraName, key.name)
+                  .putExtra(Const.valueExtraName, Config[key] as Serializable)
+                  .setPackage(MimikkoUI.packageName))
    }
 
-   inline fun SharedPreferences.Editor.put(key: String, value: Boolean) {
-      this.putBoolean(key, value)
+   fun loadConfig(ctx: Context, key: K<*>) {
+      log("loadConfig $key")
+      ctx.sendBroadcast(
+            Intent(Const.loadConfigAction)
+                  .addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES)
+                  .addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
+                  .putExtra(keyExtraName, key.name)
+                  .setPackage(MimikkoUI.packageName))
    }
 
-   inline fun SharedPreferences.Editor.put(key: String, value: Float) {
-      this.putFloat(key, value)
-   }
-
-   inline fun SharedPreferences.Editor.put(key: String, value: Long) {
-      this.putLong(key, value)
-   }
-
-   inline fun SharedPreferences.Editor.put(key: String, value: String) {
-      this.putString(key, value)
-   }
-
-   inline fun SharedPreferences.Editor.put(key: String, value: Set<String>) {
-      this.putStringSet(key, value)
+   fun loadConfig(ctx: Context) {
+      Utils.log("loadConfig")
+      ctx.sendBroadcast(
+            Intent(Const.loadConfigAction)
+                  .addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES)
+                  .addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
+                  .setClassName(BuildConfig.APPLICATION_ID, ConfigReceiver::class.java.name))
    }
 }

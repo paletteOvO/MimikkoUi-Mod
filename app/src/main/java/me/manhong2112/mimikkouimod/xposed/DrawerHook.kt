@@ -19,14 +19,7 @@ import android.widget.TextView
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.callbacks.XC_LoadPackage
-import me.manhong2112.mimikkouimod.common.Config
-import me.manhong2112.mimikkouimod.common.OnSwipeTouchListener
-import me.manhong2112.mimikkouimod.common.ReflectionUtils.findMethod
-import me.manhong2112.mimikkouimod.common.ReflectionUtils.getField
-import me.manhong2112.mimikkouimod.common.ReflectionUtils.hook
-import me.manhong2112.mimikkouimod.common.ReflectionUtils.invokeMethod
-import me.manhong2112.mimikkouimod.common.Utils
-import me.manhong2112.mimikkouimod.common.ValueBackup
+import me.manhong2112.mimikkouimod.common.*
 import org.jetbrains.anko.*
 import me.manhong2112.mimikkouimod.common.TypedKey as K
 
@@ -190,7 +183,7 @@ class DrawerHook {
                override fun onSwipeTop() {
                   if (Config[K.DrawerBatSwipeToSearch]) {
                      Utils.log("onSwipeTop")
-                     wrap.addView(searchWrap)
+                     searchWrap.parent ?: wrap.addView(searchWrap)
                      searchWrap.visibility = View.VISIBLE
                      batView.visibility = View.GONE
                      activity.window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)

@@ -21,4 +21,8 @@ object Const {
    const val drawerBackgroundId = 1641654
 
    const val drawerBtnDrawableComponentName = ":LAUNCHER_ACTION_APP_DRAWER"
+
+
+   const val keyExtraName = "Key"
+   const val valueExtraName = "Value"
 }

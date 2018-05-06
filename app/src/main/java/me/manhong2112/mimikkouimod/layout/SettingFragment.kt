@@ -19,7 +19,6 @@ import java.util.concurrent.Future
 abstract class SettingFragment : Fragment() {
    private val prefLayout: ScrollView
       get() {
-         init(this.context!!)
          return future!!.get()
       }
    private var future: Future<ScrollView>? = null
@@ -40,13 +39,15 @@ abstract class SettingFragment : Fragment() {
          }
       }
    }
-   fun open(ctx: AppCompatActivity, firstPage: Boolean = false) {
+
+   fun open(ctx: AppCompatActivity, anim: Boolean = false) {
+      init(ctx)
       val ft = ctx.supportFragmentManager.beginTransaction()
-      if (firstPage) {
-         ft.replace(android.R.id.content, this, null)
+      if (anim) {
+         ft.replace(android.R.id.content, this, "Setting")
       } else {
          ft.setCustomAnimations(R.anim.fade_slide_in_bottom, R.anim.fade_slide_out_bottom, R.anim.fade_slide_in_bottom, R.anim.fade_slide_out_bottom)
-         ft.replace(android.R.id.content, this, null)
+         ft.replace(android.R.id.content, this, "Setting")
          ft.addToBackStack(null)
       }
       ft.commit()
@@ -54,5 +55,3 @@ abstract class SettingFragment : Fragment() {
 
    abstract fun createView(layout: ViewGroup)
 }
-
-

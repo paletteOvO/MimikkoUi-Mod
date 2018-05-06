@@ -5,7 +5,7 @@ import android.support.annotation.ColorInt
 import org.jetbrains.anko.collections.forEachWithIndex
 import org.jetbrains.anko.withAlpha
 
-sealed class TypedKey<T>(val defValue: T, val isList: Boolean = false) {
+sealed class TypedKey<out T>(val defValue: T) where T : Any {
    object DockSwipeToDrawer : TypedKey<Boolean>(false)
    object DrawerBlurBackground : TypedKey<Boolean>(false)
    object DrawerDarkBackground : TypedKey<Boolean>(false)
@@ -14,7 +14,7 @@ sealed class TypedKey<T>(val defValue: T, val isList: Boolean = false) {
    object DrawerDrawUnderStatusBar : TypedKey<Boolean>(false)
    object DrawerBatSwipeToSearch : TypedKey<Boolean>(false)
 
-   object GeneralIconPackFallback : TypedKey<List<String>>(listOf("default"), isList = true)
+   object GeneralIconPackFallback : TypedKey<List<String>>(listOf("default"))
    object GeneralIconPackApplyDrawerButton : TypedKey<Boolean>(false)
    object GeneralIconScale : TypedKey<Int>(100) // in %
    object GeneralIconScaleApplyDrawerButton : TypedKey<Boolean>(false)
@@ -34,6 +34,7 @@ sealed class TypedKey<T>(val defValue: T, val isList: Boolean = false) {
 
    @Suppress("LeakingThis")
    val name: String = this::class.java.simpleName
+
    val ordinal: Int by lazy {
       values.forEachWithIndex { index, value ->
          if (value::class.java === this::class.java) {
@@ -43,16 +44,16 @@ sealed class TypedKey<T>(val defValue: T, val isList: Boolean = false) {
       throw IllegalStateException()
    }
 
-   val value: T
-      get() {
-         return Config[this]
-      }
    override fun equals(other: Any?): Boolean {
-      return other !== null && other is TypedKey<*> && this.hashCode() == other.hashCode()
+      return other === this
    }
 
    override fun hashCode(): Int {
       return ordinal
+   }
+
+   override fun toString(): String {
+      return "TypedKey(${this::class.java.simpleName}<${this.defValue::class.java.simpleName}>)"
    }
 
    companion object {
@@ -66,10 +67,10 @@ sealed class TypedKey<T>(val defValue: T, val isList: Boolean = false) {
       }
 
       val values: Array<TypedKey<Any>> = TypedKey::class.java.declaredClasses.mapNotNull {
-            if (it.superclass === TypedKey::class.java) {
-               it.getField("INSTANCE").get(it) as? TypedKey<Any>
-            } else null
-         }.toTypedArray()
+         if (it.superclass === TypedKey::class.java) {
+            it.getField("INSTANCE").get(it) as? TypedKey<Any>
+         } else null
+      }.toTypedArray()
 
       val size: Int = values.size
    }
