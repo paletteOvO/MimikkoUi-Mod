@@ -16,9 +16,13 @@
 #   public *;
 #}
 -verbose
+-keepattributes SourceFile,LineNumberTable
+
 -keep class me.manhong2112.mimikkouimod.xposed.MainHook {
     public void handleLoadPackage(de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam);
 }
+-keep class me.manhong2112.mimikkouimod.common.TypedKey$* extends me.manhong2112.mimikkouimod.common.TypedKey {
+    public *** INSTANCE;
+}
 
 -optimizationpasses 99
--dontoptimize

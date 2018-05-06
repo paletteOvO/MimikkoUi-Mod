@@ -10,6 +10,8 @@ import android.os.Bundle
 import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.callbacks.XC_LoadPackage
 import me.manhong2112.mimikkouimod.common.Const
+import me.manhong2112.mimikkouimod.common.Const.keyExtraName
+import me.manhong2112.mimikkouimod.common.Const.valueExtraName
 import me.manhong2112.mimikkouimod.common.Utils.log
 import me.manhong2112.mimikkouimod.common.findMethod
 import me.manhong2112.mimikkouimod.common.hook
@@ -27,7 +29,7 @@ class ServantSetting {
       ServantMute("key_servant_mute"),
       ServantTouchable("key_servant_touchable"),
       ServantLocked("key_servant_locked"),
-      ServantPosReset("key_servant_pos_reset"),
+      // ServantPosReset("key_servant_pos_reset"),
       ;
 
       val prefName: String = name
@@ -65,7 +67,7 @@ class ServantSetting {
    private val receiver = object : BroadcastReceiver() {
       override fun onReceive(context: Context, intent: Intent) {
          if (intent.action == Const.updateServantPrefAction) {
-            handle(SettingName.valueOf(intent.getStringExtra("Key")), intent.getSerializableExtra("Value"))
+            handle(SettingName.valueOf(intent.getStringExtra(keyExtraName)), intent.getSerializableExtra(valueExtraName))
          }
       }
    }

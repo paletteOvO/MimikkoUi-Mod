@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import me.manhong2112.mimikkouimod.common.Config
 import me.manhong2112.mimikkouimod.common.Const
+import me.manhong2112.mimikkouimod.common.Const.keyExtraName
 import me.manhong2112.mimikkouimod.common.Utils
 import me.manhong2112.mimikkouimod.common.Utils.log
 import org.jetbrains.anko.defaultSharedPreferences
@@ -18,7 +19,7 @@ class ConfigReceiver : BroadcastReceiver() {
             Utils.log("received loadConfigAction")
             val pref = context.defaultSharedPreferences
             Config.bindSharedPref(pref)
-            if (intent.hasExtra("Key")) {
+            if (intent.hasExtra(keyExtraName)) {
                Config.updateConfig(context, K.valueOf(intent.getStringExtra(Const.valueExtraName)))
             } else {
                K.values.forEach { key ->
