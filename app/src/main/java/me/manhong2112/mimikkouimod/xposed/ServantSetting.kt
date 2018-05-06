@@ -1,15 +1,14 @@
 package me.manhong2112.mimikkouimod.xposed
 
 import android.app.Activity
+import android.app.Application
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
-import android.preference.PreferenceActivity
 import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.callbacks.XC_LoadPackage
-import me.manhong2112.mimikkouimod.common.Config
 import me.manhong2112.mimikkouimod.common.Const
 import me.manhong2112.mimikkouimod.common.Utils.log
 import me.manhong2112.mimikkouimod.common.findMethod
@@ -37,19 +36,14 @@ class ServantSetting {
    private val servantSettingCls by lazy {
       XposedHelpers.findClass(MimikkoUI.servantSettingClsName, classLoader)
    }
-   private lateinit var servantSettingAct: Activity
+   private lateinit var app: Application
    private lateinit var classLoader: ClassLoader
    fun onLoad(classLoader: ClassLoader, lpparam: XC_LoadPackage.LoadPackageParam) {
       this.classLoader = classLoader
-      val actCls = servantSettingCls
-      actCls.findMethod("onCreate", Bundle::class.java).hook {
-         servantSettingAct = it.thisObject as Activity
-      }
       val launcherClass = XposedHelpers.findClass(MimikkoUI.launcherClsName, lpparam.classLoader)
       launcherClass.findMethod("onCreate", Bundle::class.java).hook(0) { param ->
-         val app = (param.thisObject as Activity).application
+         app = (param.thisObject as Activity).application
          app.registerReceiver(receiver, IntentFilter(Const.updateServantPrefAction))
-         Config.loadConfig(app)
       }
 
       launcherClass.findMethod("onDestroy").hook { param ->
@@ -59,8 +53,7 @@ class ServantSetting {
    }
 
    fun handle(key: SettingName, value: Any) {
-      (servantSettingAct as PreferenceActivity)
-            .defaultSharedPreferences
+      app.defaultSharedPreferences
             .edit()
             .also {
                log("putBoolean ${key.prefName} $value")
@@ -69,7 +62,7 @@ class ServantSetting {
             .apply()
    }
 
-   val receiver = object : BroadcastReceiver() {
+   private val receiver = object : BroadcastReceiver() {
       override fun onReceive(context: Context, intent: Intent) {
          if (intent.action == Const.updateServantPrefAction) {
             handle(SettingName.valueOf(intent.getStringExtra("Key")), intent.getSerializableExtra("Value"))
