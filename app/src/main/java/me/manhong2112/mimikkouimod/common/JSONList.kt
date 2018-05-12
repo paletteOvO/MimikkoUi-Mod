@@ -3,6 +3,7 @@ package me.manhong2112.mimikkouimod.common
 import org.json.JSONArray
 import java.util.*
 
+@Suppress("UNCHECKED_CAST")
 class JSONList<T>(val jsonArray: JSONArray) : List<T>, java.io.Serializable {
    override val size: Int
       get() = jsonArray.length()

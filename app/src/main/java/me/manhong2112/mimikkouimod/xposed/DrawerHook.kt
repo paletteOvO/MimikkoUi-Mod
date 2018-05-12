@@ -107,17 +107,17 @@ class DrawerHook {
    }
 
    private fun updateDrawerBackground() {
-      DrawerBackground.update(launcherAct, drawer)
+      DrawerBackground.update(launcherAct)
    }
 
    private fun bindConfigUpdateListener() {
-      Config.addOnChangeListener(K.DrawerBlurBackground, { k, v: Boolean ->
+      Config.addOnChangeListener(K.DrawerBlurBackground, { _, v: Boolean ->
          updateDrawerBackground()
          drawer?.let {
             if (v) {
                DrawerBackground.enable(it)
             } else {
-               DrawerBackground.disable(it)
+               DrawerBackground.disable()
             }
          }
       })
@@ -128,7 +128,7 @@ class DrawerHook {
             setDrawerColumnSize(it, v)
          }
       })
-      Config.addOnChangeListener(K.DrawerDrawUnderStatusBar) { k, v: Boolean ->
+      Config.addOnChangeListener(K.DrawerDrawUnderStatusBar) { _, v: Boolean ->
          drawer?.let {
             val lparams = it.layoutParams as RelativeLayout.LayoutParams
             ValueBackup.drawerMarginTop = ValueBackup.drawerMarginTop ?: lparams.topMargin
@@ -153,7 +153,7 @@ class DrawerHook {
          }
       })
 
-      Config.addOnChangeListener(K.GeneralIconScale, { _, scale: Int ->
+      Config.addOnChangeListener(K.GeneralIconScale, { _, _: Int ->
          refreshDrawerLayout()
       })
 

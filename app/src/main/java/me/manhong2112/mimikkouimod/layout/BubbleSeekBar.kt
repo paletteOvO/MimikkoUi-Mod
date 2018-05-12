@@ -21,10 +21,29 @@ class BubbleSeekBar : SeekBar {
    constructor(context: Context) : super(context, null)
    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs, android.R.attr.seekBarStyle)
 
-   var progressText: String = ""
+   var progressText: String
+      set(value) {
+         mBubble.progressText = value
+      }
+      get() {
+         return mBubble.progressText
+      }
    private var mOnSeekBarChangeListener: OnSeekBarChangeListener? = null
    private val mBubble = Bubble(context)
 
+   private var mMin = 0
+   override fun setMin(min: Int) {
+      this.mMin = min
+   }
+
+   override fun getMin(): Int {
+      return this.mMin
+   }
+
+   @Synchronized
+   override fun getProgress(): Int {
+      return super.getProgress() + mMin
+   }
    init {
       setOnTouchListener { _, e ->
          when (e.action) {
@@ -43,7 +62,7 @@ class BubbleSeekBar : SeekBar {
       }
       super.setOnSeekBarChangeListener(object : OnSeekBarChangeListener {
          override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-            mOnSeekBarChangeListener?.onProgressChanged(seekBar, progress, fromUser)
+            mOnSeekBarChangeListener?.onProgressChanged(seekBar, progress + mMin, fromUser)
             moveBubble()
          }
 
@@ -137,7 +156,7 @@ class BubbleSeekBar : SeekBar {
    }
 
 
-   inner class Bubble(private val ctx: Context) : View(ctx) {
+   class Bubble(private val ctx: Context) : View(ctx) {
       private val mBubblePath = Path()
       private val mBubbleRectF = RectF()
       private val mRect = Rect()
@@ -145,6 +164,7 @@ class BubbleSeekBar : SeekBar {
       private val mBubblePaint = Paint()
       private val mBubbleColor = ContextCompat.getColor(ctx, R.color.colorAccent)
       private val mBubbleTextColor = Color.WHITE
+      var progressText: String = ""
 
       init {
          id = View.generateViewId()

@@ -15,8 +15,8 @@ import me.manhong2112.mimikkouimod.common.TypedKey as K
 class SettingsActivity : AppCompatActivity() {
    override fun onCreate(savedInstanceState: Bundle?) {
       super.onCreate(savedInstanceState)
-      K.values.forEach { key ->
-         Config.addOnChangeListener(key) { key, value: Any ->
+      K.values.forEach {
+         Config.addOnChangeListener(it) { key, value: Any ->
             log("send config $key -> $value")
             Config.updateConfig(ctx, key)
          }

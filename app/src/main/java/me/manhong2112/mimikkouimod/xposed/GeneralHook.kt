@@ -40,10 +40,7 @@ import me.manhong2112.mimikkouimod.common.TypedKey as K
 open class GeneralHook {
    private lateinit var classLoader: ClassLoader
    private lateinit var launcherAct: Activity
-   private val app: Application
-      get() {
-         return launcherAct.application
-      }
+   private lateinit var app: Application
    private val launcherActCls by lazy {
       XposedHelpers.findClass(MimikkoUI.launcherClsName, classLoader)
    }
@@ -52,13 +49,13 @@ open class GeneralHook {
       set(value) {
          field = value
          value?.let {
-            initWorkspace(launcherAct, it)
+            initWorkspace(it)
          }
       }
    private val dock: RelativeLayout
       get() {
          return launcherAct.getField<RelativeLayout>("dock").also {
-            initDock(launcherAct, it)
+            initDock(it)
          }
       }
    private var dockLayout: ViewGroup? = null
@@ -66,7 +63,7 @@ open class GeneralHook {
    private val root: RelativeLayout
       get() {
          return launcherAct.getField<RelativeLayout>("root").also {
-            initRoot(launcherAct, it)
+            initRoot(it)
          }
       }
 
@@ -75,7 +72,7 @@ open class GeneralHook {
       launcherActCls.findMethod("onCreate", Bundle::class.java).hook(after = { param ->
          log("onCreate ${param.args.joinToString(", ")}")
          launcherAct = param.thisObject as Activity
-
+         app = launcherAct.application
          bindConfigUpdateListener()
 
          IconProvider.update(app)
@@ -94,7 +91,7 @@ open class GeneralHook {
       val mAddViewVILp = root.findMethod("addView", View::class.java, Integer.TYPE, ViewGroup.LayoutParams::class.java)
       mAddViewVILp.hook {
          if ((it.thisObject as View).id == root.id) {
-            rootHook(launcherAct, root, it)
+            rootHook(it)
          }
       }
 
@@ -148,8 +145,8 @@ open class GeneralHook {
    }
 
    private fun bindConfigUpdateListener() {
-      Config.addOnChangeListener(K.GeneralDarkStatusBarIcon, { k, v: Boolean ->
-         if (v) {
+      Config.addOnChangeListener(K.GeneralDarkStatusBarIcon, { _, v: Boolean ->
+         if (v && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             launcherAct.window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
          } else {
             launcherAct.window.decorView.systemUiVisibility = 0
@@ -221,7 +218,7 @@ open class GeneralHook {
       })
    }
 
-   private fun rootHook(activity: Activity, root: RelativeLayout, param: XC_MethodHook.MethodHookParam) {
+   private fun rootHook(param: XC_MethodHook.MethodHookParam) {
       if (param.args[0] !is ViewGroup) return
       val innerLayout = param.args[0] as ViewGroup
       when (innerLayout) {
@@ -260,7 +257,8 @@ open class GeneralHook {
       }
    }
 
-   private fun initDock(act: Activity, dock: RelativeLayout) {
+   private fun initDock(dock: RelativeLayout) {
+      val act = launcherAct
       log("initDock")
       drawerBtn = drawerBtn ?: dock.findViewById(MimikkoUI.id.drawerButton) as ImageView
       drawerBtn?.let {
@@ -288,11 +286,11 @@ open class GeneralHook {
       }
    }
 
-   private fun initWorkspace(activity: Activity, workspace: ViewGroup) {
-      return
+   private fun initWorkspace(workspace: ViewGroup): ViewGroup {
+      return workspace
    }
 
-   private fun initRoot(activity: Activity, root: RelativeLayout): RelativeLayout {
+   private fun initRoot(root: RelativeLayout): RelativeLayout {
       return root
    }
 }

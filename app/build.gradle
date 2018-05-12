@@ -36,7 +36,6 @@ dependencies {
     compileOnly files('lib/XposedBridgeApi-54.jar')
 
     implementation "com.android.support:appcompat-v7:$support_version"
-    implementation "com.android.support:support-v4:$support_version"
     implementation "com.android.support:cardview-v7:$support_version"
     // implementation "com.android.support:preference-v14:$support_version"
     // compile 'com.android.support:support-vector-drawable:27.+'
@@ -56,6 +55,7 @@ android {
         targetSdkVersion 27
         versionCode getVersionCode()
         versionName "1.0b"
+        resConfigs "en", "zh-rCN"
     }
     lintOptions {
         abortOnError false
@@ -77,10 +77,11 @@ android {
             setShrinkResources true
             setMinifyEnabled true
             setZipAlignEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             setSigningConfig signingConfigs.config
         }
         debug {
+            setDebuggable true
             setZipAlignEnabled true
             setSigningConfig signingConfigs.config
         }

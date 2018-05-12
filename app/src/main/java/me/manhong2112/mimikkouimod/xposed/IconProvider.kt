@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.ResolveInfo
 import android.graphics.Bitmap
 import android.support.v4.content.ContextCompat
+import android.support.v4.content.res.ResourcesCompat
 import android.util.ArrayMap
 import me.manhong2112.mimikkouimod.R
 import me.manhong2112.mimikkouimod.common.Config
@@ -133,7 +134,7 @@ object IconProvider {
                   return null
                }
                // log("cache drawable")
-               icons[drawableName] = res.getDrawable(id)!!.toBitmap()
+               icons[drawableName] = ResourcesCompat.getDrawable(res, id, null)!!.toBitmap()
             }
          }
          return icons[drawableName]!!

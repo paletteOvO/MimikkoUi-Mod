@@ -39,11 +39,11 @@ object DrawerBackground {
       imageView?.visibility = View.VISIBLE
    }
 
-   fun disable(drawer: ViewGroup) {
+   fun disable() {
       imageView?.visibility = View.GONE
    }
 
-   fun update(act: Activity, drawer: View? = null) {
+   fun update(act: Activity) {
       log("update start")
       val v = Config[K.DrawerBlurBackgroundBlurRadius]
       // load and blur background

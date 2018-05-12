@@ -5,8 +5,7 @@ import android.support.annotation.ColorInt
 import org.jetbrains.anko.collections.forEachWithIndex
 import org.jetbrains.anko.withAlpha
 
-sealed class TypedKey<out T>(val defValue: T) where T : Any {
-   object DockSwipeToDrawer : TypedKey<Boolean>(false)
+open class TypedKey<out T>(val defValue: T) where T : Any {
    object DrawerBlurBackground : TypedKey<Boolean>(false)
    object DrawerDarkBackground : TypedKey<Boolean>(false)
    object DrawerBlurBackgroundBlurRadius : TypedKey<Int>(100)
@@ -32,6 +31,16 @@ sealed class TypedKey<out T>(val defValue: T) where T : Any {
    object GeneralShortcutTextShadowDx : TypedKey<Float>(0f)
    object GeneralShortcutTextShadowDy : TypedKey<Float>(0f)
 
+   object DockSwipeToDrawer : TypedKey<Boolean>(false)
+
+   object NeKoMiMiSwipeUpGesture : TypedKey<String>("Nothing")
+   object NeKoMiMiSwipeDownGesture : TypedKey<String>("Nothing")
+   object NeKoMiMiSwipeLeftGesture : TypedKey<String>("Nothing")
+   object NeKoMiMiSwipeRightGesture : TypedKey<String>("Nothing")
+   object NeKoMiMiClickGesture : TypedKey<String>("Nothing")
+   object NeKoMiMiDoubleClickGesture : TypedKey<String>("Nothing")
+   object NeKoMiMiLongClickGesture : TypedKey<String>("Nothing")
+
    @Suppress("LeakingThis")
    val name: String = this::class.java.simpleName
 
@@ -53,7 +62,7 @@ sealed class TypedKey<out T>(val defValue: T) where T : Any {
    }
 
    override fun toString(): String {
-      return "TypedKey(${this::class.java.simpleName}<${this.defValue::class.java.simpleName}>)"
+      return "TypedKey(${this.name}<${this.defValue::class.java.simpleName}>)"
    }
 
    companion object {

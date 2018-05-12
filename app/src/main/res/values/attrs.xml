@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!--<declare-styleable name="SeekbarPreference">-->
-    <!--<attr name="min" format="reference" />-->
-    <!--<attr name="max" format="reference" />-->
-    <!--<attr name="default_value" format="reference" />-->
-    <!--</declare-styleable>-->
-</resources>

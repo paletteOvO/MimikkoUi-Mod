@@ -2,6 +2,7 @@ package me.manhong2112.mimikkouimod.layout
 
 import android.app.Activity
 import android.content.Context
+import android.content.DialogInterface
 import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.support.v7.app.AppCompatActivity
@@ -16,9 +17,11 @@ import me.manhong2112.mimikkouimod.common.Const
 import me.manhong2112.mimikkouimod.common.Utils
 import org.jetbrains.anko.*
 import org.jetbrains.anko.cardview.v7.cardView
+import org.jetbrains.anko.collections.forEachWithIndex
 import org.jetbrains.anko.custom.ankoView
 import me.manhong2112.mimikkouimod.common.TypedKey as K
 
+@Suppress("UNCHECKED_CAST")
 class PreferenceLayout {
    companion object {
       inline fun Activity.preferenceLayout(init: ViewGroup.() -> Unit = {}) = with(scrollView()) {
@@ -55,7 +58,7 @@ class PreferenceLayout {
 
       fun ViewGroup.preferencePage(page: SettingFragment, name: String, summary: String? = null, icon: Drawable? = null) {
          page.init(context as AppCompatActivity)
-         basePreference(name, summary, icon) { _, _, _ ->
+         basePreference(name, summary, icon) { ->
             setOnClickListener {
                page.open(this@preferencePage.context as AppCompatActivity)
             }
@@ -67,7 +70,7 @@ class PreferenceLayout {
       }
 
       fun ViewManager.switchPreference(name: String, summary: String? = null, key: K<Boolean>, init: Switch.() -> Unit = {}) {
-         basePreference(name, summary) { _, _, _ ->
+         basePreference(name, summary) { ->
             val s = ankoView({
                object : Switch(it) {
                   override fun isLaidOut(): Boolean {
@@ -95,46 +98,46 @@ class PreferenceLayout {
 
       fun ViewGroup.seekBarPreference(nameRes: Int, numFormatRes: Int = 0,
                                       key: K<Int>,
-                                      min: Int = 0, max: Int = 100, step: Int = 1,
+                                      min: Int = 0, max: Int = 100,
                                       init: SeekBar.() -> Unit = {}) {
-         return seekBarPreference(context.getString(nameRes), if (numFormatRes == 0) null else context.getString(numFormatRes), key, min, max, step, init)
+         return seekBarPreference(context.getString(nameRes), if (numFormatRes == 0) null else context.getString(numFormatRes), key, min, max, init)
       }
 
       fun ViewManager.seekBarPreference(name: String, numFormat: String? = null,
                                         key: K<Int>,
-                                        min: Int = 0, max: Int = 100, step: Int = 1,
+                                        min: Int = 0, max: Int = 100,
                                         init: SeekBar.() -> Unit = {}) {
-         seekBarPreference(name, numFormat, key, min, max, step, Utils::id, Utils::id, init)
+         seekBarPreference(name, numFormat, key, min, max, Utils::id, Utils::id, init)
       }
 
       fun ViewManager.seekBarPreference(name: String, numFormat: String? = null,
                                         key: K<Float>,
-                                        min: Float = 0f, max: Float = 100f, step: Float = 0.01f,
+                                        min: Float = 0f, max: Float = 100f,
                                         init: SeekBar.() -> Unit = {}) {
          val displayParse: (Float) -> Int = { (it * Const.prefFloatPrecise).toInt() }
          val valueParse: (Int) -> Float = { it / Const.prefFloatPrecise }
-         seekBarPreference(name, numFormat, key, (min * Const.prefFloatPrecise).toInt(), (max * Const.prefFloatPrecise).toInt(), (step * Const.prefFloatPrecise).toInt(), displayParse, valueParse, init)
+         seekBarPreference(name, numFormat, key, (min * Const.prefFloatPrecise).toInt(), (max * Const.prefFloatPrecise).toInt(), displayParse, valueParse, init)
       }
 
       fun ViewGroup.seekBarPreference(nameRes: Int, numFormatRes: Int = 0,
                                       key: K<Float>,
-                                      min: Float = 0f, max: Float = 100f, step: Float = 0.01f,
+                                      min: Float = 0f, max: Float = 100f,
                                       init: SeekBar.() -> Unit = {}) {
-         return seekBarPreference(context.getString(nameRes), if (numFormatRes == 0) null else context.getString(numFormatRes), key, min, max, step, init)
+         return seekBarPreference(context.getString(nameRes), if (numFormatRes == 0) null else context.getString(numFormatRes), key, min, max, init)
       }
 
       fun <T : Number> ViewGroup.seekBarPreference(nameRes: Int, numFormatRes: Int = 0,
                                                    key: K<T>,
-                                                   min: Int = 0, max: Int = 100, step: Int = 1,
+                                                   min: Int = 0, max: Int = 100,
                                                    displayParse: (T) -> Int,
                                                    valueParse: (Int) -> T,
                                                    init: SeekBar.() -> Unit = {}) {
-         return seekBarPreference(context.getString(nameRes), if (numFormatRes == 0) null else context.getString(numFormatRes), key, min, max, step, displayParse, valueParse, init)
+         return seekBarPreference(context.getString(nameRes), if (numFormatRes == 0) null else context.getString(numFormatRes), key, min, max, displayParse, valueParse, init)
       }
 
       fun <T : Number> ViewManager.seekBarPreference(name: String, numFormat: String? = null,
                                                      key: K<T>,
-                                                     min: Int = 0, max: Int = 100, step: Int = 1,
+                                                     min: Int = 0, max: Int = 100,
                                                      displayParse: (T) -> Int,
                                                      valueParse: (Int) -> T,
                                                      init: SeekBar.() -> Unit = {}) {
@@ -143,21 +146,22 @@ class PreferenceLayout {
                setPadding(25, 0, dip(8) + 25, 0)
                minimumHeight = dip(Const.prefItemHeight) / 2
                gravity = Gravity.CENTER
-               setMax(max - min)
-               incrementProgressBy(step)
+               this.min = min
+               this.max = max
+
                val value = displayParse(Config[key])
                progress = value - min
                progressText = numFormat?.format(valueParse(value)) ?: valueParse(value).toString()
                setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                   override fun onProgressChanged(p0: SeekBar, value: Int, p2: Boolean) {
-                     this@ankoView.progressText = numFormat?.format(valueParse(value + min)) ?: valueParse(value + min).toString()
+                     this@ankoView.progressText = numFormat?.format(valueParse(value)) ?: valueParse(value).toString()
                   }
 
                   override fun onStartTrackingTouch(p0: SeekBar) {
                   }
 
                   override fun onStopTrackingTouch(p0: SeekBar) {
-                     Config[key] = valueParse(p0.progress + min)
+                     Config[key] = valueParse(p0.progress)
                   }
                })
                init()
@@ -173,57 +177,32 @@ class PreferenceLayout {
          }
       }
 
-      fun <T> ViewGroup.selectorPreference(nameRes: Int, summaryRes: Int = 0, items: List<Pair<String, Any>>, key: K<T>, init: () -> Unit = {}) where T : Any {
-         selectorPreference(nameRes, summaryRes, items.map { it.first }, items.map { it.second }, key, init)
+      fun <T> ViewGroup.selectorPreference(nameRes: Int, summaryRes: Int = 0,
+                                           items: List<Pair<String, T>>, key: K<T>,
+                                           onClick: (DialogInterface, Int) -> Unit = { _, index ->
+                                              Config[key] = items[index].second
+                                           }) where T : Any {
+         selectorPreference(nameRes, summaryRes, items.map { it.first }, onClick)
       }
 
-      fun <T> ViewGroup.selectorPreference(name: String, summary: String? = null, items: List<Pair<String, Any>>, key: K<T>, init: () -> Unit = {}) where T : Any {
-         selectorPreference(name, summary, items.map { it.first }, items.map { it.second }, key, init)
+      fun <T> ViewGroup.selectorPreference(name: String, summary: String? = null,
+                                           items: List<Pair<String, T>>, key: K<T>,
+                                           onClick: (DialogInterface, Int) -> Unit = { _, index ->
+                                              Config[key] = items[index].second
+                                           }) where T : Any {
+         selectorPreference(name, summary, items.map { it.first }, onClick)
       }
 
-      fun <T> ViewGroup.selectorPreference(nameRes: Int, summaryRes: Int = 0, displayName: List<String>, value: List<Any>? = null, key: K<T>, init: () -> Unit = {}) where T : Any {
-         selectorPreference(context.getString(nameRes), if (summaryRes == 0) null else context.getString(summaryRes), displayName, value, key, init)
+      fun ViewGroup.selectorPreference(nameRes: Int, summaryRes: Int = 0, display: List<String>, onClick: (DialogInterface, Int) -> Unit) {
+         val name = context.getString(nameRes)
+         val summary = if (summaryRes == 0) null else context.getString(summaryRes)
+         selectorPreference(name, summary, display, onClick)
       }
 
-      fun <T> ViewGroup.selectorPreference(name: String, summary: String? = null, displayName: List<String>, value: List<Any>? = null, key: K<T>, init: () -> Unit = {}) where T : Any {
-         relativeLayout {
-            backgroundDrawable = getSelectedItemDrawable(context)
-            isClickable = true
-            id = View.generateViewId()
-            if (summary !== null) {
-               textView {
-                  text = name
-                  gravity = Gravity.BOTTOM or Gravity.START
-               }.lparams {
-                  height = dip(Const.prefItemHeight) / 2
-                  padding = dip(12)
-                  alignParentLeft()
-               }
-               textView {
-                  text = summary
-                  gravity = Gravity.TOP or Gravity.START
-               }.lparams {
-                  height = dip(Const.prefItemHeight) / 2
-                  padding = dip(12)
-                  alignParentLeft()
-               }
-            } else {
-               textView {
-                  text = name
-               }.lparams {
-                  padding = dip(12)
-                  centerInParent()
-                  alignParentLeft()
-               }
-            }
+      fun ViewGroup.selectorPreference(name: String, summary: String? = null, display: List<String>, onClick: (DialogInterface, Int) -> Unit) {
+         basePreference(name, summary) { ->
             setOnClickListener {
-               context.selector(name, displayName) { dialog, index ->
-                  Config[key] = (value ?: displayName)[index] as T
-               }
-            }
-            lparams {
-               width = matchParent
-               height = dip(Const.prefItemHeight)
+               context.selector(name, display, onClick)
             }
          }
       }
@@ -242,17 +221,9 @@ class PreferenceLayout {
             where T : Any {
          basePreference(name, summary) { _, _, _ ->
             setOnClickListener {
-               context.alert {
-                  customView {
-                     val text = editText {
-                        this.hint = hint
-                        setText(displayParser(Config[key]))
-                     }
-                     positiveButton("OK") {
-                        Config[key] = valueParser(text.text.toString())
-                     }
-                  }
-               }.show()
+               context.editTextAlert(name, defaultText = displayParser(Config[key])) {
+                  Config[key] = valueParser(it)
+               }
             }
          }
       }
@@ -323,19 +294,23 @@ class PreferenceLayout {
          }
       }
 
-      fun ViewManager.preferenceGroup(init: _LinearLayout.() -> Unit = {}) =
-            cardView {
-               radius = dip(4).toFloat()
-               cardElevation = 0f
-               id = View.generateViewId()
-               verticalLayout {
-                  init()
-               }
-               lparams {
-                  width = matchParent
-                  margin = dip(8)
-               }
+      fun ViewManager.preferenceGroup(init: _LinearLayout.() -> Unit = {}) {
+         cardView {
+            radius = dip(4).toFloat()
+            cardElevation = 0f
+            id = View.generateViewId()
+            verticalLayout {
+               init()
             }
+            lparams {
+               width = matchParent
+               margin = dip(8)
+            }
+         }
+      }
+
+      fun ViewManager.basePreference(name: String, summary: String? = null, icon: Drawable? = null, init: _RelativeLayout.() -> Unit) =
+            basePreference(name, summary, icon, { _, _, _ -> init() })
 
       fun ViewManager.basePreference(name: String, summary: String? = null, icon: Drawable? = null, init: _RelativeLayout.(ImageView, TextView, TextView?) -> Unit = { _, _, _ -> }) =
             relativeLayout {
@@ -401,3 +376,31 @@ class PreferenceLayout {
    }
 }
 
+fun <A, B> List<Pair<A, B>>.toPairList(): Pair<List<A>, List<B>> {
+   val resultA = ArrayList<A>(this.size)
+   val resultB = ArrayList<B>(this.size)
+   this.forEachWithIndex { i, (a, b) ->
+      resultA[i] = a
+      resultB[i] = b
+   }
+   return resultA to resultB
+}
+
+fun <A, B> Pair<List<A>, List<B>>.toListPair(): List<Pair<A, B>> {
+   require(this.first.size == this.second.size)
+   return this.first.zip(this.second)
+}
+
+fun Context.editTextAlert(title: String, hint: String? = null, defaultText: String = "", callback: (String) -> Unit) {
+   this.alert {
+      customView {
+         val text = editText {
+            this.hint = hint
+            this.setText(defaultText)
+         }
+         positiveButton("OK") {
+            callback(text.text.toString())
+         }
+      }
+   }.show()
+}

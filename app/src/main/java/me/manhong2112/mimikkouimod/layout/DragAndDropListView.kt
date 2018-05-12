@@ -47,7 +47,7 @@ class DragAndDropListView<T> : ListView {
    var targetList: MutableList<T>? = null
 
    init {
-      setOnItemLongClickListener { parent, view, position, id ->
+      setOnItemLongClickListener { _, view, position, _ ->
          createHoverViewDrawable(view)
          view.visibility = View.INVISIBLE
          hoverView = view
