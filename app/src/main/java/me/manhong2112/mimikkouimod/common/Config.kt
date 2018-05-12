@@ -1,3 +1,5 @@
+@file:Suppress("UNCHECKED_CAST", "NOTHING_TO_INLINE")
+
 package me.manhong2112.mimikkouimod.common
 
 import android.content.Context
@@ -13,16 +15,17 @@ import java.io.Serializable
 import me.manhong2112.mimikkouimod.common.TypedKey as K
 
 
-@Suppress("UNCHECKED_CAST")
 object Config {
    private val data = arrayOfNulls<Any>(K.size)
    private val callbacks = arrayOfNulls<ArrayList<(K<Any>, Any) -> Unit>>(K.size) // orz
    private var sharedPreferences: SharedPreferences? = null
    operator fun <T> get(key: K<T>): T where T : Any {
       data[key.ordinal] = data[key.ordinal] ?: sharedPreferences?.let {
-         when {
-            key.defValue is List<*> -> JSONArray(it.all[key.name] as String).toList<String>()
-            else -> it.all[key.name]
+         it.all[key.name]?.let { value ->
+            when {
+               key.defValue is List<*> -> JSONArray(value as String).toList<String>()
+               else -> value
+            }
          }
       } ?: key.defValue
       return data[key.ordinal] as T
@@ -107,17 +110,6 @@ object Config {
       editor.apply()
    }
 
-   private inline fun SharedPreferences.Editor.put(key: String, value: Int) = putInt(key, value)
-
-   private inline fun SharedPreferences.Editor.put(key: String, value: Boolean) = putBoolean(key, value)
-
-   private inline fun SharedPreferences.Editor.put(key: String, value: Float) = putFloat(key, value)
-
-   private inline fun SharedPreferences.Editor.put(key: String, value: Long) = putLong(key, value)
-
-   private inline fun SharedPreferences.Editor.put(key: String, value: String) = putString(key, value)
-
-   private inline fun SharedPreferences.Editor.put(key: String, value: Set<String>) = putStringSet(key, value)
 
    fun updateConfig(ctx: Context, key: K<*>) {
       log("updateConfig $key")
@@ -147,3 +139,16 @@ object Config {
                   .setClassName(BuildConfig.APPLICATION_ID, ConfigReceiver::class.java.name))
    }
 }
+
+
+private inline fun SharedPreferences.Editor.put(key: String, value: Int) = putInt(key, value)
+
+private inline fun SharedPreferences.Editor.put(key: String, value: Boolean) = putBoolean(key, value)
+
+private inline fun SharedPreferences.Editor.put(key: String, value: Float) = putFloat(key, value)
+
+private inline fun SharedPreferences.Editor.put(key: String, value: Long) = putLong(key, value)
+
+private inline fun SharedPreferences.Editor.put(key: String, value: String) = putString(key, value)
+
+private inline fun SharedPreferences.Editor.put(key: String, value: Set<String>) = putStringSet(key, value)
