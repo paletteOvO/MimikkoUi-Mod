@@ -2,18 +2,11 @@
 
 package me.manhong2112.mimikkouimod.common
 
-import android.content.Context
 import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.LightingColorFilter
-import android.graphics.Paint
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
-import android.renderscript.Allocation
-import android.renderscript.Element
-import android.renderscript.RenderScript
-import android.renderscript.ScriptIntrinsicBlur
 import android.util.ArrayMap
 import android.util.Log
 import android.view.View
@@ -22,7 +15,6 @@ import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.callbacks.XC_LoadPackage
 import me.manhong2112.mimikkouimod.BuildConfig
 import org.jetbrains.anko.forEachChild
-import org.jetbrains.anko.opaque
 import java.io.File
 
 
@@ -62,78 +54,6 @@ object Utils {
       drawable.draw(canvas)
       return bitmap
    }
-
-   fun upscale(height: Int, width: Int, bitmap: Bitmap): Bitmap {
-      var widthFactor = 0f
-      var heightFactor = 0f
-      if (width > bitmap.width) {
-         widthFactor = width.toFloat() / bitmap.width
-      }
-      if (height > bitmap.height) {
-         heightFactor = height.toFloat() / bitmap.height
-      }
-
-      val upscaleFactor = Math.max(widthFactor, heightFactor)
-      if (upscaleFactor <= 0) {
-         return bitmap
-      }
-
-      val scaledWidth = (bitmap.width * upscaleFactor).toInt()
-      val scaledHeight = (bitmap.height * upscaleFactor).toInt()
-      val scaled = Bitmap.createScaledBitmap(
-            bitmap,
-            scaledWidth,
-            scaledHeight, false)
-
-      val result = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-      val canvas = Canvas()
-      canvas.setBitmap(result)
-
-      val paint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
-      if (widthFactor > heightFactor) {
-         canvas.drawBitmap(scaled, 0f, ((height - scaledHeight) / 2).toFloat(), paint)
-      } else {
-         canvas.drawBitmap(scaled, ((width - scaledWidth) / 2).toFloat(), 0f, paint)
-      }
-
-      return result
-   }
-
-   fun downscale(bitmap: Bitmap, scaleFactor: Float): Bitmap {
-      return Bitmap.createScaledBitmap(bitmap, (bitmap.width * scaleFactor).toInt(), (bitmap.height * scaleFactor).toInt(), true)
-   }
-
-   fun blur(ctx: Context, image: Bitmap, blurRadius: Float): Bitmap {
-      log("blur")
-      val outputBitmap = Bitmap.createBitmap(image)
-      val rs = RenderScript.create(ctx)
-      val script = ScriptIntrinsicBlur.create(rs, Element.U8_4(rs))
-
-      val input = Allocation.createFromBitmap(rs, outputBitmap, Allocation.MipmapControl.MIPMAP_NONE, Allocation.USAGE_SHARED)
-      val output = Allocation.createTyped(rs, input.type)
-
-      script.setRadius(blurRadius)
-      script.setInput(input)
-      script.forEach(output)
-      output.copyTo(outputBitmap)
-
-      rs.destroy()
-      log("blur-ed")
-      return outputBitmap
-   }
-
-   fun darken(bitmap: Bitmap): Bitmap {
-
-      val paint = Paint()
-      val filter = LightingColorFilter(0x888888.opaque, 0)
-      paint.colorFilter = filter
-
-      val canvas = Canvas(bitmap)
-      canvas.drawBitmap(bitmap, 0f, 0f, paint)
-      return bitmap
-   }
-
-
 
    fun log(msg: String) {
       if (BuildConfig.DEBUG)

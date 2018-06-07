@@ -11,8 +11,9 @@ object MimikkoUI {
    const val packageName = "com.mimikko.mimikkoui"
    const val appClsName = "com.mimikko.common.App"
 
-   const val launcherClsName = "com.mimikko.mimikkoui.launcher.activity.Launcher"
-   const val drawerLayoutClsName = "com.mimikko.mimikkoui.launcher.components.drawer.DrawerLayout"
+   const val launcherClsName = "com.mimikko.mimikkoui.launcher3.customization.MimikkoLauncher"
+   const val launcherSettingClsName = "com.mimikko.mimikkoui.feature_launcher_settings.ui.activity.LauncherSettingActivity"
+   const val drawerLayoutClsName = "com.mimikko.mimikkoui.launcher3.customization.allapps.MimikkoAllAppRecyclerView"
    const val servantSettingClsName = "com.mimikko.servant.activity.ServantSettingsActivity"
 
    object id {

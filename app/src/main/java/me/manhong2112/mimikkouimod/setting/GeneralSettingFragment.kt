@@ -17,7 +17,6 @@ import me.manhong2112.mimikkouimod.common.TypedKey as K
 class GeneralSettingFragment : SettingFragment() {
    override fun createView(layout: ViewGroup) {
       with(layout) {
-         switchPreference(R.string.pref_general_transparent_status_bar, key = K.GeneralTransparentStatusBar)
          if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
             editTextPreference(R.string.pref_general_status_bar_color, key = K.GeneralStatusBarColor,
                   displayParser = {
@@ -49,12 +48,11 @@ class GeneralSettingFragment : SettingFragment() {
          }).toMutableList()
 
          sortingPreference(R.string.pref_general_icon_pack, K.GeneralIconPackFallback, displayList, result)
-         switchPreference(R.string.pref_general_icon_pack_apply_to_drawer_btn, key = K.GeneralIconPackApplyDrawerButton)
+         // switchPreference(R.string.pref_general_icon_pack_apply_to_drawer_btn, key = K.GeneralIconPackApplyDrawerButton)
 
-         seekBarPreference(R.string.pref_general_icon_size, R.string.pref_general_icon_size_num_format, key = K.GeneralIconScale)
-         switchPreference(R.string.pref_general_icon_size_apply_to_drawer_btn, key = K.GeneralIconScaleApplyDrawerButton)
+         // seekBarPreference(R.string.pref_general_icon_size, R.string.pref_general_icon_size_num_format, key = K.GeneralIconScale)
+         // switchPreference(R.string.pref_general_icon_size_apply_to_drawer_btn, key = K.GeneralIconScaleApplyDrawerButton)
 
-         switchPreference(R.string.pref_general_icon_text_original_name, key = K.GeneralShortcutTextOriginalName)
          editTextPreference(R.string.pref_general_icon_text_color, key = K.GeneralShortcutTextColor,
                displayParser = {
                   "%08X".format(it)
@@ -63,7 +61,7 @@ class GeneralSettingFragment : SettingFragment() {
                   BigInteger(it, 16).toInt()
                })
 
-         seekBarPreference(R.string.pref_general_icon_text_max_lines, R.string.pref_general_icon_text_max_lines_num_format, key = K.GeneralShortcutTextMaxLine, max = 3)
+         // seekBarPreference(R.string.pref_general_icon_text_max_lines, R.string.pref_general_icon_text_max_lines_num_format, key = K.GeneralShortcutTextMaxLine, max = 3)
 
          seekBarPreference(R.string.pref_general_icon_text_size, R.string.pref_general_icon_text_num_format, key = K.GeneralShortcutTextSize, max = 32f)
          editTextPreference(R.string.pref_general_icon_text_shadow_color, key = K.GeneralShortcutTextShadowColor,
@@ -76,6 +74,9 @@ class GeneralSettingFragment : SettingFragment() {
          seekBarPreference(R.string.pref_general_icon_text_shadow_radius, numFormatRes = R.string.pref_general_icon_text_num_format, key = K.GeneralShortcutTextShadowRadius, max = 32f)
          seekBarPreference(R.string.pref_general_icon_text_shadow_dx, R.string.pref_general_icon_text_num_format, key = K.GeneralShortcutTextShadowDx, max = 32f)
          seekBarPreference(R.string.pref_general_icon_text_shadow_dy, R.string.pref_general_icon_text_num_format, key = K.GeneralShortcutTextShadowDy, max = 32f)
+
+         // switchPreference("GeneralInjectSetting", key = K.GeneralInjectSetting)
+
       }
    }
 }

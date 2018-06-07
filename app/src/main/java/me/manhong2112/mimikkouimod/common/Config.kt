@@ -81,7 +81,10 @@ object Config {
          is List<*> -> {
             editor.put(key.name, value.toJSONArray().toString())
          }
-         else -> throw Exception("Type Error: type of $key is not supported")
+         else -> {
+            // if(value::class.java.getAnnotation())
+            throw Exception("Type Error: type of $key is not supported")
+         }
       }
       editor.apply()
    }

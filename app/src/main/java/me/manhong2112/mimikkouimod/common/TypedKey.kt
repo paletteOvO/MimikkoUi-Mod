@@ -2,44 +2,39 @@ package me.manhong2112.mimikkouimod.common
 
 import android.graphics.Color
 import android.support.annotation.ColorInt
+import me.manhong2112.mimikkouimod.setting.Neko
+import me.manhong2112.mimikkouimod.setting.NoAction
 import org.jetbrains.anko.collections.forEachWithIndex
 import org.jetbrains.anko.withAlpha
 
 open class TypedKey<out T>(val defValue: T) where T : Any {
-   object DrawerBlurBackground : TypedKey<Boolean>(false)
-   object DrawerDarkBackground : TypedKey<Boolean>(false)
-   object DrawerBlurBackgroundBlurRadius : TypedKey<Int>(100)
    object DrawerColumnSize : TypedKey<Int>(4)
-   object DrawerDrawUnderStatusBar : TypedKey<Boolean>(false)
-   object DrawerBatSwipeToSearch : TypedKey<Boolean>(false)
 
    object GeneralIconPackFallback : TypedKey<List<String>>(listOf("default"))
    object GeneralIconPackApplyDrawerButton : TypedKey<Boolean>(false)
    object GeneralIconScale : TypedKey<Int>(100) // in %
    object GeneralIconScaleApplyDrawerButton : TypedKey<Boolean>(false)
 
-   object GeneralTransparentStatusBar : TypedKey<Boolean>(false)
    object GeneralStatusBarColor : TypedKey<@ColorInt Int>(Color.BLACK.withAlpha(0x99))
    object GeneralDarkStatusBarIcon : TypedKey<Boolean>(false)
+
+   object GeneralInjectSetting : TypedKey<Boolean>(false)
 
    object GeneralShortcutTextSize : TypedKey<Float>(10f)
    object GeneralShortcutTextColor : TypedKey<@ColorInt Int>(Color.WHITE)
    object GeneralShortcutTextMaxLine : TypedKey<Int>(1)
-   object GeneralShortcutTextOriginalName : TypedKey<Boolean>(false)
    object GeneralShortcutTextShadowColor : TypedKey<@ColorInt Int>(Color.BLACK)
    object GeneralShortcutTextShadowRadius : TypedKey<Float>(10f)
    object GeneralShortcutTextShadowDx : TypedKey<Float>(0f)
    object GeneralShortcutTextShadowDy : TypedKey<Float>(0f)
 
-   object DockSwipeToDrawer : TypedKey<Boolean>(false)
-
-   object NeKoMiMiSwipeUpGesture : TypedKey<String>("Nothing")
-   object NeKoMiMiSwipeDownGesture : TypedKey<String>("Nothing")
-   object NeKoMiMiSwipeLeftGesture : TypedKey<String>("Nothing")
-   object NeKoMiMiSwipeRightGesture : TypedKey<String>("Nothing")
-   object NeKoMiMiClickGesture : TypedKey<String>("Nothing")
-   object NeKoMiMiDoubleClickGesture : TypedKey<String>("Nothing")
-   object NeKoMiMiLongClickGesture : TypedKey<String>("Nothing")
+   object NeKoMiMiSwipeUpGesture : TypedKey<String>(NoAction.toString())
+   object NeKoMiMiSwipeDownGesture : TypedKey<String>(NoAction.toString())
+   object NeKoMiMiSwipeLeftGesture : TypedKey<String>(NoAction.toString())
+   object NeKoMiMiSwipeRightGesture : TypedKey<String>(NoAction.toString())
+   object NeKoMiMiClickGesture : TypedKey<String>(Neko("Open Drawer").toString())
+   object NeKoMiMiDoubleClickGesture : TypedKey<String>(NoAction.toString())
+   object NeKoMiMiLongClickGesture : TypedKey<String>(NoAction.toString())
 
    @Suppress("LeakingThis")
    val name: String = this::class.java.simpleName

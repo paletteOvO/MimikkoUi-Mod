@@ -13,7 +13,9 @@ object CallOriginalMethod : Throwable()
 fun Any.printAllField() {
    val obj = this
    Utils.log(obj::class.java.canonicalName)
-   obj::class.java.declaredFields.map {
+   (obj::class.java.declaredFields
+         + obj::class.java.fields).toSet()
+         .map {
       it.isAccessible = true
       Utils.log("  ${it.name} :: ${it.type.canonicalName} : ${it.type.superclass?.canonicalName} = ${it.get(obj)}")
    }

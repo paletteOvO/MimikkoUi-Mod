@@ -44,7 +44,7 @@ class MainHook : IXposedHookLoadPackage {
       }
       GeneralHook().onLoad(lpparam.classLoader, lpparam)
       DrawerHook().onLoad(lpparam.classLoader, lpparam)
-      ServantSetting().onLoad(lpparam.classLoader, lpparam)
+      // ServantSetting().onLoad(lpparam.classLoader, lpparam)
    }
 
    private fun injectId(lpparam: XC_LoadPackage.LoadPackageParam) {

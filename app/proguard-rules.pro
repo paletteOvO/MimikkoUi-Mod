@@ -19,7 +19,6 @@
 
 -keepattributes SourceFile,LineNumberTable
 
--renamesourcefileattribute ''
 -repackageclasses ''
 -allowaccessmodification
 

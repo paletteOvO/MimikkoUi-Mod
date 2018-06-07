@@ -55,7 +55,7 @@ object IconProvider {
    fun update(ctx: Context) {
       Utils.log("IconProvider update")
       this.ctx = WeakReference(ctx)
-      val value = Config.get<List<String>>(K.GeneralIconPackFallback) + "default"
+      val value = Config[K.GeneralIconPackFallback] + "default"
       iconPacks = value.map {
          log("loading iconpack $it")
          iconPacksCache[it] = iconPacksCache[it] ?: IconPack(WeakReference(ctx), it)
@@ -70,6 +70,7 @@ object IconProvider {
    }
 
    fun getIcon(componentName: String): Bitmap? {
+      Utils.log(componentName)
       iconPacks.forEach {
          if (it.hasIcon(componentName)) {
             // log("getIcon from $it")
@@ -122,18 +123,19 @@ object IconProvider {
 
       open fun getIcon(componentName: String): Bitmap? {
          if (componentName !in appFilter) {
+            Utils.log("icon $componentName not in appFilter")
             return null
          }
          val drawableName = appFilter[componentName]!!
          if (drawableName !in icons) {
             res?.let { res ->
-               // log("load drawable $drawableName")
+               log("load drawable $drawableName")
                val id = res.getIdentifier(drawableName, "drawable", packageName)
                if (id == 0) {
                   log("failed to get drawable $drawableName from $packageName")
                   return null
                }
-               // log("cache drawable")
+               log("cache drawable")
                icons[drawableName] = ResourcesCompat.getDrawable(res, id, null)!!.toBitmap()
             }
          }
@@ -142,11 +144,12 @@ object IconProvider {
 
       open fun hasIcon(componentName: String): Boolean {
          return (componentName in appFilter).also {
-            // log("$packageName has icon $componentName == $it")
+            log("$packageName has icon $componentName == $it")
          }
       }
 
       private fun loadAppFilter(): HashMap<String, String> {
+         Utils.log("loadAppFilter")
          val hashMap = hashMapOf<String, String>()
          res ?: run {
             log("res is null")
@@ -156,7 +159,10 @@ object IconProvider {
          val parser = if (id != 0) {
             res!!.getXml(id)
          } else {
-            ctx.get() ?: return hashMap
+            ctx.get() ?: run {
+               log("ctx is null")
+               return hashMap
+            }
             val otherContext = ctx.get()!!.createPackageContext(packageName, 0)
             val am = otherContext.assets
             val f = XmlPullParserFactory.newInstance()
